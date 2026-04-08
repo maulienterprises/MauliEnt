@@ -240,7 +240,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <button class="nav-btn dev-only" onclick="showTab('log',this)" style="display:none">📋 Activity Log</button>
     <button class="nav-btn dev-only" onclick="showTab('users',this)" style="display:none">👤 Users</button>
     <button class="nav-btn dev-only" onclick="showTab('backup',this)" style="display:none">💾 Backup</button>
-    <button class="nav-btn dev-only" onclick="openGithubSetup()" style="display:none">⚙ GitHub Sync</button>
   </div>
 
   <!-- Content -->
@@ -456,9 +455,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       </table></div>
 
       <div class="backup-info" style="margin-top:16px">
-        <strong>ℹ Note:</strong> User changes here update the app's local data. To permanently save users to <code>users.json</code> on GitHub, click <strong>"Export users.jsno"</strong> below, then upload it to your GitHub repository.
-        <br><br>
-        <button class="btn btn-success btn-sm" onclick="exportUsersDB()">⬇ Export users.json</button>
+        <strong>ℹ Note:</strong> All user changes are saved automatically to Firebase and sync across all devices instantly.
       </div>
     </div>
 
@@ -761,21 +758,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   </div>
 </div>
 
-<!-- GitHub Setup Modal -->
-<div class="modal-overlay" id="modal-github">
-  <div class="modal">
-    <h3>⚙ GitHub Auto-Sync Setup</h3>
-    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:16px">Your token is encrypted with <strong>real AES-256-GCM</strong> using a master password you set. It stays saved in your browser permanently — you only re-enter the master password once per browser session.</p>
-    <div class="form-group"><label>GitHub Username</label><input type="text" id="gh-user" placeholder="your-github-username"></div>
-    <div class="form-group"><label>Repository Name</label><input type="text" id="gh-repo" placeholder="mauli-tracker"></div>
-    <div class="form-group"><label>Personal Access Token</label><input type="password" id="gh-token" placeholder="ghp_..."></div>
-    <p style="color:var(--muted);font-size:0.75rem">GitHub → Settings → Developer settings → Personal access tokens → needs <code>repo</code> scope.</p>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-github')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveGithubSync()">Save & Sync Now</button>
-    </div>
-  </div>
-</div>
 
 <script>
 // ============================================================
@@ -797,18 +779,15 @@ let editingInvoiceId = null;
 let reminderTarget = null;
 let importType = null;
 let editingUserId = null;
-let githubConfig = null;
 
 // Firestore instance — set by Firebase module after init
 let _db = null;
 
 // Collections stored in Firestore
-const FS_COLLECTIONS = ['customers','invoices','payments','creditNotes','log'];
+const FS_COLLECTIONS = ['customers','invoices','payments','creditNotes','log','users'];
 // These stay local only
 const LOCAL_KEYS = {
-  users: 'mauli_users_runtime',
-  backupHistory: 'mauli_backup_history',
-  github: 'mauli_gh_enc'
+  backupHistory: 'mauli_backup_history'
 };
 
 // Called by Firebase module once Firestore is ready
@@ -819,10 +798,6 @@ function setFirestoreDB(firestoreInstance) {
 // ---- Firestore save ----
 async function save(key) {
   // Local-only keys
-  if (key === 'users') {
-    try { localStorage.setItem(LOCAL_KEYS.users, JSON.stringify(DB.users)); } catch(e) {}
-    return;
-  }
   if (key === 'backupHistory') {
     try { localStorage.setItem(LOCAL_KEYS.backupHistory, JSON.stringify(DB.backupHistory)); } catch(e) {}
     return;
@@ -836,19 +811,16 @@ async function save(key) {
   if (!Array.isArray(items)) return;
 
   try {
-    // We store each item as its own document using item.id as the doc id
-    // For a save(key) call we upsert the entire changed array efficiently
-    // using a batch write
     const { writeBatch, doc, collection: col } = window._firebaseModules;
-    const batch = writeBatch(_db);
     const colRef = col(_db, collection);
-
-    items.forEach(item => {
-      const docRef = doc(colRef, String(item.id));
-      batch.set(docRef, item);
-    });
-
-    await batch.commit();
+    const CHUNK = 400;
+    for (let i = 0; i < items.length; i += CHUNK) {
+      const batch = writeBatch(_db);
+      items.slice(i, i + CHUNK).forEach(item => {
+        batch.set(doc(colRef, String(item.id)), item);
+      });
+      await batch.commit();
+    }
     updateSyncStatus('synced');
   } catch(e) {
     console.error('Firestore save error:', e);
@@ -858,8 +830,7 @@ async function save(key) {
 
 // ---- Firestore load (one-time fetch on login) ----
 async function load() {
-  // Always load local-only keys
-  try { DB.users = JSON.parse(localStorage.getItem(LOCAL_KEYS.users)) || []; } catch { DB.users = []; }
+  // Load local-only keys
   try { DB.backupHistory = JSON.parse(localStorage.getItem(LOCAL_KEYS.backupHistory)) || []; } catch { DB.backupHistory = []; }
 
   if (!_db) { console.warn('Firestore not ready'); return; }
@@ -914,11 +885,14 @@ async function migrateFromLocalStorage() {
     const { writeBatch, doc, collection: col } = window._firebaseModules;
     for (const key of FS_COLLECTIONS) {
       if (!DB[key].length) continue;
-      const batch = writeBatch(_db);
-      DB[key].forEach(item => {
-        batch.set(doc(col(_db, key), String(item.id)), item);
-      });
-      await batch.commit();
+      const CHUNK = 400;
+      for (let i = 0; i < DB[key].length; i += CHUNK) {
+        const batch = writeBatch(_db);
+        DB[key].slice(i, i + CHUNK).forEach(item => {
+          batch.set(doc(col(_db, key), String(item.id)), item);
+        });
+        await batch.commit();
+      }
     }
     toast('✅ Data migrated to Firebase successfully!', 'success');
   } catch(e) {
@@ -1106,96 +1080,31 @@ function showLockoutMessage(username) {
   }, 500);
 }
 
-// ---- AES-256-GCM for GitHub token ----
-const GH_MASTER_KEY_KEY = 'mauli_gh_master';
-
-async function deriveAesKey(masterPassword, saltHex) {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(masterPassword), 'PBKDF2', false, ['deriveKey']);
-  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 },
-    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-  );
-}
-
-async function aesEncrypt(plaintext, masterPassword) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2,'0')).join('');
-  const key = await deriveAesKey(masterPassword, saltHex);
-  const enc = new TextEncoder();
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
-  const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2,'0')).join('');
-  const ctHex = Array.from(new Uint8Array(ciphertext)).map(b => b.toString(16).padStart(2,'0')).join('');
-  return `aes256:${saltHex}:${ivHex}:${ctHex}`;
-}
-
-async function aesDecrypt(payload, masterPassword) {
-  const [, saltHex, ivHex, ctHex] = payload.split(':');
-  const key = await deriveAesKey(masterPassword, saltHex);
-  const iv = new Uint8Array(ivHex.match(/.{2}/g).map(b => parseInt(b, 16)));
-  const ct = new Uint8Array(ctHex.match(/.{2}/g).map(b => parseInt(b, 16)));
-  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-  return new TextDecoder().decode(plain);
-}
-
-async function loadGithubConfig() {
-  try {
-    const stored = localStorage.getItem(KEYS.github);
-    if (!stored) return;
-    // New AES-256-GCM format
-    if (stored.startsWith('aes256:')) {
-      const masterPw = sessionStorage.getItem(GH_MASTER_KEY_KEY);
-      if (!masterPw) return; // can't decrypt without master password in this session
-      const plain = await aesDecrypt(stored, masterPw);
-      githubConfig = JSON.parse(plain);
-      return;
-    }
-    // Legacy base64 — migrate automatically
-    githubConfig = JSON.parse(atob(stored));
-    // Re-encrypt with AES if master password is available this session
-    const masterPw = sessionStorage.getItem(GH_MASTER_KEY_KEY);
-    if (masterPw && githubConfig) {
-      const encrypted = await aesEncrypt(JSON.stringify(githubConfig), masterPw);
-      localStorage.setItem(KEYS.github, encrypted);
-    }
-  } catch {}
-}
-
-async function saveGithubSync() {
-  const user = document.getElementById('gh-user').value.trim();
-  const repo = document.getElementById('gh-repo').value.trim();
-  const token = document.getElementById('gh-token').value.trim();
-  let masterPw = sessionStorage.getItem(GH_MASTER_KEY_KEY);
-  if (!masterPw) {
-    masterPw = prompt('Set a master password to encrypt your GitHub token.\nYou will need to enter this once per browser session.\n\nMaster password:');
-    if (!masterPw) return toast('Master password required to save GitHub token.', 'error');
-    sessionStorage.setItem(GH_MASTER_KEY_KEY, masterPw);
-  }
-  if (!user || !repo || !token) return toast('All fields required.', 'error');
-  githubConfig = { user, repo, token };
-  const encrypted = await aesEncrypt(JSON.stringify(githubConfig), masterPw);
-  localStorage.setItem(KEYS.github, encrypted);
-  closeModal('modal-github');
-  toast('GitHub sync configured with AES-256 encryption!', 'success');
-  autoSync();
-}
-
 // ---- Login flow ----
 async function loadUsersDB() {
+  // 1. Try Firestore first
+  if (_db) {
+    try {
+      const { getDocs, collection: col } = window._firebaseModules;
+      const snap = await getDocs(col(_db, 'users'));
+      const data = snap.docs.map(d => d.data());
+      if (data.length > 0) { DB.users = data; return; }
+    } catch(e) { console.warn('Firestore users load failed:', e); }
+  }
+  // 2. Fall back to users.json (or users.db) on GitHub as one-time seed
   if (DB.users && DB.users.length > 0) return;
-  try {
-    const resp = await fetch('./users.json?v=' + Date.now());
-    if (resp.ok) {
-      const data = await resp.json();
-      if (Array.isArray(data) && data.length > 0) {
-        DB.users = data;
-        save('users');
+  for (const filename of ['./users.json', './users.db']) {
+    try {
+      const resp = await fetch(filename + '?v=' + Date.now());
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data) && data.length > 0) {
+          DB.users = data;
+          if (_db) save('users'); // auto-migrate up to Firestore
+          return;
+        }
       }
-    }
-  } catch(e) {
-    console.warn('Could not load users.json:', e);
+    } catch(e) { /* try next */ }
   }
 }
 
@@ -1253,7 +1162,6 @@ async function doLogin() {
   applyRoleAccess(user.role);
   await load();
   renderAll();
-  loadGithubConfig();
   startRealtimeListeners();
   startIdleTimer();
 
@@ -2309,6 +2217,7 @@ async function deleteUserFromApp(id) {
   if (!confirm(`Delete user "${u.username}"?`)) return;
   DB.users = DB.users.filter(u => u.id !== id);
   save('users');
+  deleteDoc('users', id);
   addLog('delete', `Deleted user: ${u.username}`);
   toast('User deleted.', 'error');
   renderUsersTable();
@@ -2338,16 +2247,6 @@ function renderUsersTable() {
       </td>
     </tr>
   `).join('');
-}
-
-function exportUsersDB() {
-  if (!DB.users.length) return toast('No users to export.', 'error');
-  const blob = new Blob([JSON.stringify(DB.users, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'users.json';
-  a.click();
-  toast('users.json downloaded! Upload it to GitHub.', 'success');
 }
 
 // ============================================================
@@ -2615,13 +2514,6 @@ function exportXLSX(data, filename) {
 }
 
 // ============================================================
-// GITHUB SYNC (legacy — data sync now handled by Firebase)
-// ============================================================
-function openGithubSetup() { openModal('modal-github'); }
-function autoSync() { /* no-op — Firebase handles real-time sync */ }
-async function githubPut() { /* no-op */ }
-
-// ============================================================
 // HELPERS
 // ============================================================
 function fmt(n) { return parseFloat(n||0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -2753,8 +2645,6 @@ if ('serviceWorker' in navigator) {
 // INIT — load users only (Firestore loads after login)
 // ============================================================
 (function initApp() {
-  // Load local-only data
-  try { DB.users = JSON.parse(localStorage.getItem('mauli_users_runtime')) || []; } catch { DB.users = []; }
   try { DB.backupHistory = JSON.parse(localStorage.getItem('mauli_backup_history')) || []; } catch { DB.backupHistory = []; }
 })();
 </script>
