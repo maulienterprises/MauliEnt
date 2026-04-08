@@ -2,14 +2,10 @@
 
 ## Folder Structure
 ```
-Mauli Enterprises/          ← Main folder (upload everything inside this)
-├── index.html              ← Root redirect (auto-redirects to Database/)
+Mauli Enterprises/          ← Main folder
+├── index.html              ← Main application
 ├── README.md               ← This file
-├── Customers_Import_Template.xlsx   ← Excel template for bulk customer import
-├── Invoices_Import_Template.xlsx    ← Excel template for bulk invoice import
-├── Payments_Import_Template.xlsx    ← Excel template for bulk payment import
 └── Database/
-    ├── index.html          ← Main application
     ├── user-manager.html   ← User creation tool (local use only)
     ├── manifest.json       ← PWA manifest
     ├── sw.js               ← Service worker (offline support)
