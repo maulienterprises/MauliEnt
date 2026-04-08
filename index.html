@@ -1159,6 +1159,12 @@ async function doLogin() {
   const isMgr = user.role === 'dev' || user.role === 'admin';
   document.querySelectorAll('.mgr-only').forEach(el => el.style.display = isMgr ? '' : 'none');
 
+  // Sign in to Firebase anonymously — required for Firestore rules (request.auth != null)
+  if (window._firebaseAuth) {
+    try { await window._firebaseAuth.signInAnonymously(window._firebaseAuth.auth); }
+    catch(e) { console.warn('Firebase anon sign-in failed:', e); }
+  }
+
   applyRoleAccess(user.role);
   await load();
   renderAll();
@@ -1180,6 +1186,10 @@ function signOut(reason) {
   clearSessionToken();
   stopIdleTimer();
   stopRealtimeListeners();
+  // Sign out of Firebase so Firestore rules block any further access
+  if (window._firebaseAuth) {
+    try { window._firebaseAuth.signOut(window._firebaseAuth.auth); } catch(e) {}
+  }
   document.getElementById('idle-warning-overlay').style.display = 'none';
   document.getElementById('stale-tab-banner').style.display = 'none';
   document.getElementById('app').style.display = 'none';
@@ -2657,6 +2667,8 @@ import { initializeApp }                        from 'https://www.gstatic.com/fi
 import { getFirestore, collection, getDocs,
          doc, setDoc, deleteDoc, writeBatch,
          onSnapshot }                           from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
+import { getAuth, signInAnonymously, signOut as fbSignOut }
+                                                from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCD7kmldOVLfXqpq53mxNq5jRCkWn_3nGw",
@@ -2667,11 +2679,13 @@ const firebaseConfig = {
   appId:             "1:590292764179:web:42ee0878a77cae29d2a1e6"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
 
-// Expose Firestore instance and module functions to the non-module script
+// Expose to non-module script
 window._firebaseModules = { collection, getDocs, doc, setDoc, deleteDoc, writeBatch, onSnapshot };
+window._firebaseAuth    = { auth, signInAnonymously, signOut: fbSignOut };
 window.setFirestoreDB(db);
 
 console.log('✅ Firebase Firestore connected');
