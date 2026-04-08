@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mauli Enterprises — Invoice Tracker</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/x-icon" href="./logo.ico">
+<link rel="apple-touch-icon" href="./logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root {
+  --bg: #f0f4fa;
+  --card: #ffffff;
+  --card2: #f8faff;
+  --accent: #1a6fd4;
+  --accent2: #1355a8;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #cbd5e1;
+  --input-bg: #f8faff;
+  --shadow: 0 4px 24px rgba(26,111,212,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+/* ===== LOGIN ===== */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a6fd4 0%,#1355a8 50%,#0d3f8a 100%)}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:380px;box-shadow:var(--shadow)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo img{width:64px;height:64px;border-radius:12px;object-fit:contain}
+.login-logo h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-top:10px;color:var(--accent)}
+.login-logo p{color:var(--muted);font-size:0.82rem;margin-top:4px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:0.82rem;color:var(--muted);margin-bottom:6px;font-weight:500}
+.form-group input,.form-group select{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 14px;font-size:0.92rem;outline:none;font-family:inherit}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group select option{background:var(--card)}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:13px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit}
+.btn-login:hover{opacity:0.9}
+.login-error{color:var(--danger);font-size:0.83rem;margin-top:10px;text-align:center;display:none}
+/* ===== APP SHELL ===== */
+#app{display:none;min-height:100vh}
+.topbar{background:#1a6fd4;border-bottom:1px solid #1355a8;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{width:36px;height:36px;border-radius:8px;object-fit:contain}
+.topbar-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:#fff}
+.topbar-sub{font-size:0.72rem;color:rgba(255,255,255,0.7)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px}
+.sync-label{font-size:0.75rem;color:rgba(255,255,255,0.8)}
+.user-chip{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:5px 14px;font-size:0.78rem;display:flex;align-items:center;gap:8px;color:#fff}
+.role-tag{font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.25);color:#fff}
+.btn-signout{background:transparent;border:1px solid rgba(255,255,255,0.4);border-radius:8px;color:rgba(255,255,255,0.85);padding:6px 14px;cursor:pointer;font-size:0.8rem;font-family:inherit}
+.btn-signout:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,0.1)}
+/* ===== NAV ===== */
+.nav{background:#1a6fd4;border-bottom:2px solid #1355a8;display:flex;overflow-x:auto;padding:0 12px;gap:4px;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{background:none;border:none;color:rgba(255,255,255,0.75);padding:14px 16px;cursor:pointer;font-size:0.83rem;font-weight:500;white-space:nowrap;border-bottom:3px solid transparent;transition:0.2s;font-family:inherit}
+.nav-btn:hover{color:#fff;background:rgba(255,255,255,0.1);border-radius:6px 6px 0 0}
+.nav-btn.active{color:#fff;border-bottom-color:#fff;font-weight:700;background:rgba(255,255,255,0.15);border-radius:6px 6px 0 0}
+/* ===== CONTENT ===== */
+.content{padding:20px;max-width:1200px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* ===== CARDS ===== */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;border-radius:0 14px 0 60px;opacity:0.12}
+.stat-card.blue::before{background:var(--accent)}
+.stat-card.green::before{background:var(--success)}
+.stat-card.red::before{background:var(--danger)}
+.stat-label{font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.stat-value{font-size:1.8rem;font-weight:700;margin:8px 0 4px;color:var(--text)}
+.stat-sub{font-size:0.75rem;color:var(--muted)}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:1rem;font-weight:600;color:var(--text)}
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th{background:#e8f0fc;color:#1a4a8a;padding:11px 14px;text-align:left;font-weight:700;font-size:0.76rem;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(26,111,212,0.04)}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600}
+.badge-paid{background:#2ecc7120;color:var(--success);border:1px solid #2ecc7140}
+.badge-pending{background:#f39c1220;color:var(--warning);border:1px solid #f39c1240}
+.badge-partial{background:#4f8ef720;color:var(--accent);border:1px solid #4f8ef740}
+.badge-overdue{background:#e74c3c20;color:var(--danger);border:1px solid #e74c3c40}
+/* ===== BUTTONS ===== */
+.btn{padding:9px 18px;border-radius:8px;border:none;font-weight:600;cursor:pointer;font-size:0.85rem;transition:0.2s;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#3a7de0}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#27ae60}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#c0392b}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 12px;font-size:0.77rem}
+.btn-xs{padding:3px 8px;font-size:0.72rem}
+.action-btns{display:flex;gap:6px;flex-wrap:wrap}
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)}
+.modal h3{font-size:1.1rem;margin-bottom:20px;color:var(--accent)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+/* ===== SEARCH/FILTER ===== */
+.filter-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.search-input{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 14px;font-size:0.85rem;outline:none;min-width:200px;font-family:inherit}
+.search-input:focus{border-color:var(--accent)}
+.filter-btn{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:7px 14px;cursor:pointer;font-size:0.8rem;font-family:inherit}
+.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* ===== OVERDUE ALERT ===== */
+.overdue-alert{background:#e74c3c15;border:1px solid #e74c3c40;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.overdue-alert p{color:var(--danger);font-size:0.85rem;font-weight:500}
+/* ===== DUPLICATE WARNING ===== */
+.dup-warning{background:#f39c1215;border:1px solid var(--warning);border-radius:8px;padding:8px 14px;color:var(--warning);font-size:0.82rem;margin-bottom:12px;display:none}
+/* ===== USER MANAGEMENT ===== */
+.user-mgmt-form{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+/* ===== BACKUP TAB ===== */
+.backup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.backup-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px}
+.backup-card h3{font-size:0.95rem;color:var(--accent);margin-bottom:8px}
+.backup-card p{color:var(--muted);font-size:0.82rem;margin-bottom:16px;line-height:1.6}
+.backup-info{background:#e8f0fc;border-radius:8px;padding:12px;font-size:0.8rem;color:var(--muted);margin-top:12px;line-height:1.7}
+.backup-info strong{color:var(--text)}
+.upload-area{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:0.2s;margin-top:12px}
+.upload-area:hover{border-color:var(--accent);background:rgba(79,142,247,0.05)}
+.upload-area p{color:var(--muted);font-size:0.85rem;margin-top:8px}
+/* ===== MISC ===== */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .icon{font-size:2.5rem;margin-bottom:10px}
+.chip{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:600}
+.chip-active{background:#2ecc7120;color:var(--success);border:1px solid #2ecc7140}
+.chip-inactive{background:#e74c3c20;color:var(--danger);border:1px solid #e74c3c40}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:0.85rem;z-index:9999;box-shadow:var(--shadow);transform:translateY(100px);opacity:0;transition:0.3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:var(--success);color:var(--success)}
+.toast.error{border-color:var(--danger);color:var(--danger)}
+.toast.info{border-color:var(--accent);color:var(--accent)}
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:600px){.form-row-2,.form-row-3{grid-template-columns:1fr}.topbar-title{display:none}.user-chip .role-tag{display:none}}
+.log-entry{background:var(--input-bg);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:0.82rem;border-left:3px solid var(--border)}
+.log-entry.correction{border-left-color:var(--warning)}
+.log-entry.create{border-left-color:var(--success)}
+.log-entry.edit{border-left-color:var(--accent)}
+.log-entry.delete{border-left-color:var(--danger)}
+.log-time{color:var(--muted);font-size:0.75rem}
+hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+</style>
+</head>
+<body>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== DUPLICATE WARNING ===== -->
+<div style="position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:500;width:90%;max-width:500px;display:none" id="dup-global">
+  <div style="background:#f39c1215;border:1px solid var(--warning);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+    <span style="color:var(--warning);font-size:0.85rem">⚠ Duplicate Invoice Number detected!</span>
+    <button onclick="document.getElementById('dup-global').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem">✕</button>
+  </div>
+</div>
+
+<!-- ===== AUTO-LOGOUT WARNING MODAL ===== -->
+<div id="idle-warning-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--card);border:2px solid var(--warning);border-radius:16px;padding:32px 28px;width:100%;max-width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+    <div style="font-size:2.5rem;margin-bottom:12px">⏱</div>
+    <h3 style="color:var(--warning);font-size:1.1rem;margin-bottom:8px">Session Expiring Soon</h3>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:20px">You will be automatically logged out due to inactivity in <strong id="idle-countdown" style="color:var(--danger);font-size:1.1rem">30</strong> seconds.</p>
+    <button onclick="resetIdleTimer()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:12px 32px;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:inherit;width:100%">Stay Logged In</button>
+  </div>
+</div>
+
+<!-- ===== STALE TAB BANNER ===== -->
+<div id="stale-tab-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:8000;background:#1355a8;color:#fff;padding:10px 20px;text-align:center;font-size:0.85rem;font-weight:500">
+  ⚡ Data was updated in another tab. &nbsp;<button onclick="reloadStaleData()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:3px 12px;cursor:pointer;font-size:0.82rem;font-family:inherit">Refresh Now</button>&nbsp;<button onclick="document.getElementById('stale-tab-banner').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1rem;margin-left:8px">✕</button>
+</div>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="./logo.png" onerror="this.style.display='none'" alt="Logo">
+      <h2>Mauli Enterprises</h2>
+      <p>Invoice Manager</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error">Invalid username or password.</div>
+    <div id="login-lockout" style="color:var(--warning);font-size:0.83rem;margin-top:10px;text-align:center;display:none"></div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <img src="./logo.png" class="topbar-logo" onerror="this.style.display='none'" alt="Logo">
+      <div>
+        <div class="topbar-title">Mauli Enterprises</div>
+        <div class="topbar-sub">Invoice Manager</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span><span class="sync-dot" id="sync-dot"></span><span class="sync-label" id="sync-label">Connecting to Firebase...</span></span>
+      <div class="user-chip">
+        <span id="topbar-name">—</span>
+        <span class="role-tag" id="topbar-role">—</span>
+      </div>
+      <button class="btn-signout" onclick="signOut()">⏻ Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav" id="main-nav">
+    <button class="nav-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showTab('customers',this)">👥 Customers</button>
+    <button class="nav-btn" onclick="showTab('invoices',this)">🧾 Invoices</button>
+    <button class="nav-btn" onclick="showTab('payments',this)">💳 Payments</button>
+    <button class="nav-btn" onclick="showTab('overdue',this)">⚠ Overdue</button>
+    <button class="nav-btn mgr-only" onclick="showTab('creditnotes',this)" style="display:none">📝 Credit Notes</button>
+    <button class="nav-btn mgr-only" onclick="showTab('ledger',this)" style="display:none">📒 Customer Ledger</button>
+    <button class="nav-btn dev-only" onclick="showTab('log',this)" style="display:none">📋 Activity Log</button>
+    <button class="nav-btn dev-only" onclick="showTab('users',this)" style="display:none">👤 Users</button>
+    <button class="nav-btn dev-only" onclick="showTab('backup',this)" style="display:none">💾 Backup</button>
+    <button class="nav-btn dev-only" onclick="openGithubSetup()" style="display:none">⚙ GitHub Sync</button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card blue">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-value" id="stat-customers">0</div>
+          <div class="stat-sub">Active accounts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Invoiced</div>
+          <div class="stat-value" id="stat-invoiced">₹0</div>
+          <div class="stat-sub">All time</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Received</div>
+          <div class="stat-value" id="stat-received">₹0</div>
+          <div class="stat-sub">Payments collected</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Outstanding</div>
+          <div class="stat-value" id="stat-outstanding">₹0</div>
+          <div class="stat-sub">Pending dues</div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Recent Invoices</div>
+          <button class="btn btn-outline btn-sm" onclick="showTab('invoices',document.querySelector('[onclick*=invoices]'))">View all</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="dash-recent"></tbody>
+        </table></div>
+      </div>
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Overdue Invoices</div>
+          <button class="btn btn-outline btn-sm" onclick="showTab('overdue',document.querySelector('[onclick*=overdue]'))">View all</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Customer</th><th>Overdue By</th><th>Due</th></tr></thead>
+          <tbody id="dash-overdue"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ===== CUSTOMERS ===== -->
+    <div class="tab-panel" id="tab-customers">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">Customers</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('customers')">📥 Import Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="exportCustomers()">📤 Export</button>
+          <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">➕ Add Customer</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <input class="search-input" placeholder="Search customers..." id="cust-search" oninput="renderCustomers()">
+        <button class="filter-btn active" onclick="setCustFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setCustFilter('pending',this)">Pending</button>
+        <button class="filter-btn" onclick="setCustFilter('partial',this)">Partial</button>
+        <button class="filter-btn" onclick="setCustFilter('paid',this)">Paid</button>
+        <button class="filter-btn" onclick="setCustFilter('overdue',this)">Overdue</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Email</th><th>City</th><th>Total Due</th><th>Reminders</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="cust-table"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ===== INVOICES ===== -->
+    <div class="tab-panel" id="tab-invoices">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">Invoices</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('invoices')">📥 Import Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="exportInvoices()">📤 Export Unpaid</button>
+          <button class="btn btn-primary btn-sm" onclick="openInvoiceModal()">➕ New Invoice</button>
+        </div>
+      </div>
+      <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
+        <input class="search-input" placeholder="Search invoices..." id="inv-search" oninput="renderInvoices()" style="min-width:160px">
+        <select class="filter-btn" id="inv-cust-filter" onchange="renderInvoices()" style="min-width:140px">
+          <option value="">All Customers</option>
+        </select>
+        <select class="filter-btn" id="inv-status-filter" onchange="renderInvoices()" style="min-width:110px">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="partial">Partial</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <input type="month" id="inv-month-filter" class="filter-btn" onchange="renderInvoices()" style="min-width:140px;padding:7px 10px">
+        <button class="filter-btn" onclick="clearInvDateFilter()" title="Clear date filter" style="padding:7px 10px">✕ All Months</button>
+      </div>
+      <div id="inv-date-label" style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;margin-top:-4px"></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Invoice #</th><th>Customer</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="inv-table"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ===== PAYMENTS ===== -->
+    <div class="tab-panel" id="tab-payments">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">Payment History</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('payments')">📥 Import Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="exportPayments()">📤 Export</button>
+          <button class="btn btn-primary btn-sm" onclick="openPaymentModal()">➕ Record Payment</button>
+        </div>
+      </div>
+      <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
+        <input class="search-input" placeholder="Search payments..." id="pay-search" oninput="renderPayments()" style="min-width:160px">
+        <select class="filter-btn" id="pay-cust-filter" onchange="renderPayments()" style="min-width:140px">
+          <option value="">All Customers</option>
+        </select>
+        <select class="filter-btn" id="pay-method-filter" onchange="renderPayments()" style="min-width:120px">
+          <option value="">All Methods</option>
+          <option value="Cash">Cash</option>
+          <option value="UPI">UPI</option>
+          <option value="NEFT/IMPS">NEFT/IMPS</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Cash Discount">Cash Discount</option>
+        </select>
+        <input type="month" id="pay-month-filter" class="filter-btn" onchange="renderPayments()" style="min-width:140px;padding:7px 10px">
+        <button class="filter-btn" onclick="clearPayDateFilter()" style="padding:7px 10px">✕ All Months</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th></tr></thead>
+        <tbody id="pay-table"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ===== OVERDUE ===== -->
+    <div class="tab-panel" id="tab-overdue">
+      <div class="overdue-alert" id="overdue-alert" style="display:none">
+        <p>⚠ Invoices past due date — send reminders immediately.</p>
+        <button class="btn btn-danger btn-sm" onclick="exportOverdueExcel()">Export Overdue Excel</button>
+      </div>
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">Overdue Invoices</div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Invoice #</th><th>Customer</th><th>Due Date</th><th>Days Overdue</th><th>Balance</th><th>Actions</th></tr></thead>
+        <tbody id="overdue-table"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ===== ACTIVITY LOG ===== -->
+    <div class="tab-panel" id="tab-log">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">Activity Log</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="exportLog()">📤 Export Log</button>
+          <button class="btn btn-danger btn-sm" onclick="clearLog()">🗑 Clear Log</button>
+        </div>
+      </div>
+      <div id="log-container"></div>
+    </div>
+
+    <!-- ===== USER MANAGEMENT ===== -->
+    <div class="tab-panel" id="tab-users">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">User Management</div>
+        <button class="btn btn-primary btn-sm" onclick="openUserForm()">➕ Add User</button>
+      </div>
+
+      <div class="section-card user-mgmt-form" id="user-form-section" style="display:none">
+        <h3 id="user-form-title" style="color:var(--accent);margin-bottom:16px;font-size:1rem">➕ Add New User</h3>
+        <div class="form-row-2">
+          <div class="form-group"><label>First Name *</label><input type="text" id="uf-firstname" placeholder="First name"></div>
+          <div class="form-group"><label>Last Name</label><input type="text" id="uf-lastname" placeholder="Last name"></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group"><label>Username *</label><input type="text" id="uf-username" placeholder="username (no spaces)"></div>
+          <div class="form-group"><label>Role *</label>
+            <select id="uf-role">
+              <option value="">-- Select --</option>
+              <option value="dev">Developer</option>
+              <option value="admin">Administrator</option>
+              <option value="emp">Employee</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group"><label>Password *</label><input type="password" id="uf-password" placeholder="Min 6 chars"></div>
+          <div class="form-group"><label>Confirm Password *</label><input type="password" id="uf-confirm" placeholder="Re-enter"></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group"><label>Status</label>
+            <select id="uf-status">
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
+          <button class="btn btn-outline btn-sm" onclick="closeUserForm()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveUserFromApp()">💾 Save User</button>
+        </div>
+      </div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="users-table-body"></tbody>
+      </table></div>
+
+      <div class="backup-info" style="margin-top:16px">
+        <strong>ℹ Note:</strong> User changes here update the app's local data. To permanently save users to <code>users.json</code> on GitHub, click <strong>"Export users.jsno"</strong> below, then upload it to your GitHub repository.
+        <br><br>
+        <button class="btn btn-success btn-sm" onclick="exportUsersDB()">⬇ Export users.json</button>
+      </div>
+    </div>
+
+    <!-- ===== BACKUP TAB ===== -->
+    <div class="tab-panel" id="tab-backup">
+      <div class="section-header" style="margin-bottom:20px">
+        <div class="section-title">💾 Backup & Restore</div>
+      </div>
+
+      <div class="backup-grid">
+        <div class="backup-card">
+          <h3>📦 Full Backup</h3>
+          <p>Download a complete backup of all data — customers, invoices, payments, and overdue info — as a ZIP file.</p>
+          <button class="btn btn-success" onclick="downloadFullBackup()">⬇ Download Full Backup</button>
+          <div class="backup-info">
+            <strong>File name format:</strong><br>
+            <code>Backup_MauliEnt_DD_MM_YYYY_HHmm.zip</code><br><br>
+            <strong>Contains:</strong><br>
+            customers.json, invoices.json, payments.json, overdue_summary.json, activity_log.json, users.json, backup_info.json
+          </div>
+        </div>
+
+        <div class="backup-card">
+          <h3>📤 Selective Backup</h3>
+          <p>Download individual data files as JSON for specific sections.</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('customers')">👥 Customers JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('invoices')">🧾 Invoices JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('payments')">💳 Payments JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('log')">📋 Activity Log JSON</button>
+          </div>
+        </div>
+
+        <div class="backup-card">
+          <h3>📥 Restore from Backup</h3>
+          <p>Upload a previously downloaded ZIP backup to restore all data. <strong style="color:var(--danger)">This will overwrite current data.</strong></p>
+          <div class="upload-area" onclick="document.getElementById('backup-upload').click()">
+            <div style="font-size:2rem">📂</div>
+            <p>Click to select backup ZIP file</p>
+            <p style="font-size:0.75rem;margin-top:4px">Only <code>.zip</code> files from this app</p>
+          </div>
+          <input type="file" id="backup-upload" accept=".zip" style="display:none" onchange="restoreBackup(this)">
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3 style="color:var(--accent);margin-bottom:12px;font-size:0.95rem">📋 Backup History</h3>
+        <div id="backup-history-list">
+          <p style="color:var(--muted);font-size:0.85rem">No backup history yet. Download a backup to see it here.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CREDIT NOTES ===== -->
+    <div class="tab-panel" id="tab-creditnotes">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">📝 Credit Notes</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="exportCreditNotes()">📤 Export</button>
+          <button class="btn btn-primary btn-sm" onclick="openCNModal()">➕ New Credit Note</button>
+        </div>
+      </div>
+      <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
+        <input class="search-input" placeholder="Search credit notes..." id="cn-search" oninput="renderCreditNotes()" style="min-width:160px">
+        <select class="filter-btn" id="cn-cust-filter" onchange="renderCreditNotes()" style="min-width:140px">
+          <option value="">All Customers</option>
+        </select>
+        <select class="filter-btn" id="cn-reason-filter" onchange="renderCreditNotes()" style="min-width:130px">
+          <option value="">All Reasons</option>
+          <option value="Return">Goods Return</option>
+          <option value="Discount">Discount</option>
+          <option value="Correction">Price Correction</option>
+          <option value="Damaged">Damaged Goods</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="month" id="cn-month-filter" class="filter-btn" onchange="renderCreditNotes()" style="min-width:140px;padding:7px 10px">
+        <button class="filter-btn" onclick="clearCNDateFilter()" style="padding:7px 10px">✕ All Months</button>
+      </div>
+      <div class="stat-grid" style="margin:12px 0">
+        <div class="stat-card blue"><div class="stat-label">Total Credit Notes</div><div class="stat-value" id="cn-stat-count">0</div><div class="stat-sub">All time</div></div>
+        <div class="stat-card red"><div class="stat-label">Total Credit Amount</div><div class="stat-value" id="cn-stat-total">₹0</div><div class="stat-sub">Reduces invoice balances</div></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>CN #</th><th>Date</th><th>Customer</th><th>Invoice #</th><th>Credit Amount</th><th>Reason</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="cn-table"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ===== CUSTOMER LEDGER ===== -->
+    <div class="tab-panel" id="tab-ledger">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">📒 Customer Invoice &amp; Payment Ledger</div>
+        <button class="btn btn-outline btn-sm" onclick="exportLedger()">📤 Export Ledger</button>
+      </div>
+      <div class="filter-bar" style="gap:12px;flex-wrap:wrap;align-items:center;background:var(--card);padding:14px 16px;border-radius:12px;border:1px solid var(--border);margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
+          <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">Customer</label>
+          <select class="search-input" id="ledger-cust" onchange="renderLedger()" style="flex:1">
+            <option value="">— All Customers —</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">Payment Status</label>
+          <select class="search-input" id="ledger-status" onchange="renderLedger()" style="min-width:140px">
+            <option value="total">Total</option>
+            <option value="paid">Paid</option>
+            <option value="unpaid">Unpaid</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">Month</label>
+          <input type="month" id="ledger-month" class="search-input" onchange="renderLedger()" style="min-width:140px">
+          <button class="filter-btn" onclick="clearLedgerDateFilter()" style="padding:6px 10px;font-size:0.78rem">✕ All</button>
+        </div>
+      </div>
+      <div class="stat-grid" style="margin-bottom:20px">
+        <div class="stat-card blue">
+          <div class="stat-label">Total Invoiced</div>
+          <div class="stat-value" id="ledger-total">&#8377;0</div>
+          <div class="stat-sub" id="ledger-total-count">0 invoices</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Total Paid</div>
+          <div class="stat-value" id="ledger-paid">&#8377;0</div>
+          <div class="stat-sub" id="ledger-paid-count">0 invoices</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Outstanding</div>
+          <div class="stat-value" id="ledger-unpaid">&#8377;0</div>
+          <div class="stat-sub" id="ledger-unpaid-count">0 invoices</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Customer</th><th>Invoice #</th><th>Invoice Date</th><th>Due Date</th>
+              <th>Invoice Amt</th><th>Paid Amt</th><th>Balance</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- Customer Modal -->
+<div class="modal-overlay" id="modal-customer">
+  <div class="modal">
+    <h3 id="cust-modal-title">Add Customer</h3>
+    <div class="form-row-2">
+      <div class="form-group"><label>Name *</label><input type="text" id="cm-name" placeholder="Full name"></div>
+      <div class="form-group"><label>Company</label><input type="text" id="cm-company" placeholder="Company name"></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Phone *</label><input type="tel" id="cm-phone" placeholder="+91 XXXXX XXXXX"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="cm-email" placeholder="email@example.com"></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group"><label>City</label><input type="text" id="cm-city" placeholder="City"></div>
+      <div class="form-group"><label>GST Number</label><input type="text" id="cm-gst" placeholder="GST number"></div>
+    </div>
+    <div class="form-group"><label>Address</label><input type="text" id="cm-address" placeholder="Full address"></div>
+    <div style="display:flex;gap:20px;margin-top:10px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" id="cm-whatsapp"> 📱 WhatsApp Reminders</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" id="cm-email-rem"> ✉️ Email Reminders</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-customer')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal">
+    <h3 id="inv-modal-title">New Invoice</h3>
+    <div class="dup-warning" id="inv-dup-warn">⚠ This invoice number already exists!</div>
+    <div class="form-group"><label>Customer *</label>
+      <select id="im-customer"><option value="">-- Select Customer --</option></select>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Invoice # *</label><input type="text" id="im-invno" placeholder="INV-001" oninput="checkDupInvoice()"></div>
+      <div class="form-group"><label>Invoice Date *</label><input type="date" id="im-date"></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Due Date *</label><input type="date" id="im-due"></div>
+      <div class="form-group"><label>Amount (₹) *</label><input type="number" id="im-amount" placeholder="0.00" min="0" step="0.01"></div>
+    </div>
+    <div class="form-group"><label>Description</label><input type="text" id="im-desc" placeholder="Invoice description"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-invoice')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvoice()">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal">
+    <h3>Record Payment</h3>
+    <div class="form-group"><label>Customer *</label>
+      <select id="pm-customer" onchange="populatePaymentInvoices()"><option value="">-- Select Customer --</option></select>
+    </div>
+    <div class="form-group"><label>Invoice *</label>
+      <select id="pm-invoice" onchange="updateBalanceDue()"><option value="">-- Select Invoice --</option></select>
+    </div>
+    <div id="pm-balance" style="color:var(--accent);font-size:0.82rem;margin-bottom:10px">Balance due: ₹0</div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Amount (₹) *</label><input type="number" id="pm-amount" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-group"><label>Payment Date *</label><input type="date" id="pm-date"></div>
+    </div>
+    <div class="form-group"><label>Payment Method *</label>
+      <select id="pm-method" onchange="onPayMethodChange()">
+        <option value="Cash">Cash</option>
+        <option value="UPI">UPI</option>
+        <option value="NEFT/IMPS">NEFT/IMPS</option>
+        <option value="Cheque">Cheque</option>
+        <option value="Cash Discount">Cash Discount</option>
+        <option value="Cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div id="pm-method-note" style="display:none;background:#f39c1215;border:1px solid var(--warning);border-radius:8px;padding:8px 12px;font-size:0.8rem;color:var(--warning);margin-bottom:10px"></div>
+    <div class="form-group"><label>Reference / Transaction ID</label><input type="text" id="pm-ref" placeholder="Transaction ID, cheque no., etc."></div>
+    <div class="form-group"><label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="pm-notes" placeholder="Any additional notes about this payment..."></div>
+    <div style="color:var(--muted);font-size:0.78rem;margin-top:4px">Note: Editing a paid entry creates a correction log entry.</div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-payment')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Credit Note Modal -->
+<div class="modal-overlay" id="modal-creditnote">
+  <div class="modal">
+    <h3 id="cn-modal-title">New Credit Note</h3>
+    <div class="form-group"><label>Customer *</label>
+      <select id="cn-customer" onchange="populateCNInvoices()"><option value="">-- Select Customer --</option></select>
+    </div>
+    <div class="form-group"><label>Invoice to Credit Against *</label>
+      <select id="cn-invoice" onchange="updateCNBalance()"><option value="">-- Select Invoice --</option></select>
+    </div>
+    <div id="cn-balance" style="color:var(--accent);font-size:0.82rem;margin-bottom:10px">Invoice balance: ₹0</div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Credit Note # *</label><input type="text" id="cn-number" placeholder="CN-001"></div>
+      <div class="form-group"><label>Date *</label><input type="date" id="cn-date"></div>
+    </div>
+    <div class="form-group"><label>Credit Amount (₹) *</label><input type="number" id="cn-amount" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="form-group"><label>Reason *</label>
+      <select id="cn-reason">
+        <option value="Return">Goods Return</option>
+        <option value="Discount">Discount</option>
+        <option value="Correction">Price Correction</option>
+        <option value="Damaged">Damaged Goods</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="cn-notes" placeholder="Details about this credit note..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-creditnote')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCreditNote()">Save Credit Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reminder Modal -->
+<div class="modal-overlay" id="modal-reminder">
+  <div class="modal">
+    <h3>Send Reminder</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">
+      <button class="btn btn-success" onclick="sendWhatsApp()">📱 Send WhatsApp Reminder</button>
+      <button class="btn btn-primary" onclick="sendEmail()">✉️ Send Email Reminder</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-reminder')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <h3 id="import-title">Import from Excel</h3>
+    <p id="import-cols" style="color:var(--muted);font-size:0.82rem;margin-bottom:16px"></p>
+    <div class="upload-area" onclick="document.getElementById('import-file').click()">
+      <div style="font-size:2rem">📂</div>
+      <p style="color:var(--muted);font-size:0.85rem;margin-top:8px">Click to select Excel file</p>
+      <p style="color:var(--muted);font-size:0.75rem">Supports .xlsx and .xls</p>
+    </div>
+    <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="handleImport(this)">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-import')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub Setup Modal -->
+<div class="modal-overlay" id="modal-github">
+  <div class="modal">
+    <h3>⚙ GitHub Auto-Sync Setup</h3>
+    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:16px">Your token is encrypted with <strong>real AES-256-GCM</strong> using a master password you set. It stays saved in your browser permanently — you only re-enter the master password once per browser session.</p>
+    <div class="form-group"><label>GitHub Username</label><input type="text" id="gh-user" placeholder="your-github-username"></div>
+    <div class="form-group"><label>Repository Name</label><input type="text" id="gh-repo" placeholder="mauli-tracker"></div>
+    <div class="form-group"><label>Personal Access Token</label><input type="password" id="gh-token" placeholder="ghp_..."></div>
+    <p style="color:var(--muted);font-size:0.75rem">GitHub → Settings → Developer settings → Personal access tokens → needs <code>repo</code> scope.</p>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-github')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveGithubSync()">Save & Sync Now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA STORE
+// ============================================================
+const DB = {
+  customers: [],
+  invoices: [],
+  payments: [],
+  creditNotes: [],
+  log: [],
+  users: [],
+  backupHistory: []
+};
+
+let currentUser = null;
+let editingCustomerId = null;
+let editingInvoiceId = null;
+let reminderTarget = null;
+let importType = null;
+let editingUserId = null;
+let githubConfig = null;
+
+// Firestore instance — set by Firebase module after init
+let _db = null;
+
+// Collections stored in Firestore
+const FS_COLLECTIONS = ['customers','invoices','payments','creditNotes','log'];
+// These stay local only
+const LOCAL_KEYS = {
+  users: 'mauli_users_runtime',
+  backupHistory: 'mauli_backup_history',
+  github: 'mauli_gh_enc'
+};
+
+// Called by Firebase module once Firestore is ready
+function setFirestoreDB(firestoreInstance) {
+  _db = firestoreInstance;
+}
+
+// ---- Firestore save ----
+async function save(key) {
+  // Local-only keys
+  if (key === 'users') {
+    try { localStorage.setItem(LOCAL_KEYS.users, JSON.stringify(DB.users)); } catch(e) {}
+    return;
+  }
+  if (key === 'backupHistory') {
+    try { localStorage.setItem(LOCAL_KEYS.backupHistory, JSON.stringify(DB.backupHistory)); } catch(e) {}
+    return;
+  }
+
+  if (!_db) { console.warn('Firestore not ready'); return; }
+
+  const collection = key; // 'customers','invoices','payments','creditNotes','log'
+  const items = DB[key];
+
+  if (!Array.isArray(items)) return;
+
+  try {
+    // We store each item as its own document using item.id as the doc id
+    // For a save(key) call we upsert the entire changed array efficiently
+    // using a batch write
+    const { writeBatch, doc, collection: col } = window._firebaseModules;
+    const batch = writeBatch(_db);
+    const colRef = col(_db, collection);
+
+    items.forEach(item => {
+      const docRef = doc(colRef, String(item.id));
+      batch.set(docRef, item);
+    });
+
+    await batch.commit();
+    updateSyncStatus('synced');
+  } catch(e) {
+    console.error('Firestore save error:', e);
+    updateSyncStatus('error');
+  }
+}
+
+// ---- Firestore load (one-time fetch on login) ----
+async function load() {
+  // Always load local-only keys
+  try { DB.users = JSON.parse(localStorage.getItem(LOCAL_KEYS.users)) || []; } catch { DB.users = []; }
+  try { DB.backupHistory = JSON.parse(localStorage.getItem(LOCAL_KEYS.backupHistory)) || []; } catch { DB.backupHistory = []; }
+
+  if (!_db) { console.warn('Firestore not ready'); return; }
+
+  try {
+    const { getDocs, collection: col } = window._firebaseModules;
+    updateSyncStatus('syncing');
+
+    for (const key of FS_COLLECTIONS) {
+      const snap = await getDocs(col(_db, key));
+      DB[key] = snap.docs.map(d => d.data());
+    }
+
+    // One-time migration: if Firestore is empty but localStorage has data, upload it
+    if (DB.customers.length === 0) {
+      await migrateFromLocalStorage();
+    }
+
+    updateSyncStatus('synced');
+  } catch(e) {
+    console.error('Firestore load error:', e);
+    updateSyncStatus('error');
+    // Fallback to localStorage if Firestore fails
+    ['customers','invoices','payments','creditNotes','log'].forEach(k => {
+      try { DB[k] = JSON.parse(localStorage.getItem('mauli_' + k)) || []; } catch { DB[k] = []; }
+    });
+  }
+}
+
+// ---- One-time migration from localStorage → Firestore ----
+async function migrateFromLocalStorage() {
+  const legacyKeys = {
+    customers:   'mauli_customers',
+    invoices:    'mauli_invoices',
+    payments:    'mauli_payments',
+    creditNotes: 'mauli_credit_notes',
+    log:         'mauli_log'
+  };
+
+  let hasData = false;
+  for (const [key, lsKey] of Object.entries(legacyKeys)) {
+    try {
+      const data = JSON.parse(localStorage.getItem(lsKey)) || [];
+      if (data.length > 0) { DB[key] = data; hasData = true; }
+    } catch {}
+  }
+
+  if (!hasData) return;
+
+  toast('Migrating existing data to Firebase...', 'info');
+  try {
+    const { writeBatch, doc, collection: col } = window._firebaseModules;
+    for (const key of FS_COLLECTIONS) {
+      if (!DB[key].length) continue;
+      const batch = writeBatch(_db);
+      DB[key].forEach(item => {
+        batch.set(doc(col(_db, key), String(item.id)), item);
+      });
+      await batch.commit();
+    }
+    toast('✅ Data migrated to Firebase successfully!', 'success');
+  } catch(e) {
+    toast('Migration error: ' + e.message, 'error');
+  }
+}
+
+// ---- Delete a single document from Firestore ----
+async function deleteDoc(key, id) {
+  if (!_db) return;
+  try {
+    const { doc, deleteDoc: fsDelete, collection: col } = window._firebaseModules;
+    await fsDelete(doc(col(_db, key), String(id)));
+  } catch(e) {
+    console.error('Firestore delete error:', e);
+  }
+}
+
+// ---- Real-time listeners — set up after login ----
+const _unsubscribers = [];
+
+function startRealtimeListeners() {
+  if (!_db) return;
+  stopRealtimeListeners();
+  const { onSnapshot, collection: col } = window._firebaseModules;
+
+  const liveKeys = ['customers','invoices','payments','creditNotes'];
+  liveKeys.forEach(key => {
+    const unsub = onSnapshot(col(_db, key), (snap) => {
+      // Only update if data actually changed (not from our own write)
+      const newData = snap.docs.map(d => d.data());
+      const changed = JSON.stringify(newData) !== JSON.stringify(DB[key]);
+      if (changed && currentUser) {
+        DB[key] = newData;
+        renderAll();
+        updateSyncStatus('synced');
+      }
+    }, (err) => {
+      console.error('Realtime listener error:', err);
+      updateSyncStatus('error');
+    });
+    _unsubscribers.push(unsub);
+  });
+}
+
+function stopRealtimeListeners() {
+  _unsubscribers.forEach(u => u());
+  _unsubscribers.length = 0;
+}
+
+function updateSyncStatus(state) {
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (!dot || !label) return;
+  if (state === 'synced') {
+    dot.style.background = 'var(--success)';
+    label.textContent = 'Firebase synced · ' + new Date().toLocaleTimeString('en-IN');
+  } else if (state === 'syncing') {
+    dot.style.background = 'var(--warning)';
+    label.textContent = 'Syncing...';
+  } else {
+    dot.style.background = 'var(--danger)';
+    label.textContent = 'Sync error';
+  }
+}
+
+function reloadStaleData() {
+  // With real-time listeners this banner shouldn't appear, but keep as fallback
+  document.getElementById('stale-tab-banner').style.display = 'none';
+  toast('Data is live via Firebase.', 'info');
+}
+
+// ============================================================
+// AUTH — PBKDF2 + Session Token + Rate Limiting
+// ============================================================
+
+// Unique ID for this browser tab (lives only in memory, dies on close)
+const SESSION_TAB_ID = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+
+// Session token stored in sessionStorage — tab-isolated, not shared across tabs
+function getSessionToken() { return sessionStorage.getItem('mauli_session_token'); }
+function setSessionToken(token) { sessionStorage.setItem('mauli_session_token', token); }
+function clearSessionToken() { sessionStorage.removeItem('mauli_session_token'); }
+
+function generateToken() {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Check session is valid — called on any sensitive action
+function requireSession() {
+  if (!currentUser || !getSessionToken()) {
+    signOut();
+    return false;
+  }
+  return true;
+}
+
+// ---- PBKDF2 hashing (replaces SHA-256) ----
+async function pbkdf2Hash(password, saltHex) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const salt = saltHex
+    ? new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)))
+    : crypto.getRandomValues(new Uint8Array(16));
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 310000 },
+    keyMaterial, 256
+  );
+  const hashHex = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,'0')).join('');
+  const saltHexOut = Array.from(salt).map(b => b.toString(16).padStart(2,'0')).join('');
+  return { hash: hashHex, salt: saltHexOut };
+}
+
+async function verifyPassword(password, user) {
+  // User has PBKDF2 hash (new format: "pbkdf2:salt:hash")
+  if (user.passwordHash && user.passwordHash.startsWith('pbkdf2:')) {
+    const [, saltHex, storedHash] = user.passwordHash.split(':');
+    const { hash } = await pbkdf2Hash(password, saltHex);
+    return hash === storedHash;
+  }
+  // Legacy SHA-256 — verify, then silently migrate to PBKDF2
+  const legacyHash = await sha256Legacy(password);
+  if (legacyHash === user.passwordHash) {
+    // Migrate: upgrade to PBKDF2 in place
+    const { hash, salt } = await pbkdf2Hash(password, null);
+    user.passwordHash = `pbkdf2:${salt}:${hash}`;
+    save('users');
+    return true;
+  }
+  return false;
+}
+
+async function sha256Legacy(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Keep sha256 alias so existing saveUserFromApp code works during password creation
+async function sha256(str) {
+  // New passwords are always saved as PBKDF2 via saveUserFromApp
+  return sha256Legacy(str);
+}
+
+// ---- Rate Limiting ----
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+function getLockout(username) {
+  try { return JSON.parse(sessionStorage.getItem('mauli_lockout_' + username)) || { attempts: 0, until: 0 }; } catch { return { attempts: 0, until: 0 }; }
+}
+function setLockout(username, data) {
+  sessionStorage.setItem('mauli_lockout_' + username, JSON.stringify(data));
+}
+function clearLockout(username) {
+  sessionStorage.removeItem('mauli_lockout_' + username);
+}
+
+let lockoutCountdownInterval = null;
+
+function showLockoutMessage(username) {
+  const lo = getLockout(username);
+  const loginBtn = document.getElementById('login-btn');
+  const lockoutEl = document.getElementById('login-lockout');
+  const errorEl = document.getElementById('login-error');
+  errorEl.style.display = 'none';
+  if (lockoutCountdownInterval) clearInterval(lockoutCountdownInterval);
+  lockoutCountdownInterval = setInterval(() => {
+    const remaining = Math.max(0, Math.ceil((getLockout(username).until - Date.now()) / 1000));
+    if (remaining <= 0) {
+      clearInterval(lockoutCountdownInterval);
+      lockoutEl.style.display = 'none';
+      loginBtn.disabled = false;
+      loginBtn.style.opacity = '1';
+      lockoutEl.textContent = '';
+      clearLockout(username);
+    } else {
+      const m = Math.floor(remaining / 60), s = remaining % 60;
+      lockoutEl.style.display = 'block';
+      lockoutEl.textContent = `⛔ Too many failed attempts. Try again in ${m}:${String(s).padStart(2,'0')}`;
+      loginBtn.disabled = true;
+      loginBtn.style.opacity = '0.6';
+    }
+  }, 500);
+}
+
+// ---- AES-256-GCM for GitHub token ----
+const GH_MASTER_KEY_KEY = 'mauli_gh_master';
+
+async function deriveAesKey(masterPassword, saltHex) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(masterPassword), 'PBKDF2', false, ['deriveKey']);
+  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 },
+    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+}
+
+async function aesEncrypt(plaintext, masterPassword) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2,'0')).join('');
+  const key = await deriveAesKey(masterPassword, saltHex);
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+  const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2,'0')).join('');
+  const ctHex = Array.from(new Uint8Array(ciphertext)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return `aes256:${saltHex}:${ivHex}:${ctHex}`;
+}
+
+async function aesDecrypt(payload, masterPassword) {
+  const [, saltHex, ivHex, ctHex] = payload.split(':');
+  const key = await deriveAesKey(masterPassword, saltHex);
+  const iv = new Uint8Array(ivHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+  const ct = new Uint8Array(ctHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(plain);
+}
+
+async function loadGithubConfig() {
+  try {
+    const stored = localStorage.getItem(KEYS.github);
+    if (!stored) return;
+    // New AES-256-GCM format
+    if (stored.startsWith('aes256:')) {
+      const masterPw = sessionStorage.getItem(GH_MASTER_KEY_KEY);
+      if (!masterPw) return; // can't decrypt without master password in this session
+      const plain = await aesDecrypt(stored, masterPw);
+      githubConfig = JSON.parse(plain);
+      return;
+    }
+    // Legacy base64 — migrate automatically
+    githubConfig = JSON.parse(atob(stored));
+    // Re-encrypt with AES if master password is available this session
+    const masterPw = sessionStorage.getItem(GH_MASTER_KEY_KEY);
+    if (masterPw && githubConfig) {
+      const encrypted = await aesEncrypt(JSON.stringify(githubConfig), masterPw);
+      localStorage.setItem(KEYS.github, encrypted);
+    }
+  } catch {}
+}
+
+async function saveGithubSync() {
+  const user = document.getElementById('gh-user').value.trim();
+  const repo = document.getElementById('gh-repo').value.trim();
+  const token = document.getElementById('gh-token').value.trim();
+  let masterPw = sessionStorage.getItem(GH_MASTER_KEY_KEY);
+  if (!masterPw) {
+    masterPw = prompt('Set a master password to encrypt your GitHub token.\nYou will need to enter this once per browser session.\n\nMaster password:');
+    if (!masterPw) return toast('Master password required to save GitHub token.', 'error');
+    sessionStorage.setItem(GH_MASTER_KEY_KEY, masterPw);
+  }
+  if (!user || !repo || !token) return toast('All fields required.', 'error');
+  githubConfig = { user, repo, token };
+  const encrypted = await aesEncrypt(JSON.stringify(githubConfig), masterPw);
+  localStorage.setItem(KEYS.github, encrypted);
+  closeModal('modal-github');
+  toast('GitHub sync configured with AES-256 encryption!', 'success');
+  autoSync();
+}
+
+// ---- Login flow ----
+async function loadUsersDB() {
+  if (DB.users && DB.users.length > 0) return;
+  try {
+    const resp = await fetch('./users.json?v=' + Date.now());
+    if (resp.ok) {
+      const data = await resp.json();
+      if (Array.isArray(data) && data.length > 0) {
+        DB.users = data;
+        save('users');
+      }
+    }
+  } catch(e) {
+    console.warn('Could not load users.json:', e);
+  }
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim().toLowerCase();
+  const password = document.getElementById('login-pass').value;
+  if (!username || !password) return showLoginError();
+
+  // Check lockout
+  const lo = getLockout(username);
+  if (lo.until > Date.now()) {
+    showLockoutMessage(username);
+    return;
+  }
+
+  await loadUsersDB();
+
+  const user = DB.users.find(u => u.username.toLowerCase() === username && u.active !== false);
+
+  const valid = user ? await verifyPassword(password, user) : false;
+
+  if (!valid) {
+    const newAttempts = (lo.attempts || 0) + 1;
+    if (newAttempts >= MAX_ATTEMPTS) {
+      setLockout(username, { attempts: newAttempts, until: Date.now() + LOCKOUT_MS });
+      showLockoutMessage(username);
+    } else {
+      setLockout(username, { attempts: newAttempts, until: 0 });
+      showLoginError(`Invalid username or password. (${newAttempts}/${MAX_ATTEMPTS} attempts)`);
+    }
+    return;
+  }
+
+  // Successful login — clear lockout, issue session token
+  clearLockout(username);
+  const token = generateToken();
+  setSessionToken(token);
+
+  currentUser = user;
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-lockout').style.display = 'none';
+  if (lockoutCountdownInterval) clearInterval(lockoutCountdownInterval);
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').style.opacity = '1';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbar-name').textContent = user.firstName + (user.lastName ? ' ' + user.lastName : '');
+  document.getElementById('topbar-role').textContent = roleLabel(user.role);
+
+  const isDev = user.role === 'dev';
+  document.querySelectorAll('.dev-only').forEach(el => el.style.display = isDev ? '' : 'none');
+  const isMgr = user.role === 'dev' || user.role === 'admin';
+  document.querySelectorAll('.mgr-only').forEach(el => el.style.display = isMgr ? '' : 'none');
+
+  applyRoleAccess(user.role);
+  await load();
+  renderAll();
+  loadGithubConfig();
+  startRealtimeListeners();
+  startIdleTimer();
+
+  addLog('login', `User "${user.username}" signed in`);
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg || 'Invalid username or password.';
+  el.style.display = 'block';
+}
+
+function signOut(reason) {
+  if (currentUser) addLog('login', `User "${currentUser.username}" signed out${reason ? ' (' + reason + ')' : ''}`);
+  currentUser = null;
+  clearSessionToken();
+  stopIdleTimer();
+  stopRealtimeListeners();
+  document.getElementById('idle-warning-overlay').style.display = 'none';
+  document.getElementById('stale-tab-banner').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ============================================================
+// AUTO-LOGOUT — 5 min idle, 30s warning
+// ============================================================
+const IDLE_TIMEOUT_MS  = 5 * 60 * 1000; // 5 minutes
+const IDLE_WARNING_MS  = 30 * 1000;      // warn 30s before
+
+let idleTimer        = null;
+let idleWarnTimer    = null;
+let idleCountdown    = null;
+let idleWarningShown = false;
+
+const IDLE_EVENTS = ['mousemove','mousedown','keydown','touchstart','scroll','click'];
+
+function startIdleTimer() {
+  IDLE_EVENTS.forEach(ev => window.addEventListener(ev, onUserActivity, { passive: true }));
+  scheduleIdle();
+}
+
+function stopIdleTimer() {
+  IDLE_EVENTS.forEach(ev => window.removeEventListener(ev, onUserActivity));
+  clearTimeout(idleTimer);
+  clearTimeout(idleWarnTimer);
+  clearInterval(idleCountdown);
+}
+
+function onUserActivity() {
+  if (idleWarningShown) return; // if warning is up, only "Stay" button resets
+  scheduleIdle();
+}
+
+function scheduleIdle() {
+  clearTimeout(idleTimer);
+  clearTimeout(idleWarnTimer);
+  // Show warning at (IDLE_TIMEOUT_MS - IDLE_WARNING_MS)
+  idleWarnTimer = setTimeout(showIdleWarning, IDLE_TIMEOUT_MS - IDLE_WARNING_MS);
+  idleTimer     = setTimeout(() => signOut('idle timeout'), IDLE_TIMEOUT_MS);
+}
+
+function showIdleWarning() {
+  idleWarningShown = true;
+  let secs = 30;
+  document.getElementById('idle-countdown').textContent = secs;
+  document.getElementById('idle-warning-overlay').style.display = 'flex';
+  clearInterval(idleCountdown);
+  idleCountdown = setInterval(() => {
+    secs--;
+    document.getElementById('idle-countdown').textContent = secs;
+    if (secs <= 0) clearInterval(idleCountdown);
+  }, 1000);
+}
+
+function resetIdleTimer() {
+  idleWarningShown = false;
+  document.getElementById('idle-warning-overlay').style.display = 'none';
+  clearInterval(idleCountdown);
+  scheduleIdle();
+  toast('Session extended.', 'success');
+}
+
+function applyRoleAccess(role) {
+  const nav = document.getElementById('main-nav');
+
+  if (role === 'emp') {
+    // emp: hide all nav tabs, show only Invoices tab
+    nav.querySelectorAll('.nav-btn').forEach(b => b.style.display = 'none');
+    nav.querySelectorAll('.nav-btn').forEach(b => {
+      if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'invoices'")) {
+        b.style.display = '';
+        b.classList.add('active');
+      }
+    });
+    // activate invoice panel
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const invPanel = document.getElementById('tab-invoices');
+    if (invPanel) invPanel.classList.add('active');
+  } else {
+    // dev/admin: ensure Dashboard is the active tab on login
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    nav.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const dashPanel = document.getElementById('tab-dashboard');
+    if (dashPanel) dashPanel.classList.add('active');
+    const dashBtn = nav.querySelector('[onclick*="\'dashboard\'"]');
+    if (dashBtn) dashBtn.classList.add('active');
+  }
+}
+
+function roleLabel(r) {
+  return { dev: 'Dev', admin: 'Admin', emp: 'Emp' }[r] || r;
+}
+
+// ============================================================
+// TAB NAVIGATION
+// ============================================================
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + name);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'log') renderLog();
+  if (name === 'users') renderUsersTable();
+  if (name === 'backup') renderBackupHistory();
+  if (name === 'ledger') { updateLedgerDropdown(); renderLedger(); }
+  if (name === 'creditnotes') { updateCustomerDropdowns(); renderCreditNotes(); }
+  if (name === 'invoices') initInvMonthFilter();
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ============================================================
+// ACTIVITY LOG
+// ============================================================
+async function addLog(type, msg) {
+  DB.log.unshift({ type, msg, user: currentUser?.username || 'system', time: new Date().toISOString() });
+  if (DB.log.length > 500) DB.log = DB.log.slice(0, 500);
+  save('log');
+}
+
+function renderLog() {
+  const c = document.getElementById('log-container');
+  if (!DB.log.length) { c.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No activity yet.</p></div>'; return; }
+  c.innerHTML = DB.log.map(e => `
+    <div class="log-entry ${e.type}">
+      <span>${e.msg}</span>
+      <span class="log-time" style="float:right">${e.user} · ${new Date(e.time).toLocaleString('en-IN')}</span>
+    </div>
+  `).join('');
+}
+
+function clearLog() {
+  if (!confirm('Clear all activity log entries?')) return;
+  DB.log = [];
+  save('log');
+  renderLog();
+}
+
+function exportLog() {
+  const ws = XLSX.utils.json_to_sheet(DB.log.map(e => ({
+    Time: new Date(e.time).toLocaleString('en-IN'),
+    User: e.user,
+    Type: e.type,
+    Message: e.msg
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Log');
+  XLSX.writeFile(wb, 'ActivityLog_MauliEnt.xlsx');
+}
+
+// ============================================================
+// CUSTOMERS
+// ============================================================
+let custFilter = 'all';
+
+function setCustFilter(f, btn) {
+  custFilter = f;
+  document.querySelectorAll('#tab-customers .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCustomers();
+}
+
+function openCustomerModal(id=null) {
+  editingCustomerId = id;
+  const c = id ? DB.customers.find(c => c.id === id) : null;
+  document.getElementById('cust-modal-title').textContent = id ? 'Edit Customer' : 'Add Customer';
+  document.getElementById('cm-name').value = c?.name || '';
+  document.getElementById('cm-company').value = c?.company || '';
+  document.getElementById('cm-phone').value = c?.phone || '';
+  document.getElementById('cm-email').value = c?.email || '';
+  document.getElementById('cm-city').value = c?.city || '';
+  document.getElementById('cm-gst').value = c?.gst || '';
+  document.getElementById('cm-address').value = c?.address || '';
+  document.getElementById('cm-whatsapp').checked = c?.whatsapp || false;
+  document.getElementById('cm-email-rem').checked = c?.emailRem || false;
+  openModal('modal-customer');
+}
+
+async function saveCustomer() {
+  const name = document.getElementById('cm-name').value.trim();
+  const phone = document.getElementById('cm-phone').value.trim();
+  if (!name) return toast('Name is required.', 'error');
+  if (!phone) return toast('Phone is required.', 'error');
+
+  const data = {
+    name, phone,
+    company: document.getElementById('cm-company').value.trim(),
+    email: document.getElementById('cm-email').value.trim(),
+    city: document.getElementById('cm-city').value.trim(),
+    gst: document.getElementById('cm-gst').value.trim(),
+    address: document.getElementById('cm-address').value.trim(),
+    whatsapp: document.getElementById('cm-whatsapp').checked,
+    emailRem: document.getElementById('cm-email-rem').checked
+  };
+
+  if (editingCustomerId) {
+    const idx = DB.customers.findIndex(c => c.id === editingCustomerId);
+    DB.customers[idx] = { ...DB.customers[idx], ...data };
+    addLog('edit', `Edited customer: ${name}`);
+    toast('Customer updated!', 'success');
+  } else {
+    data.id = Date.now();
+    DB.customers.push(data);
+    addLog('create', `Added customer: ${name}`);
+    toast('Customer added!', 'success');
+  }
+
+  save('customers');
+  closeModal('modal-customer');
+  renderCustomers();
+  updateCustomerDropdowns();
+}
+
+async function deleteCustomer(id) {
+  const c = DB.customers.find(c => c.id === id);
+  if (!confirm(`Delete customer "${c?.name}"? This also removes their invoices and payments.`)) return;
+  // Delete from Firestore
+  const invIds = DB.invoices.filter(i => i.customerId === id).map(i => i.id);
+  const payIds = DB.payments.filter(p => p.customerId === id).map(p => p.id);
+  const cnIds  = (DB.creditNotes||[]).filter(cn => cn.customerId === id).map(cn => cn.id);
+  for (const iid of invIds) await deleteDoc('invoices', iid);
+  for (const pid of payIds) await deleteDoc('payments', pid);
+  for (const cid of cnIds)  await deleteDoc('creditNotes', cid);
+  await deleteDoc('customers', id);
+  // Update local DB
+  DB.invoices    = DB.invoices.filter(i => i.customerId !== id);
+  DB.payments    = DB.payments.filter(p => p.customerId !== id);
+  DB.creditNotes = (DB.creditNotes||[]).filter(cn => cn.customerId !== id);
+  DB.customers   = DB.customers.filter(c => c.id !== id);
+  addLog('delete', `Deleted customer: ${c?.name}`);
+  toast('Customer deleted.', 'error');
+  renderAll();
+}
+
+function getCustomerBalance(id) {
+  const invs = DB.invoices.filter(i => i.customerId === id);
+  return invs.reduce((s, i) => s + (parseFloat(i.amount) - getPaidAmount(i.id)), 0);
+}
+
+function getCustomerStatus(id) {
+  const invs = DB.invoices.filter(i => i.customerId === id);
+  if (!invs.length) return 'paid';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const hasOverdue = invs.some(i => {
+    const bal = parseFloat(i.amount) - getPaidAmount(i.id);
+    return bal > 0 && new Date(i.dueDate) < today;
+  });
+  if (hasOverdue) return 'overdue';
+  const hasPartial = invs.some(i => {
+    const paid = getPaidAmount(i.id);
+    return paid > 0 && paid < parseFloat(i.amount);
+  });
+  if (hasPartial) return 'partial';
+  const hasPending = invs.some(i => getPaidAmount(i.id) < parseFloat(i.amount));
+  if (hasPending) return 'pending';
+  return 'paid';
+}
+
+function renderCustomers() {
+  const search = document.getElementById('cust-search').value.toLowerCase();
+  const tbody = document.getElementById('cust-table');
+  let list = DB.customers.filter(c => {
+    const match = [c.name, c.phone, c.email, c.city, c.company].join(' ').toLowerCase().includes(search);
+    if (!match) return false;
+    if (custFilter === 'all') return true;
+    return getCustomerStatus(c.id) === custFilter;
+  });
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">👥</div><p>No customers found.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map((c, i) => {
+    const bal = getCustomerBalance(c.id);
+    const status = getCustomerStatus(c.id);
+    const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
+    return `<tr>
+      <td>${i+1}</td>
+      <td><strong>${c.name}</strong>${c.company ? `<br><small style="color:var(--muted)">${c.company}</small>` : ''}</td>
+      <td>${c.phone}</td>
+      <td>${c.email || '—'}</td>
+      <td>${c.city || '—'}</td>
+      <td style="color:${bal>0?'var(--danger)':'var(--success)'}">₹${fmt(bal)}</td>
+      <td>${c.whatsapp ? '📱' : ''}${c.emailRem ? '✉️' : ''}</td>
+      <td><span class="badge ${statusMap[status]}">${status}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-outline btn-xs" onclick="openCustomerModal(${c.id})">✏️</button>
+          <button class="btn btn-xs" style="background:#e74c3c20;color:var(--danger);border:1px solid #e74c3c40" onclick="openReminderModal(${c.id})">🔔</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteCustomer(${c.id})">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// INVOICES
+// ============================================================
+function openInvoiceModal(id=null) {
+  editingInvoiceId = id;
+  const inv = id ? DB.invoices.find(i => i.id === id) : null;
+  document.getElementById('inv-modal-title').textContent = id ? 'Edit Invoice' : 'New Invoice';
+  document.getElementById('im-invno').value = inv?.invNo || '';
+  document.getElementById('im-date').value = inv?.date || today();
+  document.getElementById('im-due').value = inv?.dueDate || '';
+  document.getElementById('im-amount').value = inv?.amount || '';
+  document.getElementById('im-desc').value = inv?.description || '';
+  document.getElementById('inv-dup-warn').style.display = 'none';
+  populateInvoiceCustomers(inv?.customerId);
+  openModal('modal-invoice');
+}
+
+function populateInvoiceCustomers(selectedId) {
+  const sel = document.getElementById('im-customer');
+  sel.innerHTML = '<option value="">-- Select Customer --</option>' +
+    DB.customers.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
+}
+
+function checkDupInvoice() {
+  const val = document.getElementById('im-invno').value.trim();
+  const isDup = DB.invoices.some(i => i.invNo === val && i.id !== editingInvoiceId);
+  document.getElementById('inv-dup-warn').style.display = isDup ? 'block' : 'none';
+  if (isDup) document.getElementById('dup-global').style.display = 'block';
+}
+
+async function saveInvoice() {
+  const customerId = parseInt(document.getElementById('im-customer').value);
+  const invNo = document.getElementById('im-invno').value.trim();
+  const date = document.getElementById('im-date').value;
+  const dueDate = document.getElementById('im-due').value;
+  const amount = parseFloat(document.getElementById('im-amount').value);
+  const description = document.getElementById('im-desc').value.trim();
+
+  if (!customerId) return toast('Select a customer.', 'error');
+  if (!invNo) return toast('Invoice number required.', 'error');
+  if (!date) return toast('Invoice date required.', 'error');
+  if (!dueDate) return toast('Due date required.', 'error');
+  if (isNaN(amount) || amount <= 0) return toast('Valid amount required.', 'error');
+
+  const isDup = DB.invoices.some(i => i.invNo === invNo && i.id !== editingInvoiceId);
+  if (isDup) { toast('Duplicate invoice number!', 'error'); return; }
+
+  const data = { customerId, invNo, date, dueDate, amount, description };
+
+  if (editingInvoiceId) {
+    const idx = DB.invoices.findIndex(i => i.id === editingInvoiceId);
+    const wasPaid = getInvoiceStatus(DB.invoices[idx]) === 'paid';
+    DB.invoices[idx] = { ...DB.invoices[idx], ...data };
+    if (wasPaid) addLog('correction', `Correction on paid invoice ${invNo}`);
+    else addLog('edit', `Edited invoice ${invNo}`);
+    toast('Invoice updated!', 'success');
+  } else {
+    data.id = Date.now();
+    DB.invoices.push(data);
+    addLog('create', `Created invoice ${invNo} for customer ID ${customerId}`);
+    toast('Invoice saved!', 'success');
+  }
+
+  save('invoices');
+  closeModal('modal-invoice');
+  renderInvoices();
+  renderDashboard();
+}
+
+async function deleteInvoice(id) {
+  const inv = DB.invoices.find(i => i.id === id);
+  if (!confirm(`Delete invoice ${inv?.invNo}?`)) return;
+  const payIds = DB.payments.filter(p => p.invoiceId === id).map(p => p.id);
+  const cnIds  = (DB.creditNotes||[]).filter(cn => cn.invoiceId === id).map(cn => cn.id);
+  for (const pid of payIds) await deleteDoc('payments', pid);
+  for (const cid of cnIds)  await deleteDoc('creditNotes', cid);
+  await deleteDoc('invoices', id);
+  DB.invoices    = DB.invoices.filter(i => i.id !== id);
+  DB.payments    = DB.payments.filter(p => p.invoiceId !== id);
+  DB.creditNotes = (DB.creditNotes||[]).filter(cn => cn.invoiceId !== id);
+  addLog('delete', `Deleted invoice ${inv?.invNo}`);
+  toast('Invoice deleted.', 'error');
+  renderInvoices();
+  renderDashboard();
+}
+
+function getPaidAmount(invoiceId) {
+  const payments = DB.payments.filter(p => p.invoiceId === invoiceId).reduce((s, p) => s + parseFloat(p.amount), 0);
+  const credits  = (DB.creditNotes || []).filter(cn => cn.invoiceId === invoiceId).reduce((s, cn) => s + parseFloat(cn.amount), 0);
+  return payments + credits;
+}
+
+function getInvoiceStatus(inv) {
+  const paid = getPaidAmount(inv.id);
+  const amount = parseFloat(inv.amount);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(inv.dueDate);
+  if (paid >= amount) return 'paid';
+  if (due < today) return 'overdue';
+  if (paid > 0) return 'partial';
+  return 'pending';
+}
+
+function initInvMonthFilter() {
+  const el = document.getElementById('inv-month-filter');
+  if (el && !el.value) {
+    const now = new Date();
+    el.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  }
+}
+
+function clearInvDateFilter() {
+  document.getElementById('inv-month-filter').value = '';
+  renderInvoices();
+}
+
+function renderInvoices() {
+  const search      = document.getElementById('inv-search').value.toLowerCase();
+  const custFilter2 = document.getElementById('inv-cust-filter').value;
+  const statusF     = document.getElementById('inv-status-filter').value;
+  const monthF      = document.getElementById('inv-month-filter').value; // "YYYY-MM"
+  const tbody       = document.getElementById('inv-table');
+  const label       = document.getElementById('inv-date-label');
+
+  if (monthF) {
+    const [yr, mo] = monthF.split('-');
+    const mNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    label.textContent = `Showing invoices for: ${mNames[parseInt(mo)]} ${yr}`;
+  } else {
+    label.textContent = 'Showing all invoices';
+  }
+
+  let list = DB.invoices.filter(inv => {
+    const c = DB.customers.find(c => c.id === inv.customerId);
+    const textMatch = [inv.invNo, c?.name, inv.description].join(' ').toLowerCase().includes(search);
+    const custMatch = !custFilter2 || inv.customerId === parseInt(custFilter2);
+    const statusMatch = !statusF || getInvoiceStatus(inv) === statusF;
+    let monthMatch = true;
+    if (monthF) {
+      monthMatch = inv.date && inv.date.startsWith(monthF);
+    }
+    return textMatch && custMatch && statusMatch && monthMatch;
+  }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">🧾</div><p>No invoices found for this filter.</p></div></td></tr>`;
+    return;
+  }
+
+  const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
+  const isDev = currentUser?.role === 'dev';
+  tbody.innerHTML = list.map(inv => {
+    const c = DB.customers.find(c => c.id === inv.customerId);
+    const paid = getPaidAmount(inv.id);
+    const bal = parseFloat(inv.amount) - paid;
+    const status = getInvoiceStatus(inv);
+    const hasCN = (DB.creditNotes||[]).some(cn => cn.invoiceId === inv.id);
+    return `<tr>
+      <td><strong>${inv.invNo}</strong>${hasCN ? ' <span title="Has credit note" style="color:var(--accent);font-size:0.7rem">CN</span>' : ''}</td>
+      <td>${c?.name || '—'}</td>
+      <td>${fmtDate(inv.date)}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
+      <td>₹${fmt(inv.amount)}</td>
+      <td style="color:var(--success)">₹${fmt(paid)}</td>
+      <td style="color:${bal>0?'var(--danger)':'var(--success)'}">₹${fmt(bal)}</td>
+      <td><span class="badge ${statusMap[status]}">${status}</span></td>
+      <td>
+        <div class="action-btns">
+          ${isDev || status !== 'paid' ? `<button class="btn btn-outline btn-xs" onclick="openInvoiceModal(${inv.id})">✏️</button>` : ''}
+          <button class="btn btn-primary btn-xs" onclick="openPaymentModalForInvoice(${inv.id})">💳</button>
+          <button class="btn btn-xs" style="background:#4f8ef720;color:var(--accent);border:1px solid #4f8ef740" onclick="openCNModalForInvoice(${inv.id})" title="Add Credit Note">CN</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateCustomerDropdowns() {
+  const custOpts = '<option value="">All Customers</option>' + DB.customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('inv-cust-filter').innerHTML = custOpts;
+  // Payment customer filter
+  const payEl = document.getElementById('pay-cust-filter');
+  if (payEl) payEl.innerHTML = custOpts;
+  // CN customer filter
+  const cnEl = document.getElementById('cn-cust-filter');
+  if (cnEl) cnEl.innerHTML = custOpts;
+  updateLedgerDropdown();
+}
+
+// ============================================================
+// PAYMENTS
+// ============================================================
+function openPaymentModal() {
+  editingInvoiceId = null;
+  populatePaymentCustomers();
+  document.getElementById('pm-amount').value = '';
+  document.getElementById('pm-date').value = today();
+  document.getElementById('pm-ref').value = '';
+  document.getElementById('pm-notes').value = '';
+  document.getElementById('pm-method').value = 'Cash';
+  document.getElementById('pm-method-note').style.display = 'none';
+  document.getElementById('pm-balance').textContent = 'Balance due: ₹0';
+  openModal('modal-payment');
+}
+
+function openPaymentModalForInvoice(invoiceId) {
+  const inv = DB.invoices.find(i => i.id === invoiceId);
+  if (!inv) return;
+  populatePaymentCustomers(inv.customerId);
+  setTimeout(() => {
+    document.getElementById('pm-invoice').value = invoiceId;
+    updateBalanceDue();
+  }, 50);
+  document.getElementById('pm-date').value = today();
+  document.getElementById('pm-ref').value = '';
+  document.getElementById('pm-notes').value = '';
+  document.getElementById('pm-method').value = 'Cash';
+  document.getElementById('pm-method-note').style.display = 'none';
+  openModal('modal-payment');
+}
+
+function onPayMethodChange() {
+  const method = document.getElementById('pm-method').value;
+  const noteEl = document.getElementById('pm-method-note');
+  const amtLabel = document.querySelector('#modal-payment label[for="pm-amount"], #modal-payment .form-group label');
+  if (method === 'Cancelled') {
+    noteEl.textContent = '⚠ This will mark the full remaining balance as cancelled and close the invoice.';
+    noteEl.style.display = 'block';
+    // Auto-fill full balance
+    const invId = parseInt(document.getElementById('pm-invoice').value);
+    if (invId) {
+      const bal = parseFloat(DB.invoices.find(i=>i.id===invId)?.amount||0) - getPaidAmount(invId);
+      document.getElementById('pm-amount').value = bal > 0 ? bal.toFixed(2) : '0.00';
+    }
+  } else if (method === 'Cash Discount') {
+    noteEl.textContent = 'ℹ Cash Discount will reduce the outstanding balance without actual payment received. Enter the discount amount.';
+    noteEl.style.display = 'block';
+  } else {
+    noteEl.style.display = 'none';
+  }
+}
+
+function populatePaymentCustomers(selectedId) {
+  const sel = document.getElementById('pm-customer');
+  sel.innerHTML = '<option value="">-- Select Customer --</option>' +
+    DB.customers.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
+  if (selectedId) populatePaymentInvoices();
+}
+
+function populatePaymentInvoices() {
+  const custId = parseInt(document.getElementById('pm-customer').value);
+  const sel = document.getElementById('pm-invoice');
+  const invs = DB.invoices.filter(i => i.customerId === custId && getInvoiceStatus(i) !== 'paid');
+  sel.innerHTML = '<option value="">-- Select Invoice --</option>' +
+    invs.map(i => `<option value="${i.id}">${i.invNo} (₹${fmt(parseFloat(i.amount) - getPaidAmount(i.id))} due)</option>`).join('');
+  updateBalanceDue();
+}
+
+function updateBalanceDue() {
+  const invId = parseInt(document.getElementById('pm-invoice').value);
+  if (!invId) { document.getElementById('pm-balance').textContent = 'Balance due: ₹0'; return; }
+  const inv = DB.invoices.find(i => i.id === invId);
+  if (!inv) return;
+  const bal = parseFloat(inv.amount) - getPaidAmount(invId);
+  document.getElementById('pm-balance').textContent = `Balance due: ₹${fmt(bal)}`;
+  document.getElementById('pm-amount').value = bal > 0 ? bal.toFixed(2) : '';
+  // re-run method note in case Cancelled was selected
+  onPayMethodChange();
+}
+
+async function savePayment() {
+  const customerId = parseInt(document.getElementById('pm-customer').value);
+  const invoiceId  = parseInt(document.getElementById('pm-invoice').value);
+  const amount     = parseFloat(document.getElementById('pm-amount').value);
+  const date       = document.getElementById('pm-date').value;
+  const method     = document.getElementById('pm-method').value;
+  const ref        = document.getElementById('pm-ref').value.trim();
+  const notes      = document.getElementById('pm-notes').value.trim();
+
+  if (!customerId) return toast('Select a customer.', 'error');
+  if (!invoiceId)  return toast('Select an invoice.', 'error');
+  if (isNaN(amount) || amount <= 0) return toast('Valid amount required.', 'error');
+  if (!date) return toast('Payment date required.', 'error');
+
+  const inv = DB.invoices.find(i => i.id === invoiceId);
+  const c   = DB.customers.find(c => c.id === customerId);
+
+  DB.payments.push({ id: Date.now(), customerId, invoiceId, amount, date, method, ref, notes });
+  save('payments');
+  addLog('create', `Payment ₹${fmt(amount)} [${method}] for invoice ${inv?.invNo} (${c?.name})${notes ? ' — ' + notes : ''}`);
+  toast('Payment recorded!', 'success');
+  closeModal('modal-payment');
+  renderPayments();
+  renderInvoices();
+  renderDashboard();
+}
+
+function clearPayDateFilter() {
+  document.getElementById('pay-month-filter').value = '';
+  renderPayments();
+}
+
+function renderPayments() {
+  const search   = document.getElementById('pay-search').value.toLowerCase();
+  const custF    = document.getElementById('pay-cust-filter')?.value || '';
+  const methodF  = document.getElementById('pay-method-filter')?.value || '';
+  const monthF   = document.getElementById('pay-month-filter')?.value || '';
+  const tbody    = document.getElementById('pay-table');
+
+  let list = DB.payments.filter(p => {
+    const c   = DB.customers.find(c => c.id === p.customerId);
+    const inv = DB.invoices.find(i => i.id === p.invoiceId);
+    const textMatch   = [c?.name, inv?.invNo, p.method, p.ref, p.notes].join(' ').toLowerCase().includes(search);
+    const custMatch   = !custF   || String(p.customerId) === custF;
+    const methodMatch = !methodF || p.method === methodF;
+    const monthMatch  = !monthF  || (p.date && p.date.startsWith(monthF));
+    return textMatch && custMatch && methodMatch && monthMatch;
+  }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">💳</div><p>No payments found.</p></div></td></tr>`;
+    return;
+  }
+
+  const methodStyle = {
+    'Cancelled':     'color:var(--danger)',
+    'Cash Discount': 'color:var(--warning)',
+  };
+
+  tbody.innerHTML = list.map(p => {
+    const c   = DB.customers.find(c => c.id === p.customerId);
+    const inv = DB.invoices.find(i => i.id === p.invoiceId);
+    const mStyle = methodStyle[p.method] || 'color:var(--success)';
+    return `<tr>
+      <td>${fmtDate(p.date)}</td>
+      <td>${c?.name || '—'}</td>
+      <td>${inv?.invNo || '—'}</td>
+      <td style="${mStyle}">₹${fmt(p.amount)}</td>
+      <td><span style="font-size:0.8rem;font-weight:600;${p.method==='Cancelled'?'color:var(--danger)':p.method==='Cash Discount'?'color:var(--warning)':''}">${p.method}</span></td>
+      <td>${p.ref || '—'}</td>
+      <td style="color:var(--muted);font-size:0.82rem">${p.notes || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// CREDIT NOTES
+// ============================================================
+let editingCNId = null;
+
+function openCNModal() {
+  editingCNId = null;
+  document.getElementById('cn-modal-title').textContent = 'New Credit Note';
+  document.getElementById('cn-number').value = '';
+  document.getElementById('cn-date').value = today();
+  document.getElementById('cn-amount').value = '';
+  document.getElementById('cn-notes').value = '';
+  document.getElementById('cn-reason').value = 'Return';
+  document.getElementById('cn-balance').textContent = 'Invoice balance: ₹0';
+  populateCNCustomers();
+  openModal('modal-creditnote');
+}
+
+function openCNModalForInvoice(invoiceId) {
+  const inv = DB.invoices.find(i => i.id === invoiceId);
+  if (!inv) return;
+  editingCNId = null;
+  document.getElementById('cn-modal-title').textContent = 'New Credit Note';
+  document.getElementById('cn-number').value = '';
+  document.getElementById('cn-date').value = today();
+  document.getElementById('cn-amount').value = '';
+  document.getElementById('cn-notes').value = '';
+  document.getElementById('cn-reason').value = 'Return';
+  populateCNCustomers(inv.customerId);
+  setTimeout(() => {
+    document.getElementById('cn-invoice').value = invoiceId;
+    updateCNBalance();
+  }, 50);
+  openModal('modal-creditnote');
+}
+
+function populateCNCustomers(selectedId) {
+  const sel = document.getElementById('cn-customer');
+  sel.innerHTML = '<option value="">-- Select Customer --</option>' +
+    DB.customers.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
+  if (selectedId) populateCNInvoices();
+}
+
+function populateCNInvoices() {
+  const custId = parseInt(document.getElementById('cn-customer').value);
+  const sel = document.getElementById('cn-invoice');
+  const invs = DB.invoices.filter(i => i.customerId === custId);
+  sel.innerHTML = '<option value="">-- Select Invoice --</option>' +
+    invs.map(i => {
+      const bal = parseFloat(i.amount) - getPaidAmount(i.id);
+      return `<option value="${i.id}">${i.invNo} — ₹${fmt(i.amount)} (bal: ₹${fmt(bal)})</option>`;
+    }).join('');
+  updateCNBalance();
+}
+
+function updateCNBalance() {
+  const invId = parseInt(document.getElementById('cn-invoice').value);
+  if (!invId) { document.getElementById('cn-balance').textContent = 'Invoice balance: ₹0'; return; }
+  const inv = DB.invoices.find(i => i.id === invId);
+  if (!inv) return;
+  const bal = parseFloat(inv.amount) - getPaidAmount(invId);
+  document.getElementById('cn-balance').textContent = `Invoice balance: ₹${fmt(bal)} (credit note will reduce this)`;
+  document.getElementById('cn-amount').value = bal > 0 ? bal.toFixed(2) : '';
+}
+
+async function saveCreditNote() {
+  const customerId = parseInt(document.getElementById('cn-customer').value);
+  const invoiceId  = parseInt(document.getElementById('cn-invoice').value);
+  const cnNumber   = document.getElementById('cn-number').value.trim();
+  const date       = document.getElementById('cn-date').value;
+  const amount     = parseFloat(document.getElementById('cn-amount').value);
+  const reason     = document.getElementById('cn-reason').value;
+  const notes      = document.getElementById('cn-notes').value.trim();
+
+  if (!customerId) return toast('Select a customer.', 'error');
+  if (!invoiceId)  return toast('Select an invoice.', 'error');
+  if (!cnNumber)   return toast('Credit Note number required.', 'error');
+  if (!date)       return toast('Date required.', 'error');
+  if (isNaN(amount) || amount <= 0) return toast('Valid credit amount required.', 'error');
+
+  // Warn if credit exceeds balance
+  const inv = DB.invoices.find(i => i.id === invoiceId);
+  const bal = parseFloat(inv.amount) - getPaidAmount(invoiceId);
+  if (amount > bal + 0.01) {
+    if (!confirm(`Credit amount ₹${fmt(amount)} exceeds current balance ₹${fmt(bal)}. Continue?`)) return;
+  }
+
+  const c = DB.customers.find(c => c.id === customerId);
+  const cn = { id: Date.now(), customerId, invoiceId, cnNumber, date, amount, reason, notes };
+  DB.creditNotes.push(cn);
+  save('creditNotes');
+  addLog('create', `Credit Note ${cnNumber} ₹${fmt(amount)} [${reason}] against invoice ${inv?.invNo} (${c?.name})`);
+  toast('Credit Note saved!', 'success');
+  closeModal('modal-creditnote');
+  renderCreditNotes();
+  renderInvoices();
+  renderDashboard();
+}
+
+async function deleteCreditNote(id) {
+  const cn = DB.creditNotes.find(c => c.id === id);
+  if (!confirm(`Delete Credit Note ${cn?.cnNumber}?`)) return;
+  await deleteDoc('creditNotes', id);
+  DB.creditNotes = DB.creditNotes.filter(c => c.id !== id);
+  addLog('delete', `Deleted Credit Note ${cn?.cnNumber}`);
+  toast('Credit Note deleted.', 'error');
+  renderCreditNotes();
+  renderInvoices();
+  renderDashboard();
+}
+
+function clearCNDateFilter() {
+  document.getElementById('cn-month-filter').value = '';
+  renderCreditNotes();
+}
+
+function renderCreditNotes() {
+  const search  = document.getElementById('cn-search')?.value.toLowerCase() || '';
+  const custF   = document.getElementById('cn-cust-filter')?.value || '';
+  const reasonF = document.getElementById('cn-reason-filter')?.value || '';
+  const monthF  = document.getElementById('cn-month-filter')?.value || '';
+  const tbody   = document.getElementById('cn-table');
+  if (!tbody) return;
+
+  let list = (DB.creditNotes || []).filter(cn => {
+    const c   = DB.customers.find(c => c.id === cn.customerId);
+    const inv = DB.invoices.find(i => i.id === cn.invoiceId);
+    const textMatch   = [cn.cnNumber, c?.name, inv?.invNo, cn.reason, cn.notes].join(' ').toLowerCase().includes(search);
+    const custMatch   = !custF   || String(cn.customerId) === custF;
+    const reasonMatch = !reasonF || cn.reason === reasonF;
+    const monthMatch  = !monthF  || (cn.date && cn.date.startsWith(monthF));
+    return textMatch && custMatch && reasonMatch && monthMatch;
+  }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  // Update stat cards
+  const allCNs = DB.creditNotes || [];
+  document.getElementById('cn-stat-count').textContent = allCNs.length;
+  document.getElementById('cn-stat-total').textContent = '₹' + fmt(allCNs.reduce((s,cn) => s + parseFloat(cn.amount), 0));
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📝</div><p>No credit notes found.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(cn => {
+    const c   = DB.customers.find(c => c.id === cn.customerId);
+    const inv = DB.invoices.find(i => i.id === cn.invoiceId);
+    return `<tr>
+      <td><strong>${cn.cnNumber}</strong></td>
+      <td>${fmtDate(cn.date)}</td>
+      <td>${c?.name || '—'}</td>
+      <td>${inv?.invNo || '—'}</td>
+      <td style="color:var(--accent)">₹${fmt(cn.amount)}</td>
+      <td><span class="badge badge-partial">${cn.reason}</span></td>
+      <td style="color:var(--muted);font-size:0.82rem">${cn.notes || '—'}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-danger btn-xs" onclick="deleteCreditNote(${cn.id})">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCreditNotes() {
+  const list = DB.creditNotes || [];
+  if (!list.length) return toast('No credit notes to export.', 'error');
+  const data = list.map(cn => {
+    const c   = DB.customers.find(c => c.id === cn.customerId);
+    const inv = DB.invoices.find(i => i.id === cn.invoiceId);
+    return { CNNumber: cn.cnNumber, Date: cn.date, Customer: c?.name, InvoiceNo: inv?.invNo, Amount: parseFloat(cn.amount), Reason: cn.reason, Notes: cn.notes || '' };
+  });
+  exportXLSX(data, 'CreditNotes_MauliEnt');
+}
+
+// ============================================================
+// OVERDUE
+// ============================================================
+function renderOverdue() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const list = DB.invoices.filter(inv => {
+    const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
+    return bal > 0 && new Date(inv.dueDate) < today;
+  });
+
+  const alert = document.getElementById('overdue-alert');
+  alert.style.display = list.length ? 'flex' : 'none';
+
+  const tbody = document.getElementById('overdue-table');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">✅</div><p>No overdue invoices!</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(inv => {
+    const c = DB.customers.find(c => c.id === inv.customerId);
+    const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
+    const daysOver = Math.floor((today - new Date(inv.dueDate)) / 86400000);
+    return `<tr>
+      <td><strong>${inv.invNo}</strong></td>
+      <td>${c?.name || '—'}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
+      <td style="color:var(--danger)"><strong>${daysOver} days</strong></td>
+      <td style="color:var(--danger)">₹${fmt(bal)}</td>
+      <td>
+        <button class="btn btn-outline btn-xs" onclick="openReminderModal(${inv.customerId})">🔔 Remind</button>
+        <button class="btn btn-primary btn-xs" onclick="openPaymentModalForInvoice(${inv.id})">💳 Pay</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const totalInvoiced = DB.invoices.reduce((s,i) => s + parseFloat(i.amount), 0);
+  // Only count actual money received (not Cancelled or Cash Discount adjustments)
+  const totalReceived = DB.payments
+    .filter(p => p.method !== 'Cancelled' && p.method !== 'Cash Discount')
+    .reduce((s,p) => s + parseFloat(p.amount), 0);
+  const totalAdjusted = DB.payments
+    .filter(p => p.method === 'Cancelled' || p.method === 'Cash Discount')
+    .reduce((s,p) => s + parseFloat(p.amount), 0);
+  const totalCreditNotes = (DB.creditNotes||[]).reduce((s,cn) => s + parseFloat(cn.amount), 0);
+  const totalOutstanding = DB.invoices.reduce((s,i) => {
+    const bal = parseFloat(i.amount) - getPaidAmount(i.id);
+    return s + Math.max(0, bal);
+  }, 0);
+
+  document.getElementById('stat-customers').textContent = DB.customers.length;
+  document.getElementById('stat-invoiced').textContent  = '₹' + fmt(totalInvoiced);
+  document.getElementById('stat-received').textContent  = '₹' + fmt(totalReceived);
+  document.getElementById('stat-outstanding').textContent = '₹' + fmt(totalOutstanding);
+
+  // Recent invoices
+  const recent = [...DB.invoices].sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5);
+  document.getElementById('dash-recent').innerHTML = recent.length
+    ? recent.map(inv => {
+        const c = DB.customers.find(c => c.id === inv.customerId);
+        const status = getInvoiceStatus(inv);
+        const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
+        return `<tr><td>${c?.name||'—'}</td><td>₹${fmt(inv.amount)}</td><td><span class="badge ${statusMap[status]}">${status}</span></td></tr>`;
+      }).join('')
+    : `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">No invoices yet.</td></tr>`;
+
+  // Overdue
+  const today = new Date(); today.setHours(0,0,0,0);
+  const overdueList = DB.invoices.filter(inv => {
+    const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
+    return bal > 0 && new Date(inv.dueDate) < today;
+  }).slice(0,5);
+  document.getElementById('dash-overdue').innerHTML = overdueList.length
+    ? overdueList.map(inv => {
+        const c = DB.customers.find(c => c.id === inv.customerId);
+        const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
+        const days = Math.floor((today - new Date(inv.dueDate)) / 86400000);
+        return `<tr><td>${c?.name||'—'}</td><td style="color:var(--danger)">${days} days</td><td style="color:var(--danger)">₹${fmt(bal)}</td></tr>`;
+      }).join('')
+    : `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">No overdue invoices. 🎉</td></tr>`;
+}
+
+// ============================================================
+// REMINDER
+// ============================================================
+function openReminderModal(customerId) {
+  reminderTarget = DB.customers.find(c => c.id === customerId);
+  openModal('modal-reminder');
+}
+
+function sendWhatsApp() {
+  if (!reminderTarget?.phone) return toast('No phone number.', 'error');
+  const phone = reminderTarget.phone.replace(/\D/g,'');
+  const bal = getCustomerBalance(reminderTarget.id);
+  const msg = encodeURIComponent(`Dear ${reminderTarget.name},\n\nThis is a reminder from Mauli Enterprises.\nYour outstanding balance is ₹${fmt(bal)}.\nKindly arrange the payment at the earliest.\n\nThank you.`);
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+  addLog('edit', `WhatsApp reminder sent to ${reminderTarget.name}`);
+  closeModal('modal-reminder');
+}
+
+function sendEmail() {
+  if (!reminderTarget?.email) return toast('No email address.', 'error');
+  const bal = getCustomerBalance(reminderTarget.id);
+  const subject = encodeURIComponent('Payment Reminder — Mauli Enterprises');
+  const body = encodeURIComponent(`Dear ${reminderTarget.name},\n\nThis is a payment reminder from Mauli Enterprises.\nYour outstanding balance is ₹${fmt(bal)}.\nKindly arrange the payment at the earliest.\n\nThank you.`);
+  window.open(`mailto:${reminderTarget.email}?subject=${subject}&body=${body}`, '_blank');
+  addLog('edit', `Email reminder sent to ${reminderTarget.name}`);
+  closeModal('modal-reminder');
+}
+
+// ============================================================
+// USER MANAGEMENT (Dev only — in app)
+// ============================================================
+function openUserForm(id=null) {
+  editingUserId = id;
+  const u = id ? DB.users.find(u => u.id === id) : null;
+  document.getElementById('user-form-title').textContent = id ? '✏️ Edit User' : '➕ Add New User';
+  document.getElementById('uf-firstname').value = u?.firstName || '';
+  document.getElementById('uf-lastname').value = u?.lastName || '';
+  document.getElementById('uf-username').value = u?.username || '';
+  document.getElementById('uf-role').value = u?.role || '';
+  document.getElementById('uf-status').value = u?.active !== false ? 'true' : 'false';
+  document.getElementById('uf-password').value = '';
+  document.getElementById('uf-confirm').value = '';
+  document.getElementById('user-form-section').style.display = 'block';
+  document.getElementById('user-form-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function closeUserForm() {
+  document.getElementById('user-form-section').style.display = 'none';
+  editingUserId = null;
+}
+
+async function saveUserFromApp() {
+  const firstName = document.getElementById('uf-firstname').value.trim();
+  const lastName = document.getElementById('uf-lastname').value.trim();
+  const username = document.getElementById('uf-username').value.trim().toLowerCase();
+  const role = document.getElementById('uf-role').value;
+  const active = document.getElementById('uf-status').value === 'true';
+  const password = document.getElementById('uf-password').value;
+  const confirm = document.getElementById('uf-confirm').value;
+
+  if (!firstName) return toast('First name required.', 'error');
+  if (!username) return toast('Username required.', 'error');
+  if (!role) return toast('Select a role.', 'error');
+
+  if (!editingUserId) {
+    if (!password) return toast('Password required.', 'error');
+    if (password.length < 6) return toast('Password min 6 chars.', 'error');
+    if (password !== confirm) return toast('Passwords do not match.', 'error');
+    if (DB.users.find(u => u.username === username)) return toast('Username already exists.', 'error');
+    const { hash, salt } = await pbkdf2Hash(password, null);
+    DB.users.push({ id: Date.now(), firstName, lastName, username, role, passwordHash: `pbkdf2:${salt}:${hash}`, active });
+    addLog('create', `Dev created user: ${username} (${role})`);
+    toast('User created!', 'success');
+  } else {
+    const idx = DB.users.findIndex(u => u.id === editingUserId);
+    if (idx === -1) return;
+    DB.users[idx] = { ...DB.users[idx], firstName, lastName, username, role, active };
+    if (password) {
+      if (password.length < 6) return toast('Password min 6 chars.', 'error');
+      if (password !== confirm) return toast('Passwords do not match.', 'error');
+      const { hash, salt } = await pbkdf2Hash(password, null);
+      DB.users[idx].passwordHash = `pbkdf2:${salt}:${hash}`;
+    }
+    addLog('edit', `Dev edited user: ${username}`);
+    toast('User updated!', 'success');
+  }
+
+  save('users');
+  closeUserForm();
+  renderUsersTable();
+}
+
+async function toggleUserActive(id) {
+  const u = DB.users.find(u => u.id === id);
+  if (!u) return;
+  // Prevent deactivating self
+  if (u.id === currentUser?.id) return toast("You can't deactivate yourself.", 'error');
+  u.active = !u.active;
+  save('users');
+  addLog('edit', `${u.active ? 'Activated' : 'Deactivated'} user: ${u.username}`);
+  toast(`User ${u.active ? 'activated' : 'deactivated'}.`, 'info');
+  renderUsersTable();
+}
+
+async function deleteUserFromApp(id) {
+  const u = DB.users.find(u => u.id === id);
+  if (!u) return;
+  if (u.id === currentUser?.id) return toast("You can't delete yourself.", 'error');
+  if (!confirm(`Delete user "${u.username}"?`)) return;
+  DB.users = DB.users.filter(u => u.id !== id);
+  save('users');
+  addLog('delete', `Deleted user: ${u.username}`);
+  toast('User deleted.', 'error');
+  renderUsersTable();
+}
+
+function renderUsersTable() {
+  const tbody = document.getElementById('users-table-body');
+  if (!DB.users.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No users found.</td></tr>`;
+    return;
+  }
+  const roleMap = { dev: 'Developer', admin: 'Admin', emp: 'Employee' };
+  const roleClass = { dev: 'var(--accent)', admin: 'var(--warning)', emp: 'var(--success)' };
+  tbody.innerHTML = DB.users.map((u, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${u.firstName} ${u.lastName || ''} ${u.id === currentUser?.id ? '<span style="color:var(--muted);font-size:0.75rem">(you)</span>' : ''}</td>
+      <td><code>${u.username}</code></td>
+      <td><span class="chip" style="background:${roleClass[u.role]}20;color:${roleClass[u.role]};border:1px solid ${roleClass[u.role]}40">${roleMap[u.role]||u.role}</span></td>
+      <td><span class="${u.active !== false ? 'chip-active' : 'chip-inactive'} chip">${u.active !== false ? '● Active' : '● Inactive'}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-outline btn-xs" onclick="openUserForm(${u.id})">✏️ Edit</button>
+          <button class="btn btn-xs" style="background:${u.active!==false?'#e74c3c20':'#2ecc7120'};color:${u.active!==false?'var(--danger)':'var(--success)'};border:1px solid ${u.active!==false?'#e74c3c40':'#2ecc7140'}" onclick="toggleUserActive(${u.id})">${u.active !== false ? '🔴 Deactivate' : '🟢 Activate'}</button>
+          ${u.id !== currentUser?.id ? `<button class="btn btn-danger btn-xs" onclick="deleteUserFromApp(${u.id})">🗑</button>` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function exportUsersDB() {
+  if (!DB.users.length) return toast('No users to export.', 'error');
+  const blob = new Blob([JSON.stringify(DB.users, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'users.json';
+  a.click();
+  toast('users.json downloaded! Upload it to GitHub.', 'success');
+}
+
+// ============================================================
+// BACKUP TAB
+// ============================================================
+function getBackupFilename() {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2,'0');
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const yyyy = now.getFullYear();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const min = String(now.getMinutes()).padStart(2,'0');
+  return `Backup_MauliEnt_${dd}_${mm}_${yyyy}_${hh}${min}`;
+}
+
+async function downloadFullBackup() {
+  if (typeof JSZip === 'undefined') {
+    toast('JSZip library not loaded. Check your internet connection.', 'error');
+    return;
+  }
+
+  const zip = new JSZip();
+  const fname = getBackupFilename();
+
+  // Overdue summary
+  const today = new Date(); today.setHours(0,0,0,0);
+  const overdueSummary = DB.invoices.filter(inv => {
+    const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
+    return bal > 0 && new Date(inv.dueDate) < today;
+  }).map(inv => {
+    const c = DB.customers.find(c => c.id === inv.customerId);
+    return {
+      invNo: inv.invNo,
+      customer: c?.name,
+      dueDate: inv.dueDate,
+      daysOverdue: Math.floor((today - new Date(inv.dueDate)) / 86400000),
+      balance: parseFloat(inv.amount) - getPaidAmount(inv.id)
+    };
+  });
+
+  zip.file('customers.json', JSON.stringify(DB.customers, null, 2));
+  zip.file('invoices.json', JSON.stringify(DB.invoices, null, 2));
+  zip.file('payments.json', JSON.stringify(DB.payments, null, 2));
+  zip.file('overdue_summary.json', JSON.stringify(overdueSummary, null, 2));
+  zip.file('activity_log.json', JSON.stringify(DB.log, null, 2));
+  zip.file('users.json', JSON.stringify(DB.users.map(u => ({ ...u, passwordHash: '***HIDDEN***' })), null, 2));
+  zip.file('backup_info.json', JSON.stringify({
+    appName: 'Mauli Enterprises Invoice Tracker',
+    backupDate: new Date().toISOString(),
+    backupName: fname,
+    counts: {
+      customers: DB.customers.length,
+      invoices: DB.invoices.length,
+      payments: DB.payments.length,
+      overdueInvoices: overdueSummary.length
+    }
+  }, null, 2));
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fname + '.zip';
+  a.click();
+
+  // Save backup history
+  DB.backupHistory.unshift({ name: fname + '.zip', date: new Date().toISOString(), type: 'full' });
+  if (DB.backupHistory.length > 20) DB.backupHistory = DB.backupHistory.slice(0, 20);
+  save('backupHistory');
+  renderBackupHistory();
+
+  addLog('create', `Full backup downloaded: ${fname}.zip`);
+  toast(`Backup downloaded: ${fname}.zip`, 'success');
+}
+
+function downloadSingleBackup(type) {
+  const map = {
+    customers: { data: DB.customers, name: 'customers' },
+    invoices: { data: DB.invoices, name: 'invoices' },
+    payments: { data: DB.payments, name: 'payments' },
+    log: { data: DB.log, name: 'activity_log' }
+  };
+  const item = map[type];
+  if (!item) return;
+  const fname = getBackupFilename();
+  const blob = new Blob([JSON.stringify(item.data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${item.name}_${fname}.json`;
+  a.click();
+  toast(`${type} backup downloaded!`, 'success');
+}
+
+async function restoreBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.name.endsWith('.zip')) return toast('Please select a valid .zip backup file.', 'error');
+
+  if (!confirm('⚠ This will OVERWRITE all current data with the backup. Are you sure?')) {
+    input.value = '';
+    return;
+  }
+
+  try {
+    if (typeof JSZip === 'undefined') throw new Error('JSZip not loaded');
+    const zip = await JSZip.loadAsync(file);
+
+    const readJSON = async (filename) => {
+      const f = zip.file(filename);
+      if (!f) return null;
+      const txt = await f.async('string');
+      return JSON.parse(txt);
+    };
+
+    const customers = await readJSON('customers.json');
+    const invoices = await readJSON('invoices.json');
+    const payments = await readJSON('payments.json');
+    const log = await readJSON('activity_log.json');
+
+    if (customers) { DB.customers = customers; await save('customers'); }
+    if (invoices)  { DB.invoices  = invoices;  await save('invoices'); }
+    if (payments)  { DB.payments  = payments;  await save('payments'); }
+    if (log)       { DB.log       = log; }
+
+    await addLog('edit', `Data restored from backup: ${file.name}`);
+    await save('log');
+
+    DB.backupHistory.unshift({ name: file.name, date: new Date().toISOString(), type: 'restore' });
+    save('backupHistory');
+
+    renderAll();
+    renderBackupHistory();
+    toast('✅ Backup restored successfully!', 'success');
+  } catch(e) {
+    toast('❌ Failed to restore backup: ' + e.message, 'error');
+  }
+  input.value = '';
+}
+
+function renderBackupHistory() {
+  const c = document.getElementById('backup-history-list');
+  if (!DB.backupHistory.length) {
+    c.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">No backup history yet.</p>';
+    return;
+  }
+  c.innerHTML = DB.backupHistory.map(b => `
+    <div class="log-entry ${b.type === 'restore' ? 'correction' : 'create'}" style="margin-bottom:8px">
+      <span style="font-size:0.85rem">${b.type === 'restore' ? '📥 Restored' : '📦 Backed up'}: <strong>${b.name}</strong></span>
+      <span class="log-time" style="float:right">${new Date(b.date).toLocaleString('en-IN')}</span>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// IMPORT
+// ============================================================
+function openImportModal(type) {
+  importType = type;
+  const titles = { customers: 'Import Customers from Excel', invoices: 'Import Invoices from Excel', payments: 'Import Payments from Excel' };
+  const cols = {
+    customers: 'Required columns: Name, Phone, Email, Company, City, Address, GST',
+    invoices: 'Required columns: CustomerName, InvoiceNo, InvoiceDate, DueDate, Amount, Description',
+    payments: 'Required columns: InvoiceNo, CustomerName, Amount, PaymentDate, Method, Reference'
+  };
+  document.getElementById('import-title').textContent = titles[type];
+  document.getElementById('import-cols').textContent = cols[type];
+  document.getElementById('import-file').value = '';
+  openModal('modal-import');
+}
+
+async function handleImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws);
+      let count = 0;
+
+      if (importType === 'customers') {
+        for (const r of rows) {
+          if (!r.Name || !r.Phone) continue;
+          DB.customers.push({ id: Date.now() + Math.random(), name: r.Name, phone: String(r.Phone), email: r.Email||'', company: r.Company||'', city: r.City||'', address: r.Address||'', gst: r.GST||'' });
+          count++;
+        }
+        await save('customers');
+      } else if (importType === 'invoices') {
+        for (const r of rows) {
+          if (!r.CustomerName || !r.InvoiceNo) continue;
+          const c = DB.customers.find(c => c.name.toLowerCase() === String(r.CustomerName).toLowerCase());
+          if (!c) continue;
+          DB.invoices.push({ id: Date.now() + Math.random(), customerId: c.id, invNo: String(r.InvoiceNo), date: fmtExcelDate(r.InvoiceDate), dueDate: fmtExcelDate(r.DueDate), amount: parseFloat(r.Amount)||0, description: r.Description||'' });
+          count++;
+        }
+        await save('invoices');
+      } else if (importType === 'payments') {
+        for (const r of rows) {
+          if (!r.InvoiceNo || !r.Amount) continue;
+          const inv = DB.invoices.find(i => i.invNo === String(r.InvoiceNo));
+          if (!inv) continue;
+          DB.payments.push({ id: Date.now() + Math.random(), customerId: inv.customerId, invoiceId: inv.id, amount: parseFloat(r.Amount)||0, date: fmtExcelDate(r.PaymentDate), method: r.Method||'Cash', ref: r.Reference||'' });
+          count++;
+        }
+        await save('payments');
+      }
+
+      await addLog('create', `Imported ${count} ${importType} from Excel`);
+      toast(`Imported ${count} ${importType}!`, 'success');
+      closeModal('modal-import');
+      renderAll();
+    } catch(err) {
+      toast('Import failed: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportCustomers() {
+  const data = DB.customers.map(c => ({
+    Name: c.name, Company: c.company, Phone: c.phone, Email: c.email,
+    City: c.city, GST: c.gst, Address: c.address,
+    Balance: getCustomerBalance(c.id), Status: getCustomerStatus(c.id)
+  }));
+  exportXLSX(data, 'Customers_MauliEnt');
+}
+
+function exportInvoices() {
+  const data = DB.invoices.filter(i => getInvoiceStatus(i) !== 'paid').map(inv => {
+    const c = DB.customers.find(c => c.id === inv.customerId);
+    return { InvoiceNo: inv.invNo, Customer: c?.name, Date: inv.date, DueDate: inv.dueDate, Amount: inv.amount, Paid: getPaidAmount(inv.id), Balance: parseFloat(inv.amount) - getPaidAmount(inv.id), Status: getInvoiceStatus(inv) };
+  });
+  exportXLSX(data, 'Unpaid_Invoices_MauliEnt');
+}
+
+function exportPayments() {
+  const data = DB.payments.map(p => {
+    const c   = DB.customers.find(c => c.id === p.customerId);
+    const inv = DB.invoices.find(i => i.id === p.invoiceId);
+    return { Date: p.date, Customer: c?.name, InvoiceNo: inv?.invNo, Amount: p.amount, Method: p.method, Reference: p.ref, Notes: p.notes || '' };
+  });
+  exportXLSX(data, 'Payments_MauliEnt');
+}
+
+function exportOverdueExcel() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const data = DB.invoices.filter(inv => {
+    const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
+    return bal > 0 && new Date(inv.dueDate) < today;
+  }).map(inv => {
+    const c = DB.customers.find(c => c.id === inv.customerId);
+    return { InvoiceNo: inv.invNo, Customer: c?.name, Phone: c?.phone, DueDate: inv.dueDate, DaysOverdue: Math.floor((today - new Date(inv.dueDate))/86400000), Balance: parseFloat(inv.amount) - getPaidAmount(inv.id) };
+  });
+  exportXLSX(data, 'Overdue_MauliEnt');
+}
+
+function exportXLSX(data, filename) {
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
+  XLSX.writeFile(wb, filename + '.xlsx');
+}
+
+// ============================================================
+// GITHUB SYNC (legacy — data sync now handled by Firebase)
+// ============================================================
+function openGithubSetup() { openModal('modal-github'); }
+function autoSync() { /* no-op — Firebase handles real-time sync */ }
+async function githubPut() { /* no-op */ }
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(n) { return parseFloat(n||0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); } catch { return d; } }
+function fmtExcelDate(v) {
+  if (!v) return today();
+  if (typeof v === 'number') {
+    const d = new Date((v - 25569) * 86400 * 1000);
+    return d.toISOString().split('T')[0];
+  }
+  return String(v);
+}
+
+function renderAll() {
+  renderDashboard();
+  renderCustomers();
+  initInvMonthFilter();
+  renderInvoices();
+  renderPayments();
+  renderOverdue();
+  renderCreditNotes();
+  updateCustomerDropdowns();
+  updateLedgerDropdown();
+  renderLedger();
+}
+
+// ============================================================
+// CUSTOMER LEDGER
+// ============================================================
+function updateLedgerDropdown() {
+  const sel = document.getElementById('ledger-cust');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— All Customers —</option>' +
+    DB.customers.map(c => `<option value="${c.id}" ${String(c.id) === current ? 'selected' : ''}>${c.name}</option>`).join('');
+}
+
+function clearLedgerDateFilter() {
+  document.getElementById('ledger-month').value = '';
+  renderLedger();
+}
+
+function renderLedger() {
+  const custId      = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const statusFilter = document.getElementById('ledger-status')?.value || 'total';
+  const monthF      = document.getElementById('ledger-month')?.value || '';
+  const tbody       = document.getElementById('ledger-table');
+  if (!tbody) return;
+
+  let invList = custId
+    ? DB.invoices.filter(i => i.customerId === custId)
+    : [...DB.invoices];
+
+  if (monthF) invList = invList.filter(i => i.date && i.date.startsWith(monthF));
+  if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
+  else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
+
+  // Compute summary totals from full set (ignoring month/status filter for totals)
+  const allForCust = custId ? DB.invoices.filter(i => i.customerId === custId) : [...DB.invoices];
+  const totalInvoiced = allForCust.reduce((s,i) => s + parseFloat(i.amount), 0);
+  const totalPaidAmt  = allForCust.reduce((s,i) => s + getPaidAmount(i.id), 0);
+  const totalUnpaid   = totalInvoiced - totalPaidAmt;
+  const paidCount     = allForCust.filter(i => getInvoiceStatus(i) === 'paid').length;
+  const unpaidCount   = allForCust.filter(i => getInvoiceStatus(i) !== 'paid').length;
+
+  document.getElementById('ledger-total').textContent      = '₹' + fmt(totalInvoiced);
+  document.getElementById('ledger-total-count').textContent = allForCust.length + ' invoices';
+  document.getElementById('ledger-paid').textContent       = '₹' + fmt(totalPaidAmt);
+  document.getElementById('ledger-paid-count').textContent  = paidCount + ' paid';
+  document.getElementById('ledger-unpaid').textContent     = '₹' + fmt(totalUnpaid);
+  document.getElementById('ledger-unpaid-count').textContent = unpaidCount + ' unpaid';
+
+  if (!invList.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">📒</div><p>No invoices found for this filter.</p></div></td></tr>`;
+    return;
+  }
+
+  const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
+  tbody.innerHTML = invList.map((inv, idx) => {
+    const c    = DB.customers.find(c => c.id === inv.customerId);
+    const paid = getPaidAmount(inv.id);
+    const bal  = parseFloat(inv.amount) - paid;
+    const status = getInvoiceStatus(inv);
+    const hasCN = (DB.creditNotes||[]).some(cn => cn.invoiceId === inv.id);
+    return `<tr>
+      <td>${idx + 1}</td>
+      <td><strong>${c?.name || '—'}</strong>${c?.company ? `<br><small style="color:var(--muted)">${c.company}</small>` : ''}</td>
+      <td><strong>${inv.invNo}</strong>${hasCN ? ' <span style="color:var(--accent);font-size:0.7rem" title="Has credit note">CN</span>' : ''}</td>
+      <td>${fmtDate(inv.date)}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
+      <td>₹${fmt(inv.amount)}</td>
+      <td style="color:var(--success)">₹${fmt(paid)}</td>
+      <td style="color:${bal > 0 ? 'var(--danger)' : 'var(--success)'}"><strong>₹${fmt(bal)}</strong></td>
+      <td><span class="badge ${statusMap[status]}">${status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function exportLedger() {
+  const custId      = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const statusFilter = document.getElementById('ledger-status')?.value || 'total';
+  const monthF      = document.getElementById('ledger-month')?.value || '';
+  let invList = custId ? DB.invoices.filter(i => i.customerId === custId) : [...DB.invoices];
+  if (monthF) invList = invList.filter(i => i.date && i.date.startsWith(monthF));
+  if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
+  else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
+  const data = invList.map((inv, idx) => {
+    const c    = DB.customers.find(c => c.id === inv.customerId);
+    const paid = getPaidAmount(inv.id);
+    return {
+      '#': idx + 1, Customer: c?.name, Company: c?.company || '',
+      InvoiceNo: inv.invNo, Date: inv.date, DueDate: inv.dueDate,
+      Amount: parseFloat(inv.amount), Paid: paid,
+      Balance: parseFloat(inv.amount) - paid, Status: getInvoiceStatus(inv)
+    };
+  });
+  exportXLSX(data, 'CustomerLedger_MauliEnt');
+}
+
+// ============================================================
+// SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ============================================================
+// INIT — load users only (Firestore loads after login)
+// ============================================================
+(function initApp() {
+  // Load local-only data
+  try { DB.users = JSON.parse(localStorage.getItem('mauli_users_runtime')) || []; } catch { DB.users = []; }
+  try { DB.backupHistory = JSON.parse(localStorage.getItem('mauli_backup_history')) || []; } catch { DB.backupHistory = []; }
+})();
+</script>
+
+<!-- ============================================================
+     FIREBASE — loaded as ES module, exposes Firestore to app
+     ============================================================ -->
+<script type="module">
+import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js';
+import { getFirestore, collection, getDocs,
+         doc, setDoc, deleteDoc, writeBatch,
+         onSnapshot }                           from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCD7kmldOVLfXqpq53mxNq5jRCkWn_3nGw",
+  authDomain:        "mauli-enterprises-b83ea.firebaseapp.com",
+  projectId:         "mauli-enterprises-b83ea",
+  storageBucket:     "mauli-enterprises-b83ea.firebasestorage.app",
+  messagingSenderId: "590292764179",
+  appId:             "1:590292764179:web:42ee0878a77cae29d2a1e6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// Expose Firestore instance and module functions to the non-module script
+window._firebaseModules = { collection, getDocs, doc, setDoc, deleteDoc, writeBatch, onSnapshot };
+window.setFirestoreDB(db);
+
+console.log('✅ Firebase Firestore connected');
+</script></body>
+</html>
