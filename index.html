@@ -337,8 +337,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           <option value="paid">Paid</option>
           <option value="overdue">Overdue</option>
         </select>
-        <input type="month" id="inv-month-filter" class="filter-btn" onchange="renderInvoices()" style="min-width:140px;padding:7px 10px">
-        <button class="filter-btn" onclick="clearInvDateFilter()" title="Clear date filter" style="padding:7px 10px">✕ All Months</button>
+        <input type="date" id="inv-date-from" class="filter-btn" onchange="renderInvoices()" style="min-width:140px;padding:7px 10px" title="From date">
+        <span style="color:var(--muted);font-size:0.82rem">to</span>
+        <input type="date" id="inv-date-to" class="filter-btn" onchange="renderInvoices()" style="min-width:140px;padding:7px 10px" title="To date">
+        <button class="filter-btn" onclick="clearInvDateFilter()" title="Clear date filter" style="padding:7px 10px">✕ All Dates</button>
       </div>
       <div id="inv-date-label" style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;margin-top:-4px"></div>
       <div class="table-wrap"><table>
@@ -371,11 +373,13 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           <option value="Cancelled">Cancelled</option>
           <option value="Cash Discount">Cash Discount</option>
         </select>
-        <input type="month" id="pay-month-filter" class="filter-btn" onchange="renderPayments()" style="min-width:140px;padding:7px 10px">
-        <button class="filter-btn" onclick="clearPayDateFilter()" style="padding:7px 10px">✕ All Months</button>
+        <input type="date" id="pay-date-from" class="filter-btn" onchange="renderPayments()" style="min-width:140px;padding:7px 10px" title="From date">
+        <span style="color:var(--muted);font-size:0.82rem">to</span>
+        <input type="date" id="pay-date-to" class="filter-btn" onchange="renderPayments()" style="min-width:140px;padding:7px 10px" title="To date">
+        <button class="filter-btn" onclick="clearPayDateFilter()" style="padding:7px 10px">✕ All Dates</button>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Date</th><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Date</th><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Actions</th></tr></thead>
         <tbody id="pay-table"></tbody>
       </table></div>
     </div>
@@ -531,8 +535,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           <option value="Damaged">Damaged Goods</option>
           <option value="Other">Other</option>
         </select>
-        <input type="month" id="cn-month-filter" class="filter-btn" onchange="renderCreditNotes()" style="min-width:140px;padding:7px 10px">
-        <button class="filter-btn" onclick="clearCNDateFilter()" style="padding:7px 10px">✕ All Months</button>
+        <input type="date" id="cn-date-from" class="filter-btn" onchange="renderCreditNotes()" style="min-width:140px;padding:7px 10px" title="From date">
+        <span style="color:var(--muted);font-size:0.82rem">to</span>
+        <input type="date" id="cn-date-to" class="filter-btn" onchange="renderCreditNotes()" style="min-width:140px;padding:7px 10px" title="To date">
+        <button class="filter-btn" onclick="clearCNDateFilter()" style="padding:7px 10px">✕ All Dates</button>
       </div>
       <div class="stat-grid" style="margin:12px 0">
         <div class="stat-card blue"><div class="stat-label">Total Credit Notes</div><div class="stat-value" id="cn-stat-count">0</div><div class="stat-sub">All time</div></div>
@@ -548,7 +554,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="tab-panel" id="tab-ledger">
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">📒 Customer Invoice &amp; Payment Ledger</div>
-        <button class="btn btn-outline btn-sm" onclick="exportLedger()">📤 Export Ledger</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="exportLedger()">📤 Export Ledger</button>
+          <button class="btn btn-primary btn-sm" onclick="printLedgerStatement()">🧾 PDF Statement</button>
+        </div>
       </div>
       <div class="filter-bar" style="gap:12px;flex-wrap:wrap;align-items:center;background:var(--card);padding:14px 16px;border-radius:12px;border:1px solid var(--border);margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
@@ -566,8 +575,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">Month</label>
-          <input type="month" id="ledger-month" class="search-input" onchange="renderLedger()" style="min-width:140px">
+          <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">From</label>
+          <input type="date" id="ledger-date-from" class="search-input" onchange="renderLedger()" style="min-width:140px">
+          <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">To</label>
+          <input type="date" id="ledger-date-to" class="search-input" onchange="renderLedger()" style="min-width:140px">
           <button class="filter-btn" onclick="clearLedgerDateFilter()" style="padding:6px 10px;font-size:0.78rem">✕ All</button>
         </div>
       </div>
@@ -623,6 +634,12 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="form-group"><label>GST Number</label><input type="text" id="cm-gst" placeholder="GST number"></div>
     </div>
     <div class="form-group"><label>Address</label><input type="text" id="cm-address" placeholder="Full address"></div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Credit Days <span style="color:var(--muted);font-size:0.78rem">(default 60)</span></label>
+        <input type="number" id="cm-credit-days" placeholder="60" min="0" value="60">
+      </div>
+      <div></div>
+    </div>
     <div style="display:flex;gap:20px;margin-top:10px">
       <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" id="cm-whatsapp"> 📱 WhatsApp Reminders</label>
       <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" id="cm-email-rem"> ✉️ Email Reminders</label>
@@ -640,14 +657,14 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <h3 id="inv-modal-title">New Invoice</h3>
     <div class="dup-warning" id="inv-dup-warn">⚠ This invoice number already exists!</div>
     <div class="form-group"><label>Customer *</label>
-      <select id="im-customer"><option value="">-- Select Customer --</option></select>
+      <select id="im-customer" onchange="autoFillDueDate()"><option value="">-- Select Customer --</option></select>
     </div>
     <div class="form-row-2">
       <div class="form-group"><label>Invoice # *</label><input type="text" id="im-invno" placeholder="INV-001" oninput="checkDupInvoice()"></div>
-      <div class="form-group"><label>Invoice Date *</label><input type="date" id="im-date"></div>
+      <div class="form-group"><label>Invoice Date *</label><input type="date" id="im-date" oninput="autoFillDueDate()"></div>
     </div>
     <div class="form-row-2">
-      <div class="form-group"><label>Due Date *</label><input type="date" id="im-due"></div>
+      <div class="form-group"><label>Due Date *</label><input type="date" id="im-due" oninput="this.dataset.manuallySet='true'"></div>
       <div class="form-group"><label>Amount (₹) *</label><input type="number" id="im-amount" placeholder="0.00" min="0" step="0.01"></div>
     </div>
     <div class="form-group"><label>Description</label><input type="text" id="im-desc" placeholder="Invoice description"></div>
@@ -660,36 +677,82 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 
 <!-- Payment Modal -->
 <div class="modal-overlay" id="modal-payment">
-  <div class="modal">
+  <div class="modal" style="max-width:620px">
     <h3>Record Payment</h3>
-    <div class="form-group"><label>Customer *</label>
-      <select id="pm-customer" onchange="populatePaymentInvoices()"><option value="">-- Select Customer --</option></select>
-    </div>
-    <div class="form-group"><label>Invoice *</label>
-      <select id="pm-invoice" onchange="updateBalanceDue()"><option value="">-- Select Invoice --</option></select>
-    </div>
-    <div id="pm-balance" style="color:var(--accent);font-size:0.82rem;margin-bottom:10px">Balance due: ₹0</div>
+    <!-- Row 1: Customer + Total Received -->
     <div class="form-row-2">
-      <div class="form-group"><label>Amount (₹) *</label><input type="number" id="pm-amount" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-group"><label>Customer *</label>
+        <select id="pm-customer" onchange="onPayCustomerChange()"><option value="">-- Select Customer --</option></select>
+      </div>
+      <div class="form-group"><label>Total Amount Received (₹) *</label>
+        <input type="number" id="pm-total-received" placeholder="0.00" min="0" step="0.01" oninput="updatePayRemaining()">
+      </div>
+    </div>
+    <!-- Row 2: Date + Method + Ref -->
+    <div class="form-row-3">
       <div class="form-group"><label>Payment Date *</label><input type="date" id="pm-date"></div>
+      <div class="form-group"><label>Mode of Payment *</label>
+        <select id="pm-method">
+          <option value="Cash">Cash</option>
+          <option value="UPI">UPI</option>
+          <option value="NEFT/IMPS">NEFT/IMPS</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Cash Discount">Cash Discount</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Reference / UTR</label><input type="text" id="pm-ref" placeholder="Optional"></div>
     </div>
-    <div class="form-group"><label>Payment Method *</label>
-      <select id="pm-method" onchange="onPayMethodChange()">
-        <option value="Cash">Cash</option>
-        <option value="UPI">UPI</option>
-        <option value="NEFT/IMPS">NEFT/IMPS</option>
-        <option value="Cheque">Cheque</option>
-        <option value="Cash Discount">Cash Discount</option>
-        <option value="Cancelled">Cancelled</option>
-      </select>
+    <!-- Invoice Allocation Section -->
+    <div style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 8px;display:flex;align-items:center;gap:8px">
+      Allocate to Invoices <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
     </div>
-    <div id="pm-method-note" style="display:none;background:#f39c1215;border:1px solid var(--warning);border-radius:8px;padding:8px 12px;font-size:0.8rem;color:var(--warning);margin-bottom:10px"></div>
-    <div class="form-group"><label>Reference / Transaction ID</label><input type="text" id="pm-ref" placeholder="Transaction ID, cheque no., etc."></div>
-    <div class="form-group"><label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="pm-notes" placeholder="Any additional notes about this payment..."></div>
-    <div style="color:var(--muted);font-size:0.78rem;margin-top:4px">Note: Editing a paid entry creates a correction log entry.</div>
+    <div id="pm-invoice-rows"></div>
+    <button class="btn btn-outline btn-sm" style="width:100%;margin-top:4px;border-style:dashed" onclick="addPayInvoiceRow()">+ Add Another Invoice</button>
+    <!-- Remaining Summary -->
+    <div id="pm-remaining-bar" style="display:flex;justify-content:space-between;align-items:center;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:0.82rem">
+      <span style="color:var(--muted)">Received: <strong id="pm-bar-received">₹0</strong> &nbsp;|&nbsp; Allocated: <strong id="pm-bar-allocated">₹0</strong> &nbsp;|&nbsp; Cash Disc: <strong id="pm-bar-disc">₹0</strong></span>
+      <span>Remaining: <strong id="pm-bar-remaining" style="color:var(--success)">₹0</strong></span>
+    </div>
+    <div id="pm-remaining-warn" style="display:none;color:var(--danger);font-size:0.8rem;margin-top:6px">⚠ Total allocated + cash disc must equal total received before saving.</div>
+    <div class="form-group" style="margin-top:10px"><label>Notes (optional)</label><input type="text" id="pm-notes" placeholder="Any additional notes..."></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-payment')">Cancel</button>
-      <button class="btn btn-primary" onclick="savePayment()">Record Payment</button>
+      <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Revise Payment Modal -->
+<div class="modal-overlay" id="modal-revise-payment">
+  <div class="modal" style="max-width:460px">
+    <h3>Revise Payment</h3>
+    <div id="revise-payment-info" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-bottom:14px"></div>
+    <div class="form-group"><label>Reason *</label>
+      <select id="rp-reason" onchange="onReviseReasonChange()">
+        <option value="Check Bounce">Check Bounce</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Notes</label>
+      <input type="text" id="rp-notes" placeholder="Any remarks about this revision...">
+    </div>
+    <div style="margin:10px 0">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.85rem">
+        <input type="checkbox" id="rp-charges-chk" onchange="toggleReviseCharges()"> Apply penalty / bank charges
+      </label>
+    </div>
+    <div id="rp-charges-box" style="display:none">
+      <div class="form-group"><label>Charge Amount (₹) *</label>
+        <input type="number" id="rp-charge-amount" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div style="font-size:0.78rem;color:var(--warning);background:#f39c1215;border:1px solid #f39c1240;border-radius:8px;padding:8px 12px">
+        ⚠ This amount will be added to the original invoice, increasing the outstanding balance.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-revise-payment')">Cancel</button>
+      <button class="btn btn-danger" onclick="saveRevisePayment()">Revise Payment</button>
     </div>
   </div>
 </div>
@@ -938,7 +1001,7 @@ function startRealtimeListeners() {
   stopRealtimeListeners();
   const { onSnapshot, collection: col } = window._firebaseModules;
 
-  const liveKeys = ['customers','invoices','payments','creditNotes'];
+  const liveKeys = ['customers','invoices','payments','creditNotes','log'];
   liveKeys.forEach(key => {
     const unsub = onSnapshot(col(_db, key), (snap) => {
       // Only update if data actually changed (not from our own write)
@@ -1181,6 +1244,8 @@ async function doLogin() {
   clearLockout(username);
   const token = generateToken();
   setSessionToken(token);
+  // Cache user (no password hash) so refresh can restore session
+  try { sessionStorage.setItem('mauli_current_user', JSON.stringify({ id: user.id, firstName: user.firstName, lastName: user.lastName, username: user.username, role: user.role })); } catch(e) {}
 
   currentUser = user;
   document.getElementById('login-error').style.display = 'none';
@@ -1217,6 +1282,7 @@ function signOut(reason) {
   if (currentUser) addLog('login', `User "${currentUser.username}" signed out${reason ? ' (' + reason + ')' : ''}`);
   currentUser = null;
   clearSessionToken();
+  try { sessionStorage.removeItem('mauli_current_user'); } catch(e) {}
   stopIdleTimer();
   stopRealtimeListeners();
   // Sign out of Firebase so Firestore rules block any further access
@@ -1419,6 +1485,7 @@ function openCustomerModal(id=null) {
   document.getElementById('cm-address').value = c?.address || '';
   document.getElementById('cm-whatsapp').checked = c?.whatsapp || false;
   document.getElementById('cm-email-rem').checked = c?.emailRem || false;
+  document.getElementById('cm-credit-days').value = c?.creditDays ?? 60;
   openModal('modal-customer');
 }
 
@@ -1436,7 +1503,8 @@ async function saveCustomer() {
     gst: document.getElementById('cm-gst').value.trim(),
     address: document.getElementById('cm-address').value.trim(),
     whatsapp: document.getElementById('cm-whatsapp').checked,
-    emailRem: document.getElementById('cm-email-rem').checked
+    emailRem: document.getElementById('cm-email-rem').checked,
+    creditDays: parseInt(document.getElementById('cm-credit-days').value) || 60
   };
 
   if (editingCustomerId) {
@@ -1551,6 +1619,7 @@ function openInvoiceModal(id=null) {
   document.getElementById('im-invno').value = inv?.invNo || '';
   document.getElementById('im-date').value = inv?.date || today();
   document.getElementById('im-due').value = inv?.dueDate || '';
+  document.getElementById('im-due').dataset.manuallySet = id ? 'true' : 'false';
   document.getElementById('im-amount').value = inv?.amount || '';
   document.getElementById('im-desc').value = inv?.description || '';
   document.getElementById('inv-dup-warn').style.display = 'none';
@@ -1569,6 +1638,20 @@ function checkDupInvoice() {
   const isDup = DB.invoices.some(i => i.invNo === val && i.id !== editingInvoiceId);
   document.getElementById('inv-dup-warn').style.display = isDup ? 'block' : 'none';
   if (isDup) document.getElementById('dup-global').style.display = 'block';
+}
+
+function autoFillDueDate() {
+  const dateVal = document.getElementById('im-date').value;
+  const dueEl   = document.getElementById('im-due');
+  if (!dateVal) return;
+  // Only auto-fill if due date is empty or was auto-filled (not manually changed)
+  if (dueEl.dataset.manuallySet === 'true') return;
+  const custId = parseInt(document.getElementById('im-customer').value);
+  const cust = DB.customers.find(c => c.id === custId);
+  const days = cust?.creditDays ?? 60;
+  const d = new Date(dateVal);
+  d.setDate(d.getDate() + days);
+  dueEl.value = d.toISOString().split('T')[0];
 }
 
 async function saveInvoice() {
@@ -1644,16 +1727,13 @@ function getInvoiceStatus(inv) {
   return 'pending';
 }
 
-function initInvMonthFilter() {
-  const el = document.getElementById('inv-month-filter');
-  if (el && !el.value) {
-    const now = new Date();
-    el.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  }
-}
+function initInvMonthFilter() { /* no-op — using from/to date range now */ }
 
 function clearInvDateFilter() {
-  document.getElementById('inv-month-filter').value = '';
+  const f = document.getElementById('inv-date-from');
+  const t = document.getElementById('inv-date-to');
+  if (f) f.value = '';
+  if (t) t.value = '';
   renderInvoices();
 }
 
@@ -1661,14 +1741,13 @@ function renderInvoices() {
   const search      = document.getElementById('inv-search').value.toLowerCase();
   const custFilter2 = document.getElementById('inv-cust-filter').value;
   const statusF     = document.getElementById('inv-status-filter').value;
-  const monthF      = document.getElementById('inv-month-filter').value; // "YYYY-MM"
+  const dateFrom    = document.getElementById('inv-date-from')?.value || '';
+  const dateTo      = document.getElementById('inv-date-to')?.value || '';
   const tbody       = document.getElementById('inv-table');
   const label       = document.getElementById('inv-date-label');
 
-  if (monthF) {
-    const [yr, mo] = monthF.split('-');
-    const mNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    label.textContent = `Showing invoices for: ${mNames[parseInt(mo)]} ${yr}`;
+  if (dateFrom || dateTo) {
+    label.textContent = `Showing invoices: ${dateFrom ? 'from ' + fmtDate(dateFrom) : ''} ${dateTo ? 'to ' + fmtDate(dateTo) : ''}`;
   } else {
     label.textContent = 'Showing all invoices';
   }
@@ -1678,11 +1757,10 @@ function renderInvoices() {
     const textMatch = [inv.invNo, c?.name, inv.description].join(' ').toLowerCase().includes(search);
     const custMatch = !custFilter2 || inv.customerId === parseInt(custFilter2);
     const statusMatch = !statusF || getInvoiceStatus(inv) === statusF;
-    let monthMatch = true;
-    if (monthF) {
-      monthMatch = inv.date && inv.date.startsWith(monthF);
-    }
-    return textMatch && custMatch && statusMatch && monthMatch;
+    let dateMatch = true;
+    if (dateFrom) dateMatch = dateMatch && inv.date >= dateFrom;
+    if (dateTo)   dateMatch = dateMatch && inv.date <= dateTo;
+    return textMatch && custMatch && statusMatch && dateMatch;
   }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
   if (!list.length) {
@@ -1732,106 +1810,215 @@ function updateCustomerDropdowns() {
 }
 
 // ============================================================
-// PAYMENTS
+// PAYMENTS — Multi-invoice, Cash Discount, Revise Payment
 // ============================================================
+let _revisePaymentId = null;
+
 function openPaymentModal() {
-  editingInvoiceId = null;
+  _revisePaymentId = null;
   populatePaymentCustomers();
-  document.getElementById('pm-amount').value = '';
+  document.getElementById('pm-total-received').value = '';
   document.getElementById('pm-date').value = today();
   document.getElementById('pm-ref').value = '';
   document.getElementById('pm-notes').value = '';
   document.getElementById('pm-method').value = 'Cash';
-  document.getElementById('pm-method-note').style.display = 'none';
-  document.getElementById('pm-balance').textContent = 'Balance due: ₹0';
+  document.getElementById('pm-invoice-rows').innerHTML = '';
+  document.getElementById('pm-remaining-warn').style.display = 'none';
+  updatePayRemaining();
   openModal('modal-payment');
+  // Add first invoice row after customer is selected
 }
 
 function openPaymentModalForInvoice(invoiceId) {
   const inv = DB.invoices.find(i => i.id === invoiceId);
   if (!inv) return;
+  _revisePaymentId = null;
   populatePaymentCustomers(inv.customerId);
-  setTimeout(() => {
-    document.getElementById('pm-invoice').value = invoiceId;
-    updateBalanceDue();
-  }, 50);
+  document.getElementById('pm-total-received').value = '';
   document.getElementById('pm-date').value = today();
   document.getElementById('pm-ref').value = '';
   document.getElementById('pm-notes').value = '';
   document.getElementById('pm-method').value = 'Cash';
-  document.getElementById('pm-method-note').style.display = 'none';
+  document.getElementById('pm-invoice-rows').innerHTML = '';
+  updatePayRemaining();
   openModal('modal-payment');
-}
-
-function onPayMethodChange() {
-  const method = document.getElementById('pm-method').value;
-  const noteEl = document.getElementById('pm-method-note');
-  const amtLabel = document.querySelector('#modal-payment label[for="pm-amount"], #modal-payment .form-group label');
-  if (method === 'Cancelled') {
-    noteEl.textContent = '⚠ This will mark the full remaining balance as cancelled and close the invoice.';
-    noteEl.style.display = 'block';
-    // Auto-fill full balance
-    const invId = parseInt(document.getElementById('pm-invoice').value);
-    if (invId) {
-      const bal = parseFloat(DB.invoices.find(i=>i.id===invId)?.amount||0) - getPaidAmount(invId);
-      document.getElementById('pm-amount').value = bal > 0 ? bal.toFixed(2) : '0.00';
-    }
-  } else if (method === 'Cash Discount') {
-    noteEl.textContent = 'ℹ Cash Discount will reduce the outstanding balance without actual payment received. Enter the discount amount.';
-    noteEl.style.display = 'block';
-  } else {
-    noteEl.style.display = 'none';
-  }
+  setTimeout(() => {
+    onPayCustomerChange(inv.customerId, invoiceId);
+  }, 60);
 }
 
 function populatePaymentCustomers(selectedId) {
   const sel = document.getElementById('pm-customer');
   sel.innerHTML = '<option value="">-- Select Customer --</option>' +
     DB.customers.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
-  if (selectedId) populatePaymentInvoices();
 }
 
-function populatePaymentInvoices() {
+function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
+  const custId = forceCustomerId || parseInt(document.getElementById('pm-customer').value);
+  document.getElementById('pm-invoice-rows').innerHTML = '';
+  if (!custId) { updatePayRemaining(); return; }
+  addPayInvoiceRow(forceInvoiceId);
+}
+
+function getPendingInvoicesForCustomer(custId) {
+  // Aging: oldest due date first
+  return DB.invoices
+    .filter(i => i.customerId === custId && getInvoiceStatus(i) !== 'paid')
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+}
+
+function addPayInvoiceRow(preselectInvId) {
   const custId = parseInt(document.getElementById('pm-customer').value);
-  const sel = document.getElementById('pm-invoice');
-  const invs = DB.invoices.filter(i => i.customerId === custId && getInvoiceStatus(i) !== 'paid');
-  sel.innerHTML = '<option value="">-- Select Invoice --</option>' +
-    invs.map(i => `<option value="${i.id}">${i.invNo} (₹${fmt(parseFloat(i.amount) - getPaidAmount(i.id))} due)</option>`).join('');
-  updateBalanceDue();
+  if (!custId) { toast('Select a customer first.', 'error'); return; }
+  const container = document.getElementById('pm-invoice-rows');
+  const rowId = 'prow_' + Date.now();
+  const pending = getPendingInvoicesForCustomer(custId);
+
+  const opts = pending.map(i => {
+    const bal = parseFloat(i.amount) - getPaidAmount(i.id);
+    const isSelected = preselectInvId && i.id === preselectInvId ? 'selected' : '';
+    return `<option value="${i.id}" data-amount="${parseFloat(i.amount)}" data-bal="${bal.toFixed(2)}" ${isSelected}>${i.invNo} — ₹${fmt(parseFloat(i.amount))} (bal ₹${fmt(bal)})</option>`;
+  }).join('');
+
+  const div = document.createElement('div');
+  div.id = rowId;
+  div.style.cssText = 'background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px';
+  div.innerHTML = `
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Invoice</label>
+        <select onchange="onPayInvRowChange('${rowId}')" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;font-family:inherit;color:var(--text)">
+          <option value="">-- Select --</option>${opts}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Cash Disc (₹)</label>
+        <input type="number" placeholder="0" min="0" step="0.01" value="0" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;font-family:inherit;color:var(--text)" oninput="updatePayRemaining()">
+      </div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Adjust Amt (₹)</label>
+        <input type="number" placeholder="0" min="0" step="0.01" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;font-family:inherit;color:var(--text)" oninput="updatePayRemaining()">
+      </div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Balance</label>
+        <input type="text" readonly placeholder="₹0" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;color:var(--success);font-weight:600;font-family:inherit">
+      </div>
+      <button onclick="document.getElementById('${rowId}').remove();updatePayRemaining()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:0 4px;margin-bottom:2px" title="Remove">✕</button>
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:5px" id="${rowId}_meta">Select an invoice to see details</div>
+  `;
+  container.appendChild(div);
+  if (preselectInvId) {
+    const sel = div.querySelector('select');
+    if (sel) { sel.value = preselectInvId; onPayInvRowChange(rowId); }
+  }
+  updatePayRemaining();
 }
 
-function updateBalanceDue() {
-  const invId = parseInt(document.getElementById('pm-invoice').value);
-  if (!invId) { document.getElementById('pm-balance').textContent = 'Balance due: ₹0'; return; }
+function onPayInvRowChange(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const sel = row.querySelector('select');
+  const invId = parseInt(sel.value);
+  const meta = document.getElementById(rowId + '_meta');
+  if (!invId) { if (meta) meta.textContent = 'Select an invoice to see details'; updatePayRemaining(); return; }
   const inv = DB.invoices.find(i => i.id === invId);
   if (!inv) return;
   const bal = parseFloat(inv.amount) - getPaidAmount(invId);
-  document.getElementById('pm-balance').textContent = `Balance due: ₹${fmt(bal)}`;
-  document.getElementById('pm-amount').value = bal > 0 ? bal.toFixed(2) : '';
-  // re-run method note in case Cancelled was selected
-  onPayMethodChange();
+  const status = getInvoiceStatus(inv);
+  const statusColors = { paid:'var(--success)', pending:'var(--warning)', partial:'var(--accent)', overdue:'var(--danger)' };
+  if (meta) meta.innerHTML = `Invoice ₹${fmt(parseFloat(inv.amount))} &nbsp;|&nbsp; <span style="color:${statusColors[status]};font-weight:600">${status}</span> &nbsp;|&nbsp; Due: ${fmtDate(inv.dueDate)} &nbsp;|&nbsp; Balance: <strong style="color:var(--danger)">₹${fmt(bal)}</strong>`;
+  updatePayRemaining();
+}
+
+function updatePayRemaining() {
+  const totalReceived = parseFloat(document.getElementById('pm-total-received').value) || 0;
+  let totalAllocated = 0;
+  let totalDisc = 0;
+
+  document.querySelectorAll('#pm-invoice-rows > div').forEach(row => {
+    const inputs = row.querySelectorAll('input[type=number]');
+    const disc = parseFloat(inputs[0]?.value) || 0;
+    const adj  = parseFloat(inputs[1]?.value) || 0;
+    const balInput = row.querySelectorAll('input[type=text]')[0];
+    totalDisc += disc;
+    totalAllocated += adj;
+
+    // Update balance display
+    const sel = row.querySelector('select');
+    const invId = parseInt(sel?.value);
+    if (invId && balInput) {
+      const inv = DB.invoices.find(i => i.id === invId);
+      if (inv) {
+        const invBal = parseFloat(inv.amount) - getPaidAmount(invId);
+        const remainBal = invBal - adj - disc;
+        balInput.value = '₹' + fmt(remainBal);
+        balInput.style.color = remainBal <= 0.01 ? 'var(--success)' : 'var(--danger)';
+      }
+    }
+  });
+
+  const remaining = totalReceived - totalAllocated;
+  document.getElementById('pm-bar-received').textContent = '₹' + fmt(totalReceived);
+  document.getElementById('pm-bar-allocated').textContent = '₹' + fmt(totalAllocated);
+  document.getElementById('pm-bar-disc').textContent = '₹' + fmt(totalDisc);
+  const remEl = document.getElementById('pm-bar-remaining');
+  remEl.textContent = '₹' + fmt(remaining);
+  remEl.style.color = Math.abs(remaining) < 0.01 ? 'var(--success)' : 'var(--danger)';
 }
 
 async function savePayment() {
   const customerId = parseInt(document.getElementById('pm-customer').value);
-  const invoiceId  = parseInt(document.getElementById('pm-invoice').value);
-  const amount     = parseFloat(document.getElementById('pm-amount').value);
   const date       = document.getElementById('pm-date').value;
   const method     = document.getElementById('pm-method').value;
   const ref        = document.getElementById('pm-ref').value.trim();
   const notes      = document.getElementById('pm-notes').value.trim();
+  const totalReceived = parseFloat(document.getElementById('pm-total-received').value) || 0;
 
   if (!customerId) return toast('Select a customer.', 'error');
-  if (!invoiceId)  return toast('Select an invoice.', 'error');
-  if (isNaN(amount) || amount <= 0) return toast('Valid amount required.', 'error');
-  if (!date) return toast('Payment date required.', 'error');
+  if (!date)       return toast('Payment date required.', 'error');
+  if (totalReceived <= 0) return toast('Enter total amount received.', 'error');
 
-  const inv = DB.invoices.find(i => i.id === invoiceId);
-  const c   = DB.customers.find(c => c.id === customerId);
+  const rows = document.querySelectorAll('#pm-invoice-rows > div');
+  if (!rows.length) return toast('Add at least one invoice to allocate.', 'error');
 
-  DB.payments.push({ id: Date.now(), customerId, invoiceId, amount, date, method, ref, notes });
-  save('payments');
-  addLog('create', `Payment ₹${fmt(amount)} [${method}] for invoice ${inv?.invNo} (${c?.name})${notes ? ' — ' + notes : ''}`);
+  const allocations = [];
+  let totalAllocated = 0;
+  let totalDisc = 0;
+
+  for (const row of rows) {
+    const sel = row.querySelector('select');
+    const inputs = row.querySelectorAll('input[type=number]');
+    const invId = parseInt(sel?.value);
+    const disc  = parseFloat(inputs[0]?.value) || 0;
+    const adj   = parseFloat(inputs[1]?.value) || 0;
+    if (!invId) { toast('Select an invoice for each row.', 'error'); return; }
+    if (adj <= 0 && disc <= 0) { toast('Enter adjust amount or cash discount for each invoice row.', 'error'); return; }
+    allocations.push({ invId, disc, adj });
+    totalAllocated += adj;
+    totalDisc += disc;
+  }
+
+  if (Math.abs(totalReceived - totalAllocated) > 0.01) {
+    document.getElementById('pm-remaining-warn').style.display = 'block';
+    return toast('Total allocated must equal total received.', 'error');
+  }
+  document.getElementById('pm-remaining-warn').style.display = 'none';
+
+  const c = DB.customers.find(c => c.id === customerId);
+  for (const alloc of allocations) {
+    const inv = DB.invoices.find(i => i.id === alloc.invId);
+    if (alloc.adj > 0) {
+      DB.payments.push({ id: Date.now() + Math.random(), customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc });
+    }
+    if (alloc.disc > 0 && alloc.adj === 0) {
+      // Pure cash discount with no actual payment
+      DB.payments.push({ id: Date.now() + Math.random(), customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc });
+    }
+    if (alloc.disc > 0 && alloc.adj > 0) {
+      // Also record cash discount as separate payment entry
+      DB.payments.push({ id: Date.now() + Math.random(), customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc });
+    }
+    addLog('create', `Payment ₹${fmt(alloc.adj)} [${method}]${alloc.disc > 0 ? ' + Cash Disc ₹' + fmt(alloc.disc) : ''} for invoice ${inv?.invNo} (${c?.name})`);
+  }
+
+  await save('payments');
   toast('Payment recorded!', 'success');
   closeModal('modal-payment');
   renderPayments();
@@ -1839,8 +2026,79 @@ async function savePayment() {
   renderDashboard();
 }
 
+// ---- Revise Payment (Check Bounce / Other) ----
+function openRevisePaymentModal(paymentId) {
+  _revisePaymentId = paymentId;
+  const p = DB.payments.find(p => p.id === paymentId);
+  if (!p) return;
+  const c   = DB.customers.find(c => c.id === p.customerId);
+  const inv = DB.invoices.find(i => i.id === p.invoiceId);
+  document.getElementById('revise-payment-info').innerHTML =
+    `<strong>${c?.name || '—'}</strong> &nbsp;·&nbsp; Invoice: <strong>${inv?.invNo || '—'}</strong><br>` +
+    `Payment: ₹${fmt(p.amount)} via ${p.method} on ${fmtDate(p.date)}`;
+  document.getElementById('rp-reason').value = 'Check Bounce';
+  document.getElementById('rp-notes').value = '';
+  document.getElementById('rp-charges-chk').checked = false;
+  document.getElementById('rp-charges-box').style.display = 'none';
+  document.getElementById('rp-charge-amount').value = '';
+  openModal('modal-revise-payment');
+}
+
+function onReviseReasonChange() {}
+
+function toggleReviseCharges() {
+  const show = document.getElementById('rp-charges-chk').checked;
+  document.getElementById('rp-charges-box').style.display = show ? 'block' : 'none';
+}
+
+async function saveRevisePayment() {
+  if (!_revisePaymentId) return;
+  const p = DB.payments.find(p => p.id === _revisePaymentId);
+  if (!p) return;
+  const reason      = document.getElementById('rp-reason').value;
+  const notes       = document.getElementById('rp-notes').value.trim();
+  const applyCharge = document.getElementById('rp-charges-chk').checked;
+  const chargeAmt   = parseFloat(document.getElementById('rp-charge-amount').value) || 0;
+
+  if (applyCharge && chargeAmt <= 0) return toast('Enter a valid charge amount.', 'error');
+
+  const inv = DB.invoices.find(i => i.id === p.invoiceId);
+  const c   = DB.customers.find(c => c.id === p.customerId);
+
+  // Mark original payment as revised
+  p.method = 'Cancelled';
+  p.notes  = `[REVISED — ${reason}]${notes ? ': ' + notes : ''}`;
+
+  // Add penalty to invoice amount if charges apply
+  if (applyCharge && chargeAmt > 0 && inv) {
+    const idx = DB.invoices.findIndex(i => i.id === inv.id);
+    if (idx !== -1) {
+      DB.invoices[idx].amount = (parseFloat(DB.invoices[idx].amount) + chargeAmt).toFixed(2);
+      addLog('correction', `Invoice ${inv.invNo} amount increased by ₹${fmt(chargeAmt)} due to ${reason} penalty`);
+      await save('invoices');
+    }
+  }
+
+  await save('payments');
+  addLog('correction', `Payment revised for ${inv?.invNo} (${c?.name}) — ${reason}${notes ? ': ' + notes : ''}${applyCharge ? ' | Charge ₹' + fmt(chargeAmt) : ''}`);
+  toast('Payment revised!', 'info');
+  closeModal('modal-revise-payment');
+  renderPayments();
+  renderInvoices();
+  renderDashboard();
+}
+
+function onPayMethodChange() {} // kept as stub for compatibility
+
+function populatePaymentInvoices() {} // kept as stub
+
+function updateBalanceDue() {} // kept as stub
+
 function clearPayDateFilter() {
-  document.getElementById('pay-month-filter').value = '';
+  const f = document.getElementById('pay-date-from');
+  const t = document.getElementById('pay-date-to');
+  if (f) f.value = '';
+  if (t) t.value = '';
   renderPayments();
 }
 
@@ -1848,7 +2106,8 @@ function renderPayments() {
   const search   = document.getElementById('pay-search').value.toLowerCase();
   const custF    = document.getElementById('pay-cust-filter')?.value || '';
   const methodF  = document.getElementById('pay-method-filter')?.value || '';
-  const monthF   = document.getElementById('pay-month-filter')?.value || '';
+  const dateFrom = document.getElementById('pay-date-from')?.value || '';
+  const dateTo   = document.getElementById('pay-date-to')?.value || '';
   const tbody    = document.getElementById('pay-table');
 
   let list = DB.payments.filter(p => {
@@ -1857,12 +2116,14 @@ function renderPayments() {
     const textMatch   = [c?.name, inv?.invNo, p.method, p.ref, p.notes].join(' ').toLowerCase().includes(search);
     const custMatch   = !custF   || String(p.customerId) === custF;
     const methodMatch = !methodF || p.method === methodF;
-    const monthMatch  = !monthF  || (p.date && p.date.startsWith(monthF));
-    return textMatch && custMatch && methodMatch && monthMatch;
+    let dateMatch = true;
+    if (dateFrom) dateMatch = dateMatch && p.date >= dateFrom;
+    if (dateTo)   dateMatch = dateMatch && p.date <= dateTo;
+    return textMatch && custMatch && methodMatch && dateMatch;
   }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">💳</div><p>No payments found.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">💳</div><p>No payments found.</p></div></td></tr>`;
     return;
   }
 
@@ -1883,6 +2144,12 @@ function renderPayments() {
       <td><span style="font-size:0.8rem;font-weight:600;${p.method==='Cancelled'?'color:var(--danger)':p.method==='Cash Discount'?'color:var(--warning)':''}">${p.method}</span></td>
       <td>${p.ref || '—'}</td>
       <td style="color:var(--muted);font-size:0.82rem">${p.notes || '—'}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-outline btn-xs" onclick="openRevisePaymentModal(${p.id})" title="Revise Payment">✏️ Revise</button>
+          <button class="btn btn-outline btn-xs" onclick="printPaymentReceipt(${p.id})" title="Print Receipt">🧾 PDF</button>
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -1999,7 +2266,10 @@ async function deleteCreditNote(id) {
 }
 
 function clearCNDateFilter() {
-  document.getElementById('cn-month-filter').value = '';
+  const f = document.getElementById('cn-date-from');
+  const t = document.getElementById('cn-date-to');
+  if (f) f.value = '';
+  if (t) t.value = '';
   renderCreditNotes();
 }
 
@@ -2007,7 +2277,8 @@ function renderCreditNotes() {
   const search  = document.getElementById('cn-search')?.value.toLowerCase() || '';
   const custF   = document.getElementById('cn-cust-filter')?.value || '';
   const reasonF = document.getElementById('cn-reason-filter')?.value || '';
-  const monthF  = document.getElementById('cn-month-filter')?.value || '';
+  const dateFrom = document.getElementById('cn-date-from')?.value || '';
+  const dateTo   = document.getElementById('cn-date-to')?.value || '';
   const tbody   = document.getElementById('cn-table');
   if (!tbody) return;
 
@@ -2017,8 +2288,10 @@ function renderCreditNotes() {
     const textMatch   = [cn.cnNumber, c?.name, inv?.invNo, cn.reason, cn.notes].join(' ').toLowerCase().includes(search);
     const custMatch   = !custF   || String(cn.customerId) === custF;
     const reasonMatch = !reasonF || cn.reason === reasonF;
-    const monthMatch  = !monthF  || (cn.date && cn.date.startsWith(monthF));
-    return textMatch && custMatch && reasonMatch && monthMatch;
+    let dateMatch = true;
+    if (dateFrom) dateMatch = dateMatch && cn.date >= dateFrom;
+    if (dateTo)   dateMatch = dateMatch && cn.date <= dateTo;
+    return textMatch && custMatch && reasonMatch && dateMatch;
   }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
   // Update stat cards
@@ -2522,7 +2795,7 @@ function openImportModal(type) {
   importType = type;
   const titles = { customers: 'Import Customers from Excel', invoices: 'Import Invoices from Excel', payments: 'Import Payments from Excel' };
   const cols = {
-    customers: 'Required columns: Name, Phone, Email, Company, Pincode, Address, GST, WhatsappReminder, EmailReminder',
+    customers: 'Required columns: Name*, Phone*, Email, Company, Pincode, Address, GST, CreditDays, WhatsappReminder, EmailReminder',
     invoices: 'Required columns: CustomerName, InvoiceNo, InvoiceDate, DueDate, Amount, Description',
     payments: 'Required columns: InvoiceNo, CustomerName, Amount, PaymentDate, Method, Reference'
   };
@@ -2553,6 +2826,7 @@ async function handleImport(input) {
             name: r.Name, phone: String(r.Phone),
             email: r.Email||'', company: r.Company||'',
             city: r.Pincode||'', address: r.Address||'', gst: r.GST||'',
+            creditDays: parseInt(r.CreditDays) || 60,
             whatsapp: wa === 'yes', emailRem: em === 'yes'
           });
           count++;
@@ -2677,22 +2951,27 @@ function updateLedgerDropdown() {
 }
 
 function clearLedgerDateFilter() {
-  document.getElementById('ledger-month').value = '';
+  const f = document.getElementById('ledger-date-from');
+  const t = document.getElementById('ledger-date-to');
+  if (f) f.value = '';
+  if (t) t.value = '';
   renderLedger();
 }
 
 function renderLedger() {
-  const custId      = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const custId       = parseInt(document.getElementById('ledger-cust')?.value) || null;
   const statusFilter = document.getElementById('ledger-status')?.value || 'total';
-  const monthF      = document.getElementById('ledger-month')?.value || '';
-  const tbody       = document.getElementById('ledger-table');
+  const dateFrom     = document.getElementById('ledger-date-from')?.value || '';
+  const dateTo       = document.getElementById('ledger-date-to')?.value || '';
+  const tbody        = document.getElementById('ledger-table');
   if (!tbody) return;
 
   let invList = custId
     ? DB.invoices.filter(i => i.customerId === custId)
     : [...DB.invoices];
 
-  if (monthF) invList = invList.filter(i => i.date && i.date.startsWith(monthF));
+  if (dateFrom) invList = invList.filter(i => i.date && i.date >= dateFrom);
+  if (dateTo)   invList = invList.filter(i => i.date && i.date <= dateTo);
   if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
   else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
 
@@ -2759,17 +3038,209 @@ function exportLedger() {
 }
 
 // ============================================================
-// SERVICE WORKER
+// PDF PRINT — Ledger Statement & Payment Receipt
 // ============================================================
+const MAULI_LETTERHEAD = {
+  name: 'Mauli Enterprises',
+  address: 'Sonar Galli, At Po. Tal. Lanja, Ratnagiri, Maharashtra - 416701',
+  gstin: '27EQLPK0131H1ZZ',
+  email: 'maulienterprises125@gmail.com',
+  phone: '7972848641'
+};
+
+function buildPrintWindow(htmlContent) {
+  const win = window.open('', '_blank', 'width=800,height=900');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Mauli Enterprises</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;padding:28px;font-size:13px}
+    .header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1a6fd4;padding-bottom:14px;margin-bottom:18px}
+    .co-name{font-size:20px;font-weight:700;color:#1a6fd4;margin-bottom:4px}
+    .co-sub{font-size:11px;color:#64748b;line-height:1.7}
+    .logo{width:56px;height:56px;border-radius:8px;object-fit:contain}
+    .section-title{font-size:15px;font-weight:700;color:#1355a8;margin:16px 0 10px;padding-bottom:4px;border-bottom:1px solid #cbd5e1}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}
+    th{background:#e8f0fc;color:#1a4a8a;padding:8px 10px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.4px}
+    td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+    .paid{background:#2ecc7120;color:#16a34a}.pending{background:#f39c1220;color:#d97706}.overdue{background:#e74c3c20;color:#dc2626}.partial{background:#4f8ef720;color:#1a6fd4}
+    .total-row{background:#f8faff;font-weight:700}
+    .footer{margin-top:20px;border-top:1px solid #cbd5e1;padding-top:12px;font-size:11px;color:#64748b;text-align:center}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:12px}
+    .info-box{background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px}
+    .info-box label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:3px}
+    .info-box strong{font-size:13px;color:#1e293b}
+    @media print{body{padding:12px}.no-print{display:none}}
+  </style></head><body>${htmlContent}
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function printLedgerStatement() {
+  const custId = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const dateFrom = document.getElementById('ledger-date-from')?.value || '';
+  const dateTo   = document.getElementById('ledger-date-to')?.value || '';
+
+  let invList = custId ? DB.invoices.filter(i => i.customerId === custId) : [...DB.invoices];
+  if (dateFrom) invList = invList.filter(i => i.date >= dateFrom);
+  if (dateTo)   invList = invList.filter(i => i.date <= dateTo);
+  invList.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  const custName = custId ? DB.customers.find(c => c.id === custId)?.name || 'All Customers' : 'All Customers';
+  const totalInvoiced = invList.reduce((s,i) => s + parseFloat(i.amount), 0);
+  const totalPaid     = invList.reduce((s,i) => s + getPaidAmount(i.id), 0);
+  const totalDue      = totalInvoiced - totalPaid;
+
+  const statusMap = { paid:'paid', pending:'pending', partial:'partial', overdue:'overdue' };
+  const rows = invList.map((inv, idx) => {
+    const c    = DB.customers.find(c => c.id === inv.customerId);
+    const paid = getPaidAmount(inv.id);
+    const bal  = parseFloat(inv.amount) - paid;
+    const st   = getInvoiceStatus(inv);
+    return `<tr>
+      <td>${idx+1}</td>
+      <td>${c?.name || '—'}</td>
+      <td><strong>${inv.invNo}</strong></td>
+      <td>${fmtDate(inv.date)}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
+      <td style="text-align:right">₹${fmt(inv.amount)}</td>
+      <td style="text-align:right;color:#16a34a">₹${fmt(paid)}</td>
+      <td style="text-align:right;color:${bal>0?'#dc2626':'#16a34a'}"><strong>₹${fmt(bal)}</strong></td>
+      <td><span class="badge ${statusMap[st]}">${st}</span></td>
+    </tr>`;
+  }).join('');
+
+  const html = `
+    <div class="header">
+      <div>
+        <div class="co-name">${MAULI_LETTERHEAD.name}</div>
+        <div class="co-sub">
+          ${MAULI_LETTERHEAD.address}<br>
+          GSTIN: ${MAULI_LETTERHEAD.gstin} &nbsp;|&nbsp; Ph: ${MAULI_LETTERHEAD.phone} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.email}
+        </div>
+      </div>
+      <img src="./logo.png" class="logo" onerror="this.style.display='none'">
+    </div>
+    <div class="section-title">Statement of Account — ${custName}</div>
+    <div class="info-grid">
+      <div class="info-box"><label>Period</label><strong>${dateFrom ? fmtDate(dateFrom) : 'All'} ${dateTo ? '→ ' + fmtDate(dateTo) : ''}</strong></div>
+      <div class="info-box"><label>Generated On</label><strong>${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</strong></div>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Customer</th><th>Invoice #</th><th>Date</th><th>Due Date</th><th style="text-align:right">Amount</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
+      <tbody>
+        ${rows}
+        <tr class="total-row">
+          <td colspan="5" style="text-align:right">Total</td>
+          <td style="text-align:right">₹${fmt(totalInvoiced)}</td>
+          <td style="text-align:right;color:#16a34a">₹${fmt(totalPaid)}</td>
+          <td style="text-align:right;color:#dc2626">₹${fmt(totalDue)}</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="footer">This is a computer generated statement. &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.phone}</div>`;
+
+  buildPrintWindow(html);
+  addLog('edit', `Printed Ledger Statement for ${custName}`);
+}
+
+function printPaymentReceipt(paymentId) {
+  const p   = DB.payments.find(p => p.id === paymentId);
+  if (!p) return;
+  const c   = DB.customers.find(c => c.id === p.customerId);
+  const inv = DB.invoices.find(i => i.id === p.invoiceId);
+
+  const receiptNo = 'RCP-' + String(paymentId).slice(-6);
+  const html = `
+    <div class="header">
+      <div>
+        <div class="co-name">${MAULI_LETTERHEAD.name}</div>
+        <div class="co-sub">
+          ${MAULI_LETTERHEAD.address}<br>
+          GSTIN: ${MAULI_LETTERHEAD.gstin} &nbsp;|&nbsp; Ph: ${MAULI_LETTERHEAD.phone} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.email}
+        </div>
+      </div>
+      <img src="./logo.png" class="logo" onerror="this.style.display='none'">
+    </div>
+    <div class="section-title">Payment Receipt</div>
+    <div class="info-grid">
+      <div class="info-box"><label>Receipt No.</label><strong>${receiptNo}</strong></div>
+      <div class="info-box"><label>Payment Date</label><strong>${fmtDate(p.date)}</strong></div>
+      <div class="info-box"><label>Received From</label><strong>${c?.name || '—'}</strong>${c?.company ? '<br><span style="color:#64748b;font-size:11px">'+c.company+'</span>' : ''}</div>
+      <div class="info-box"><label>Payment Method</label><strong>${p.method}</strong>${p.ref ? '<br><span style="color:#64748b;font-size:11px">Ref: '+p.ref+'</span>' : ''}</div>
+    </div>
+    <table>
+      <thead><tr><th>Invoice #</th><th>Invoice Date</th><th>Invoice Amount</th><th>Payment Amount</th>${p.cashDisc > 0 ? '<th>Cash Discount</th>' : ''}</tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>${inv?.invNo || '—'}</strong></td>
+          <td>${fmtDate(inv?.date)}</td>
+          <td>₹${fmt(inv?.amount || 0)}</td>
+          <td style="color:#16a34a;font-weight:700">₹${fmt(p.amount)}</td>
+          ${p.cashDisc > 0 ? `<td style="color:#d97706">₹${fmt(p.cashDisc)}</td>` : ''}
+        </tr>
+      </tbody>
+    </table>
+    <div style="text-align:right;font-size:16px;font-weight:700;color:#1a6fd4;margin:10px 0">
+      Amount Received: ₹${fmt(p.amount)}
+    </div>
+    ${p.notes ? `<div style="margin-top:8px;font-size:12px;color:#64748b">Notes: ${p.notes}</div>` : ''}
+    <div style="margin-top:32px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
+      <div>Received By: ___________________</div>
+      <div>Authorised Signatory</div>
+    </div>
+    <div class="footer">Thank you for your payment! &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.phone}</div>`;
+
+  buildPrintWindow(html);
+  addLog('edit', `Printed Payment Receipt for ${c?.name} — Invoice ${inv?.invNo}`);
+}
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
 // ============================================================
-// INIT — load users only (Firestore loads after login)
+// INIT — restore session on refresh if token exists
 // ============================================================
 (function initApp() {
   try { DB.backupHistory = JSON.parse(localStorage.getItem('mauli_backup_history')) || []; } catch { DB.backupHistory = []; }
+
+  // Restore session on refresh — token lives in sessionStorage (tab-isolated)
+  const token = getSessionToken();
+  const cachedUser = (() => { try { return JSON.parse(sessionStorage.getItem('mauli_current_user')); } catch { return null; } })();
+  if (token && cachedUser) {
+    // Re-hydrate currentUser immediately so UI can restore
+    currentUser = cachedUser;
+    // Wait for Firebase to be ready then finish loading
+    const tryRestore = setInterval(async () => {
+      if (!window._firebaseAuth) return;
+      clearInterval(tryRestore);
+      try {
+        await window._firebaseAuth.signInAnonymously(window._firebaseAuth.auth);
+      } catch(e) { console.warn('Anon sign-in on restore failed:', e); }
+      // Wait for Firestore to be set
+      const waitDB = setInterval(async () => {
+        if (!_db) return;
+        clearInterval(waitDB);
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('topbar-name').textContent = cachedUser.firstName + (cachedUser.lastName ? ' ' + cachedUser.lastName : '');
+        document.getElementById('topbar-role').textContent = roleLabel(cachedUser.role);
+        const isDev = cachedUser.role === 'dev';
+        document.querySelectorAll('.dev-only').forEach(el => el.style.display = isDev ? '' : 'none');
+        const isMgr = cachedUser.role === 'dev' || cachedUser.role === 'admin';
+        document.querySelectorAll('.mgr-only').forEach(el => el.style.display = isMgr ? '' : 'none');
+        applyRoleAccess(cachedUser.role);
+        await load();
+        renderAll();
+        startRealtimeListeners();
+        startIdleTimer();
+      }, 100);
+    }, 100);
+  }
 })();
 </script>
 
