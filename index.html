@@ -219,7 +219,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       </div>
     </div>
     <div class="topbar-right">
-      <span><span class="sync-dot" id="sync-dot"></span><span class="sync-label" id="sync-label">Connecting to Firebase...</span></span>
+      <span><span class="sync-dot" id="sync-dot"></span><span class="sync-label" id="sync-label"></span></span>
       <div class="user-chip">
         <span id="topbar-name">—</span>
         <span class="role-tag" id="topbar-role">—</span>
@@ -493,8 +493,14 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           </div>
         </div>
 
-        <div class="backup-card">
-          <h3>📥 Restore from Backup</h3>
+        <div class="backup-card" style="border:1px solid #e74c3c40">
+          <h3 style="color:var(--danger)">🧹 Clear Test Data</h3>
+          <p>Permanently delete all <strong>Customers, Invoices, Payments</strong> and <strong>Credit Notes</strong> from Firebase. <strong style="color:var(--danger)">User accounts will NOT be deleted.</strong></p>
+          <button class="btn btn-danger" onclick="clearTestData()">🗑 Clear Test Data</button>
+          <div class="backup-info" style="margin-top:12px;background:#e74c3c10;border:1px solid #e74c3c30">
+            <strong style="color:var(--danger)">⚠ Warning:</strong> This action is irreversible. Take a backup first if needed.
+          </div>
+        </div>
           <p>Upload a previously downloaded ZIP backup to restore all data. <strong style="color:var(--danger)">This will overwrite current data.</strong></p>
           <div class="upload-area" onclick="document.getElementById('backup-upload').click()">
             <div style="font-size:2rem">📂</div>
@@ -1004,11 +1010,9 @@ function startRealtimeListeners() {
   const liveKeys = ['customers','invoices','payments','creditNotes','log'];
   liveKeys.forEach(key => {
     const unsub = onSnapshot(col(_db, key), (snap) => {
-      // Only update if data actually changed (not from our own write)
       const newData = snap.docs.map(d => d.data());
-      const changed = JSON.stringify(newData) !== JSON.stringify(DB[key]);
-      if (changed && currentUser) {
-        DB[key] = newData;
+      DB[key] = newData;
+      if (currentUser) {
         renderAll();
         updateSyncStatus('synced');
       }
@@ -1026,20 +1030,27 @@ function stopRealtimeListeners() {
 }
 
 function updateSyncStatus(state) {
-  const dot   = document.getElementById('sync-dot');
-  const label = document.getElementById('sync-label');
-  if (!dot || !label) return;
-  if (state === 'synced') {
-    dot.style.background = 'var(--success)';
-    label.textContent = 'Firebase synced · ' + new Date().toLocaleTimeString('en-IN');
-  } else if (state === 'syncing') {
-    dot.style.background = 'var(--warning)';
-    label.textContent = 'Syncing...';
-  } else {
-    dot.style.background = 'var(--danger)';
-    label.textContent = 'Sync error';
-  }
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  if (state === 'synced')  dot.style.background = 'var(--success)';
+  else if (state === 'syncing') dot.style.background = 'var(--warning)';
+  else dot.style.background = 'var(--danger)';
 }
+
+// Live clock in topbar
+function startClock() {
+  const label = document.getElementById('sync-label');
+  if (!label) return;
+  function tick() {
+    const now = new Date();
+    const d = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+    const t = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
+    label.textContent = d + '  ' + t;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+startClock();
 
 function reloadStaleData() {
   // With real-time listeners this banner shouldn't appear, but keep as fallback
@@ -1396,13 +1407,17 @@ function showTab(name, btn) {
   const panel = document.getElementById('tab-' + name);
   if (panel) panel.classList.add('active');
   if (btn) btn.classList.add('active');
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'log') renderLog();
-  if (name === 'users') renderUsersTable();
-  if (name === 'backup') renderBackupHistory();
-  if (name === 'ledger') { updateLedgerDropdown(); renderLedger(); }
+  // Always re-render from current DB state on tab switch
+  if (name === 'dashboard')   renderDashboard();
+  if (name === 'customers')   renderCustomers();
+  if (name === 'invoices')    { initInvMonthFilter(); renderInvoices(); }
+  if (name === 'payments')    renderPayments();
+  if (name === 'overdue')     renderOverdue();
   if (name === 'creditnotes') { updateCustomerDropdowns(); renderCreditNotes(); }
-  if (name === 'invoices') initInvMonthFilter();
+  if (name === 'ledger')      { updateLedgerDropdown(); renderLedger(); }
+  if (name === 'log')         renderLog();
+  if (name === 'users')       renderUsersTable();
+  if (name === 'backup')      renderBackupHistory();
 }
 
 // ============================================================
@@ -3198,6 +3213,37 @@ function printPaymentReceipt(paymentId) {
   buildPrintWindow(html);
   addLog('edit', `Printed Payment Receipt for ${c?.name} — Invoice ${inv?.invNo}`);
 }
+
+// ============================================================
+// CLEAR TEST DATA (Dev only)
+// ============================================================
+async function clearTestData() {
+  if (currentUser?.role !== 'dev') return toast('Only Dev can do this.', 'error');
+  if (!confirm('⚠ This will permanently delete ALL Customers, Invoices, Payments and Credit Notes from Firebase.\n\nUser accounts will NOT be affected.\n\nAre you absolutely sure?')) return;
+  if (!confirm('Second confirmation — this cannot be undone. Proceed?')) return;
+  if (!_db) return toast('Firestore not ready.', 'error');
+  toast('Clearing test data...', 'info');
+  try {
+    const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
+    for (const key of ['customers','invoices','payments','creditNotes']) {
+      const snap = await getDocs(col(_db, key));
+      const docs = snap.docs;
+      for (let i = 0; i < docs.length; i += 400) {
+        const batch = writeBatch(_db);
+        docs.slice(i, i + 400).forEach(d => batch.delete(doc(col(_db, key), d.id)));
+        await batch.commit();
+      }
+    }
+    DB.customers = []; DB.invoices = []; DB.payments = []; DB.creditNotes = [];
+    addLog('delete', 'Dev cleared all test data (customers, invoices, payments, credit notes)');
+    await save('log');
+    renderAll();
+    toast('✅ Test data cleared! Users are untouched.', 'success');
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
