@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mauli Enterprises — Invoice Tracker</title>
+<meta name="theme-color" content="#1a2744">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" href="logo.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --navy: #1a2744;
+  --navy-light: #243358;
+  --gold: #c9a84c;
+  --gold-light: #e8c76a;
+  --cream: #faf8f3;
+  --white: #ffffff;
+  --danger: #c0392b;
+  --success: #1e7e45;
+  --warning: #d4850a;
+  --text: #1a1a2e;
+  --text-muted: #6b7280;
+  --border: #e5e0d5;
+  --shadow: 0 4px 24px rgba(26,39,68,0.10);
+  --shadow-sm: 0 2px 8px rgba(26,39,68,0.07);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--navy);display:flex;flex-direction:column;z-index:100;transition:transform .3s}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.1);padding:4px}
+.sidebar-logo .brand{color:#fff}
+.sidebar-logo .brand-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;line-height:1.2}
+.sidebar-logo .brand-sub{font-size:10px;color:var(--gold);letter-spacing:1px;text-transform:uppercase}
+.nav-menu{padding:16px 12px;flex:1;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius-sm);color:rgba(255,255,255,0.65);cursor:pointer;margin-bottom:2px;transition:all .2s;font-size:14px;font-weight:500;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff}
+.nav-item.active{background:var(--gold);color:var(--navy);font-weight:600}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.nav-section{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.3);padding:12px 14px 6px;margin-top:8px}
+.sidebar-bottom{padding:16px;border-top:1px solid rgba(255,255,255,0.08)}
+.sync-btn{width:100%;padding:10px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--radius-sm);font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+.sync-btn:hover{background:var(--gold-light)}
+
+/* MAIN */
+.main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--navy)}
+.topbar-actions{display:flex;align-items:center;gap:12px}
+.content{padding:28px 32px;flex:1}
+
+/* CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);border:1px solid var(--border)}
+.stat-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:500;margin-bottom:8px}
+.stat-value{font-size:26px;font-weight:700;font-family:'Playfair Display',serif;color:var(--navy)}
+.stat-value.danger{color:var(--danger)}
+.stat-value.success{color:var(--success)}
+.stat-value.warning{color:var(--warning)}
+.stat-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+
+/* TABLES */
+.table-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);border:1px solid var(--border);overflow:hidden}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-header h3{font-size:15px;font-weight:600;color:var(--navy)}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f7f4;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);font-weight:600;padding:11px 16px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:13px 16px;border-bottom:1px solid #f0ede8;font-size:14px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#faf9f7}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.3px}
+.badge-success{background:#d4edda;color:#1e7e45}
+.badge-danger{background:#fde8e8;color:#c0392b}
+.badge-warning{background:#fef3cd;color:#856404}
+.badge-info{background:#d1ecf1;color:#0c5460}
+.badge-secondary{background:#e9ecef;color:#495057}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;font-family:'DM Sans',sans-serif}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy-light)}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-gold:hover{background:var(--gold-light)}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-ghost{background:transparent;color:var(--navy);border:1.5px solid var(--border)}
+.btn-ghost:hover{border-color:var(--navy)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-icon{padding:7px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;transition:all .2s}
+.btn-icon:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal-head{padding:24px 24px 0;display:flex;align-items:flex-start;justify-content:space-between}
+.modal-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--navy)}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:22px;line-height:1;padding:0 4px}
+.modal-body{padding:20px 24px 24px}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px}
+.form-label span{color:var(--danger)}
+.form-control{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;transition:border-color .2s;outline:none}
+.form-control:focus{border-color:var(--navy)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
+select.form-control{cursor:pointer}
+textarea.form-control{resize:vertical;min-height:80px}
+
+/* SEARCH */
+.search-bar{position:relative}
+.search-bar input{padding-left:36px;background:#f8f7f4;border-color:#f0ede8}
+.search-bar svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted)}
+
+/* ALERTS */
+.alert{padding:12px 16px;border-radius:var(--radius-sm);margin-bottom:16px;font-size:13px;font-weight:500;display:flex;align-items:flex-start;gap:10px}
+.alert-danger{background:#fde8e8;color:#c0392b;border:1px solid #f5c6c6}
+.alert-success{background:#d4edda;color:#1e7e45;border:1px solid #c3e6cb}
+.alert-warning{background:#fef3cd;color:#856404;border:1px solid #ffc107}
+
+/* OVERDUE BANNER */
+.overdue-banner{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px}
+.overdue-banner svg{width:28px;height:28px;flex-shrink:0}
+.overdue-banner h4{font-size:15px;font-weight:700}
+.overdue-banner p{font-size:13px;opacity:0.9;margin-top:2px}
+
+/* LOG */
+.log-item{padding:12px 0;border-bottom:1px solid #f0ede8;display:flex;gap:14px;align-items:flex-start}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.log-dot-blue{background:#3b82f6}
+.log-dot-green{background:var(--success)}
+.log-dot-gold{background:var(--gold)}
+.log-dot-red{background:var(--danger)}
+.log-dot-purple{background:#8b5cf6}
+.log-text{font-size:13px;color:var(--text);line-height:1.5}
+.log-time{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* MOBILE TOGGLE */
+.menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px;color:var(--navy)}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .topbar{padding:0 16px}
+  .content{padding:16px}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .menu-toggle{display:block}
+  .form-row{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+.page{display:none}.page.active{display:block}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-muted)}
+.empty-state svg{width:52px;height:52px;margin:0 auto 16px;opacity:0.3}
+.empty-state h4{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.empty-state p{font-size:13px}
+.chip-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);transition:all .2s}
+.chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+.flex-gap{display:flex;align-items:center;gap:10px}
+.mt-16{margin-top:16px}
+.payment-methods{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+.pay-method-opt{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;font-size:13px;font-weight:500}
+.pay-method-opt:hover{border-color:var(--navy)}
+.pay-method-opt input{accent-color:var(--navy)}
+.pay-method-opt.selected{border-color:var(--navy);background:#f0f4ff}
+.customer-detail-header{background:var(--navy);color:#fff;border-radius:var(--radius);padding:24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.excel-drop{border:2px dashed var(--border);border-radius:var(--radius);padding:32px 20px;text-align:center;color:var(--text-muted);cursor:pointer;transition:all .2s;margin-top:8px}
+.excel-drop:hover{border-color:var(--gold);background:#faf8f0}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+    <div class="brand">
+      <div class="brand-name">Mauli Enterprises</div>
+      <div class="brand-sub">Invoice Manager</div>
+    </div>
+  </div>
+  <nav class="nav-menu">
+    <div class="nav-section">Main</div>
+    <button class="nav-item active" onclick="showPage('dashboard')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Dashboard
+    </button>
+    <div class="nav-section">Business</div>
+    <button class="nav-item" onclick="showPage('customers')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Customers
+    </button>
+    <button class="nav-item" onclick="showPage('invoices')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Invoices
+    </button>
+    <button class="nav-item" onclick="showPage('payments')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Payments
+    </button>
+    <button class="nav-item" onclick="showPage('overdues')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      Overdues
+    </button>
+    <div class="nav-section">Records</div>
+    <button class="nav-item" onclick="showPage('activity')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Activity Log
+    </button>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="sync-btn" onclick="openGitHubSync()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      Sync to GitHub
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <header class="topbar">
+    <div class="flex-gap">
+      <button class="menu-toggle" onclick="toggleSidebar()">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <span class="page-title" id="pageTitle">Dashboard</span>
+    </div>
+    <div class="topbar-actions">
+      <span id="topbar-user" style="font-size:13px;color:var(--text-muted);font-weight:500"></span>
+      <span id="topbar-date" style="font-size:12px;color:var(--text-muted)"></span>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div id="overdue-banner"></div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-value" id="stat-customers">0</div>
+          <div class="stat-sub">Active accounts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Invoiced</div>
+          <div class="stat-value" id="stat-total">₹0</div>
+          <div class="stat-sub">All time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Received</div>
+          <div class="stat-value success" id="stat-received">₹0</div>
+          <div class="stat-sub">Payments collected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Outstanding</div>
+          <div class="stat-value warning" id="stat-outstanding">₹0</div>
+          <div class="stat-sub">Pending dues</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="table-card">
+          <div class="table-header"><h3>Recent Invoices</h3><button class="btn btn-ghost btn-sm" onclick="showPage('invoices')">View all</button></div>
+          <table><thead><tr><th>Customer</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dash-invoices-tbody"></tbody></table>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>Overdue Invoices</h3><button class="btn btn-ghost btn-sm" onclick="showPage('overdues')">View all</button></div>
+          <table><thead><tr><th>Customer</th><th>Overdue By</th><th>Due</th></tr></thead><tbody id="dash-overdue-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="page" id="page-customers">
+      <div class="flex-between" style="margin-bottom:20px">
+        <div class="flex-gap">
+          <div class="search-bar">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" class="form-control" id="customer-search" placeholder="Search customers..." oninput="renderCustomers()" style="width:220px">
+          </div>
+        </div>
+        <div class="flex-gap">
+          <button class="btn btn-ghost" onclick="openBulkImport()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>
+            Import Excel
+          </button>
+          <button class="btn btn-primary" onclick="openAddCustomer()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Customer
+          </button>
+        </div>
+      </div>
+      <div class="table-card">
+        <table><thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Email</th><th>City</th><th>Total Due</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="customers-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- INVOICES -->
+    <div class="page" id="page-invoices">
+      <div class="flex-between" style="margin-bottom:16px">
+        <div class="chip-group" id="invoice-filter-chips" style="margin:0">
+          <div class="chip active" onclick="setInvoiceFilter('all',this)">All</div>
+          <div class="chip" onclick="setInvoiceFilter('pending',this)">Pending</div>
+          <div class="chip" onclick="setInvoiceFilter('partial',this)">Partial</div>
+          <div class="chip" onclick="setInvoiceFilter('paid',this)">Paid</div>
+          <div class="chip" onclick="setInvoiceFilter('overdue',this)">Overdue</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddInvoice()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          New Invoice
+        </button>
+      </div>
+      <div class="table-card">
+        <table><thead><tr><th>Invoice #</th><th>Customer</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="invoices-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="page" id="page-payments">
+      <div class="flex-between" style="margin-bottom:20px">
+        <h3 style="color:var(--navy);font-family:'Playfair Display',serif">Payment History</h3>
+        <button class="btn btn-primary" onclick="openAddPayment()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Record Payment
+        </button>
+      </div>
+      <div class="table-card">
+        <table><thead><tr><th>Date</th><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Method</th><th>Ref/Note</th></tr></thead>
+        <tbody id="payments-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- OVERDUES -->
+    <div class="page" id="page-overdues">
+      <div style="margin-bottom:20px">
+        <div class="alert alert-danger" style="display:inline-flex">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          These invoices are past their due date. Send reminders immediately.
+        </div>
+      </div>
+      <div class="table-card">
+        <table><thead><tr><th>Invoice #</th><th>Customer</th><th>Due Date</th><th>Days Overdue</th><th>Balance</th><th>Remind</th></tr></thead>
+        <tbody id="overdues-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ACTIVITY LOG -->
+    <div class="page" id="page-activity">
+      <div class="flex-between" style="margin-bottom:20px">
+        <div class="chip-group" id="log-filter-chips" style="margin:0">
+          <div class="chip active" onclick="setLogFilter('all',this)">All</div>
+          <div class="chip" onclick="setLogFilter('customer',this)">Customers</div>
+          <div class="chip" onclick="setLogFilter('invoice',this)">Invoices</div>
+          <div class="chip" onclick="setLogFilter('payment',this)">Payments</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="exportLog()">Export Log</button>
+      </div>
+      <div class="table-card" style="padding:0 20px">
+        <div id="activity-log-list" style="max-height:70vh;overflow-y:auto"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODALS -->
+
+<!-- Add Customer -->
+<div class="modal-overlay" id="modal-add-customer">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="customer-modal-title">Add Customer</div>
+      <button class="modal-close" onclick="closeModal('modal-add-customer')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-customer-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Name <span>*</span></label>
+          <input class="form-control" id="c-name" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company</label>
+          <input class="form-control" id="c-company" placeholder="Company name">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Phone <span>*</span></label>
+          <input class="form-control" id="c-phone" placeholder="10-digit mobile">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" id="c-email" type="email" placeholder="email@example.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input class="form-control" id="c-city" placeholder="City">
+        </div>
+        <div class="form-group">
+          <label class="form-label">GST Number</label>
+          <input class="form-control" id="c-gst" placeholder="GST (optional)">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <textarea class="form-control" id="c-address" rows="2" placeholder="Full address"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-add-customer')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Import -->
+<div class="modal-overlay" id="modal-bulk-import">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Import Customers from Excel</div>
+      <button class="modal-close" onclick="closeModal('modal-bulk-import')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Your Excel must have columns: <strong>Name, Phone, Email, Company, City, Address, GST</strong>. First row = headers.
+      </div>
+      <div class="excel-drop" id="excel-drop" onclick="document.getElementById('excel-file').click()">
+        <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block;color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>
+        <strong style="color:var(--navy)">Click to select Excel file</strong>
+        <p style="font-size:12px;margin-top:6px">Supports .xlsx and .xls</p>
+      </div>
+      <input type="file" id="excel-file" accept=".xlsx,.xls" style="display:none" onchange="handleExcelImport(this)">
+      <div id="import-preview" style="margin-top:16px"></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-bulk-import')">Cancel</button>
+        <button class="btn btn-primary" id="confirm-import-btn" style="display:none" onclick="confirmBulkImport()">Import Customers</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Invoice -->
+<div class="modal-overlay" id="modal-add-invoice">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="invoice-modal-title">New Invoice</div>
+      <button class="modal-close" onclick="closeModal('modal-add-invoice')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-invoice-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Customer <span>*</span></label>
+          <select class="form-control" id="inv-customer"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Invoice # <span>*</span></label>
+          <input class="form-control" id="inv-num" placeholder="e.g. INV-001">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Invoice Date <span>*</span></label>
+          <input class="form-control" id="inv-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date <span>*</span></label>
+          <input class="form-control" id="inv-due" type="date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (₹) <span>*</span></label>
+          <input class="form-control" id="inv-amount" type="number" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input class="form-control" id="inv-desc" placeholder="What is this for?">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-add-invoice')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveInvoice()">Save Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Payment -->
+<div class="modal-overlay" id="modal-add-payment">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <div class="modal-title">Record Payment</div>
+      <button class="modal-close" onclick="closeModal('modal-add-payment')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Customer <span>*</span></label>
+        <select class="form-control" id="pay-customer" onchange="loadInvoicesForCustomer()"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Invoice <span>*</span></label>
+        <select class="form-control" id="pay-invoice"></select>
+      </div>
+      <div class="form-group" id="pay-balance-info" style="display:none">
+        <div class="alert alert-warning" style="margin:0">Balance due: <strong id="pay-balance-amount">₹0</strong></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount Received (₹) <span>*</span></label>
+          <input class="form-control" id="pay-amount" type="number" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Date <span>*</span></label>
+          <input class="form-control" id="pay-date" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Method <span>*</span></label>
+        <div class="payment-methods">
+          <label class="pay-method-opt" onclick="selectPayMethod(this)"><input type="radio" name="pay-method" value="Cash"> Cash</label>
+          <label class="pay-method-opt" onclick="selectPayMethod(this)"><input type="radio" name="pay-method" value="UPI"> UPI</label>
+          <label class="pay-method-opt" onclick="selectPayMethod(this)"><input type="radio" name="pay-method" value="NEFT/IMPS"> NEFT/IMPS</label>
+          <label class="pay-method-opt" onclick="selectPayMethod(this)"><input type="radio" name="pay-method" value="Cheque"> Cheque</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reference / Note</label>
+        <input class="form-control" id="pay-ref" placeholder="UTR, cheque no., or note">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-add-payment')">Cancel</button>
+        <button class="btn btn-success" onclick="savePayment()">Record Payment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reminder Modal -->
+<div class="modal-overlay" id="modal-reminder">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <div class="modal-title">Send Reminder</div>
+      <button class="modal-close" onclick="closeModal('modal-reminder')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="reminder-info" style="margin-bottom:16px;font-size:14px;color:var(--text-muted)"></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a id="wa-link" href="#" target="_blank" class="btn btn-success" style="justify-content:center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Send WhatsApp Reminder
+        </a>
+        <a id="email-link" href="#" class="btn btn-primary" style="justify-content:center">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Send Email Reminder
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub Sync -->
+<div class="modal-overlay" id="modal-github">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <div class="modal-title">Sync to GitHub</div>
+      <button class="modal-close" onclick="closeModal('modal-github')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Your data is saved locally. GitHub sync backs it up securely. You need a GitHub account + Personal Access Token.
+      </div>
+      <div class="form-group">
+        <label class="form-label">GitHub Username</label>
+        <input class="form-control" id="gh-user" placeholder="your-github-username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Repository Name</label>
+        <input class="form-control" id="gh-repo" placeholder="mauli-data" value="mauli-data">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Personal Access Token</label>
+        <input class="form-control" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Get from: GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic). Needs <strong>repo</strong> scope.</div>
+      </div>
+      <div id="gh-status" style="margin-top:8px"></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeModal('modal-github')">Cancel</button>
+        <button class="btn btn-primary" onclick="syncToGitHub()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Push to GitHub
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== DB =====================
+const DB_KEY = 'mauli_db';
+let DB = {customers:[],invoices:[],payments:[],activityLog:[]};
+let invoiceFilter = 'all';
+let logFilter = 'all';
+let bulkImportData = [];
+
+function loadDB(){
+  try{const d=localStorage.getItem(DB_KEY);if(d)DB=JSON.parse(d);}catch(e){}
+  if(!DB.customers)DB.customers=[];
+  if(!DB.invoices)DB.invoices=[];
+  if(!DB.payments)DB.payments=[];
+  if(!DB.activityLog)DB.activityLog=[];
+}
+function saveDB(){localStorage.setItem(DB_KEY,JSON.stringify(DB));}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
+function fmt(n){return'₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtDate(d){if(!d)return'-';const dt=new Date(d);return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function today(){return new Date().toISOString().split('T')[0];}
+function daysDiff(d){const t=new Date(d),n=new Date();n.setHours(0,0,0,0);return Math.floor((n-t)/(1000*60*60*24));}
+
+// ===================== LOG =====================
+function addLog(type,msg){
+  DB.activityLog.unshift({id:genId(),type,msg,date:new Date().toISOString(),user:'Admin'});
+  saveDB();
+}
+
+// ===================== STATS =====================
+function refreshStats(){
+  document.getElementById('stat-customers').textContent=DB.customers.length;
+  const total=DB.invoices.reduce((s,i)=>s+Number(i.amount),0);
+  const received=DB.payments.reduce((s,p)=>s+Number(p.amount),0);
+  document.getElementById('stat-total').textContent=fmt(total);
+  document.getElementById('stat-received').textContent=fmt(received);
+  document.getElementById('stat-outstanding').textContent=fmt(total-received);
+}
+
+function getInvoiceBalance(inv){
+  const paid=DB.payments.filter(p=>p.invoiceId===inv.id).reduce((s,p)=>s+Number(p.amount),0);
+  return Number(inv.amount)-paid;
+}
+function getInvoiceStatus(inv){
+  const bal=getInvoiceBalance(inv);
+  if(bal<=0)return'paid';
+  const over=daysDiff(inv.dueDate)>0;
+  if(over)return'overdue';
+  if(bal<Number(inv.amount))return'partial';
+  return'pending';
+}
+function statusBadge(s){
+  const map={paid:'badge-success',pending:'badge-secondary',partial:'badge-info',overdue:'badge-danger'};
+  return`<span class="badge ${map[s]||'badge-secondary'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard(){
+  refreshStats();
+  // overdue banner
+  const overdue=DB.invoices.filter(i=>getInvoiceStatus(i)==='overdue');
+  const banner=document.getElementById('overdue-banner');
+  if(overdue.length){
+    banner.innerHTML=`<div class="overdue-banner">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <div><h4>⚠ ${overdue.length} Overdue Invoice${overdue.length>1?'s':''}</h4><p>You have unpaid invoices past their due date. Send reminders now.</p></div>
+      <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3);margin-left:auto" onclick="showPage('overdues')">View Overdues →</button>
+    </div>`;
+  } else banner.innerHTML='';
+  // recent invoices
+  const recent=[...DB.invoices].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  const rTbody=document.getElementById('dash-invoices-tbody');
+  if(!recent.length){rTbody.innerHTML=`<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">No invoices yet</td></tr>`;return;}
+  rTbody.innerHTML=recent.map(inv=>{
+    const c=DB.customers.find(x=>x.id===inv.customerId);
+    return`<tr><td>${c?c.name:'-'}</td><td>${fmt(inv.amount)}</td><td>${statusBadge(getInvoiceStatus(inv))}</td></tr>`;
+  }).join('');
+  // overdue table
+  const oTbody=document.getElementById('dash-overdue-tbody');
+  if(!overdue.length){oTbody.innerHTML=`<tr><td colspan="3" style="text-align:center;color:var(--success);padding:24px">✓ No overdue invoices</td></tr>`;return;}
+  oTbody.innerHTML=overdue.map(inv=>{
+    const c=DB.customers.find(x=>x.id===inv.customerId);
+    const days=daysDiff(inv.dueDate);
+    return`<tr><td>${c?c.name:'-'}</td><td><span class="badge badge-danger">${days} day${days>1?'s':''}</span></td><td>${fmt(getInvoiceBalance(inv))}</td></tr>`;
+  }).join('');
+}
+
+// ===================== CUSTOMERS =====================
+function renderCustomers(){
+  const q=(document.getElementById('customer-search')||{}).value?.toLowerCase()||'';
+  const filtered=DB.customers.filter(c=>!q||(c.name+c.phone+c.email+c.city+c.company).toLowerCase().includes(q));
+  const tbody=document.getElementById('customers-tbody');
+  if(!filtered.length){
+    tbody.innerHTML=`<tr><td colspan="8"><div class="empty-state"><h4>No customers found</h4><p>Add your first customer to get started</p></div></td></tr>`;return;
+  }
+  tbody.innerHTML=filtered.map((c,i)=>{
+    const due=DB.invoices.filter(inv=>inv.customerId===c.id).reduce((s,inv)=>s+getInvoiceBalance(inv),0);
+    return`<tr>
+      <td>${i+1}</td>
+      <td><strong>${c.name}</strong>${c.company?`<br><span style="font-size:11px;color:var(--text-muted)">${c.company}</span>`:''}</td>
+      <td>${c.phone||'-'}</td>
+      <td style="font-size:12px">${c.email||'-'}</td>
+      <td>${c.city||'-'}</td>
+      <td>${due>0?`<strong style="color:var(--warning)">${fmt(due)}</strong>`:'<span style="color:var(--success)">Cleared</span>'}</td>
+      <td>${due>0?`<span class="badge badge-warning">Due</span>`:`<span class="badge badge-success">OK</span>`}</td>
+      <td>
+        <div class="flex-gap">
+          <button class="btn-icon" title="Edit" onclick="editCustomer('${c.id}')"><svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+          <button class="btn-icon" title="Add Invoice" onclick="openAddInvoice('${c.id}')"><svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></button>
+          <button class="btn-icon" title="Delete" onclick="deleteCustomer('${c.id}')" style="color:var(--danger)"><svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openAddCustomer(preId){
+  document.getElementById('customer-modal-title').textContent='Add Customer';
+  document.getElementById('edit-customer-id').value='';
+  ['c-name','c-company','c-phone','c-email','c-city','c-gst','c-address'].forEach(id=>document.getElementById(id).value='');
+  openModal('modal-add-customer');
+}
+function editCustomer(id){
+  const c=DB.customers.find(x=>x.id===id);if(!c)return;
+  document.getElementById('customer-modal-title').textContent='Edit Customer';
+  document.getElementById('edit-customer-id').value=id;
+  document.getElementById('c-name').value=c.name||'';
+  document.getElementById('c-company').value=c.company||'';
+  document.getElementById('c-phone').value=c.phone||'';
+  document.getElementById('c-email').value=c.email||'';
+  document.getElementById('c-city').value=c.city||'';
+  document.getElementById('c-gst').value=c.gst||'';
+  document.getElementById('c-address').value=c.address||'';
+  openModal('modal-add-customer');
+}
+function saveCustomer(){
+  const name=document.getElementById('c-name').value.trim();
+  const phone=document.getElementById('c-phone').value.trim();
+  if(!name||!phone){alert('Name and phone are required.');return;}
+  const editId=document.getElementById('edit-customer-id').value;
+  const obj={id:editId||genId(),name,company:document.getElementById('c-company').value.trim(),phone,email:document.getElementById('c-email').value.trim(),city:document.getElementById('c-city').value.trim(),gst:document.getElementById('c-gst').value.trim(),address:document.getElementById('c-address').value.trim()};
+  if(editId){const i=DB.customers.findIndex(x=>x.id===editId);DB.customers[i]=obj;addLog('customer',`Customer updated: ${name}`);}
+  else{DB.customers.push(obj);addLog('customer',`Customer added: ${name} | Phone: ${phone}`);}
+  saveDB();closeModal('modal-add-customer');renderCustomers();refreshStats();
+}
+function deleteCustomer(id){
+  const c=DB.customers.find(x=>x.id===id);if(!c)return;
+  if(!confirm(`Delete customer "${c.name}"? This won't delete their invoices.`))return;
+  DB.customers=DB.customers.filter(x=>x.id!==id);
+  addLog('customer',`Customer deleted: ${c.name}`);
+  saveDB();renderCustomers();
+}
+
+// ===================== BULK IMPORT =====================
+function openBulkImport(){bulkImportData=[];document.getElementById('import-preview').innerHTML='';document.getElementById('confirm-import-btn').style.display='none';document.getElementById('excel-file').value='';openModal('modal-bulk-import');}
+function handleExcelImport(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const data=new Uint8Array(e.target.result);
+    const wb=XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    bulkImportData=rows.map(r=>({
+      id:genId(),
+      name:(r['Name']||r['name']||'').toString().trim(),
+      phone:(r['Phone']||r['phone']||r['Mobile']||'').toString().trim(),
+      email:(r['Email']||r['email']||'').toString().trim(),
+      company:(r['Company']||r['company']||'').toString().trim(),
+      city:(r['City']||r['city']||'').toString().trim(),
+      address:(r['Address']||r['address']||'').toString().trim(),
+      gst:(r['GST']||r['gst']||'').toString().trim()
+    })).filter(r=>r.name);
+    const preview=document.getElementById('import-preview');
+    if(!bulkImportData.length){preview.innerHTML='<div class="alert alert-danger">No valid rows found. Check column headers.</div>';return;}
+    preview.innerHTML=`<div class="alert alert-success">Found <strong>${bulkImportData.length} customers</strong> ready to import.</div>
+      <div style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+      <table style="width:100%;font-size:12px"><thead><tr style="background:#f8f7f4"><th style="padding:8px 10px">Name</th><th style="padding:8px 10px">Phone</th><th style="padding:8px 10px">City</th></tr></thead>
+      <tbody>${bulkImportData.slice(0,10).map(r=>`<tr><td style="padding:7px 10px">${r.name}</td><td style="padding:7px 10px">${r.phone}</td><td style="padding:7px 10px">${r.city}</td></tr>`).join('')}${bulkImportData.length>10?`<tr><td colspan="3" style="padding:8px 10px;color:var(--text-muted);text-align:center">...and ${bulkImportData.length-10} more</td></tr>`:''}</tbody></table></div>`;
+    document.getElementById('confirm-import-btn').style.display='inline-flex';
+  };
+  reader.readAsArrayBuffer(file);
+}
+function confirmBulkImport(){
+  DB.customers.push(...bulkImportData);
+  addLog('customer',`Bulk import: ${bulkImportData.length} customers added from Excel`);
+  saveDB();closeModal('modal-bulk-import');renderCustomers();refreshStats();
+  alert(`✓ ${bulkImportData.length} customers imported successfully!`);
+}
+
+// ===================== INVOICES =====================
+function populateCustomerDropdown(selId,preselect){
+  const sel=document.getElementById(selId);
+  sel.innerHTML='<option value="">-- Select Customer --</option>'+DB.customers.map(c=>`<option value="${c.id}">${c.name}${c.company?' ('+c.company+')':''}</option>`).join('');
+  if(preselect)sel.value=preselect;
+}
+function openAddInvoice(customerId){
+  document.getElementById('invoice-modal-title').textContent='New Invoice';
+  document.getElementById('edit-invoice-id').value='';
+  document.getElementById('inv-date').value=today();
+  const due=new Date();due.setDate(due.getDate()+30);
+  document.getElementById('inv-due').value=due.toISOString().split('T')[0];
+  document.getElementById('inv-amount').value='';
+  document.getElementById('inv-desc').value='';
+  // auto invoice number
+  const num='INV-'+String(DB.invoices.length+1).padStart(3,'0');
+  document.getElementById('inv-num').value=num;
+  populateCustomerDropdown('inv-customer',customerId);
+  openModal('modal-add-invoice');
+}
+function setInvoiceFilter(f,el){
+  invoiceFilter=f;
+  document.querySelectorAll('#invoice-filter-chips .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderInvoices();
+}
+function renderInvoices(){
+  let list=[...DB.invoices].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(invoiceFilter!=='all')list=list.filter(i=>getInvoiceStatus(i)===invoiceFilter);
+  const tbody=document.getElementById('invoices-tbody');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><h4>No invoices found</h4></div></td></tr>`;return;}
+  tbody.innerHTML=list.map(inv=>{
+    const c=DB.customers.find(x=>x.id===inv.customerId);
+    const bal=getInvoiceBalance(inv);
+    const paid=Number(inv.amount)-bal;
+    const st=getInvoiceStatus(inv);
+    return`<tr>
+      <td><strong style="font-size:13px">${inv.invoiceNum}</strong></td>
+      <td>${c?c.name:'-'}</td>
+      <td>${fmtDate(inv.date)}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
+      <td>${fmt(inv.amount)}</td>
+      <td style="color:var(--success)">${fmt(paid)}</td>
+      <td><strong style="color:${bal>0?'var(--warning)':'var(--success)'}">${fmt(bal)}</strong></td>
+      <td>${statusBadge(st)}</td>
+      <td>
+        <div class="flex-gap">
+          ${bal>0?`<button class="btn btn-sm btn-success" onclick="openAddPayment('${inv.customerId}','${inv.id}')">Pay</button>`:''}
+          ${bal>0?`<button class="btn-icon" title="Remind" onclick="openReminder('${inv.id}')"><svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>`:''}
+          <button class="btn-icon" title="Delete" onclick="deleteInvoice('${inv.id}')" style="color:var(--danger)"><svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function saveInvoice(){
+  const cId=document.getElementById('inv-customer').value;
+  const num=document.getElementById('inv-num').value.trim();
+  const date=document.getElementById('inv-date').value;
+  const due=document.getElementById('inv-due').value;
+  const amount=document.getElementById('inv-amount').value;
+  if(!cId||!num||!date||!due||!amount){alert('Please fill all required fields.');return;}
+  const editId=document.getElementById('edit-invoice-id').value;
+  const c=DB.customers.find(x=>x.id===cId);
+  const obj={id:editId||genId(),customerId:cId,invoiceNum:num,date,dueDate:due,amount:Number(amount),description:document.getElementById('inv-desc').value.trim()};
+  if(editId){const i=DB.invoices.findIndex(x=>x.id===editId);DB.invoices[i]=obj;addLog('invoice',`Invoice updated: ${num} | ${c?c.name:''} | ₹${amount}`);}
+  else{DB.invoices.push(obj);addLog('invoice',`Invoice added: ${num} | Customer: ${c?c.name:''} | Amount: ₹${amount} | Due: ${due}`);}
+  saveDB();closeModal('modal-add-invoice');renderInvoices();renderDashboard();
+}
+function deleteInvoice(id){
+  const inv=DB.invoices.find(x=>x.id===id);if(!inv)return;
+  if(!confirm(`Delete invoice ${inv.invoiceNum}?`))return;
+  DB.invoices=DB.invoices.filter(x=>x.id!==id);
+  addLog('invoice',`Invoice deleted: ${inv.invoiceNum}`);
+  saveDB();renderInvoices();renderDashboard();
+}
+
+// ===================== PAYMENTS =====================
+function openAddPayment(customerId,invoiceId){
+  populateCustomerDropdown('pay-customer',customerId);
+  document.getElementById('pay-date').value=today();
+  document.getElementById('pay-amount').value='';
+  document.getElementById('pay-ref').value='';
+  document.querySelectorAll('.pay-method-opt').forEach(el=>el.classList.remove('selected'));
+  document.querySelectorAll('input[name="pay-method"]').forEach(el=>el.checked=false);
+  loadInvoicesForCustomer(invoiceId);
+  openModal('modal-add-payment');
+}
+function loadInvoicesForCustomer(preselect){
+  const cId=document.getElementById('pay-customer').value;
+  const sel=document.getElementById('pay-invoice');
+  const invList=DB.invoices.filter(i=>i.customerId===cId&&getInvoiceBalance(i)>0);
+  sel.innerHTML='<option value="">-- Select Invoice --</option>'+invList.map(i=>`<option value="${i.id}">${i.invoiceNum} (Balance: ${fmt(getInvoiceBalance(i))})</option>`).join('');
+  if(preselect){sel.value=preselect;showPayBalance();}
+  sel.onchange=showPayBalance;
+}
+function showPayBalance(){
+  const id=document.getElementById('pay-invoice').value;
+  const info=document.getElementById('pay-balance-info');
+  if(!id){info.style.display='none';return;}
+  const inv=DB.invoices.find(x=>x.id===id);if(!inv){info.style.display='none';return;}
+  const bal=getInvoiceBalance(inv);
+  document.getElementById('pay-balance-amount').textContent=fmt(bal);
+  info.style.display='block';
+  document.getElementById('pay-amount').value=bal.toFixed(2);
+}
+function selectPayMethod(el){
+  document.querySelectorAll('.pay-method-opt').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('input').checked=true;
+}
+function savePayment(){
+  const cId=document.getElementById('pay-customer').value;
+  const invId=document.getElementById('pay-invoice').value;
+  const amount=document.getElementById('pay-amount').value;
+  const date=document.getElementById('pay-date').value;
+  const method=document.querySelector('input[name="pay-method"]:checked')?.value;
+  if(!cId||!invId||!amount||!date||!method){alert('Please fill all required fields and select payment method.');return;}
+  const inv=DB.invoices.find(x=>x.id===invId);
+  const c=DB.customers.find(x=>x.id===cId);
+  const bal=getInvoiceBalance(inv);
+  if(Number(amount)>bal){if(!confirm(`Amount ₹${amount} exceeds balance ₹${bal.toFixed(2)}. Continue?`))return;}
+  const obj={id:genId(),customerId:cId,invoiceId:invId,invoiceNum:inv?inv.invoiceNum:'',amount:Number(amount),date,method,ref:document.getElementById('pay-ref').value.trim()};
+  DB.payments.push(obj);
+  addLog('payment',`Payment received: ₹${amount} | ${c?c.name:''} | Invoice: ${inv?inv.invoiceNum:''} | Method: ${method} | Date: ${date}`);
+  saveDB();closeModal('modal-add-payment');renderPayments();renderInvoices();renderDashboard();renderOverdues();
+}
+function renderPayments(){
+  const list=[...DB.payments].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const tbody=document.getElementById('payments-tbody');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state"><h4>No payments recorded yet</h4></div></td></tr>`;return;}
+  const methodColors={Cash:'badge-success',UPI:'badge-info','NEFT/IMPS':'badge-secondary',Cheque:'badge-warning'};
+  tbody.innerHTML=list.map(p=>{
+    const c=DB.customers.find(x=>x.id===p.customerId);
+    return`<tr>
+      <td>${fmtDate(p.date)}</td>
+      <td>${c?c.name:'-'}</td>
+      <td style="font-size:13px">${p.invoiceNum||'-'}</td>
+      <td><strong style="color:var(--success)">${fmt(p.amount)}</strong></td>
+      <td><span class="badge ${methodColors[p.method]||'badge-secondary'}">${p.method}</span></td>
+      <td style="font-size:12px;color:var(--text-muted)">${p.ref||'-'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===================== OVERDUES =====================
+function renderOverdues(){
+  const list=DB.invoices.filter(i=>getInvoiceStatus(i)==='overdue').sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
+  const tbody=document.getElementById('overdues-tbody');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><h4>No overdue invoices</h4><p>All invoices are on track!</p></div></td></tr>`;return;}
+  tbody.innerHTML=list.map(inv=>{
+    const c=DB.customers.find(x=>x.id===inv.customerId);
+    const days=daysDiff(inv.dueDate);
+    return`<tr>
+      <td><strong>${inv.invoiceNum}</strong></td>
+      <td>${c?c.name:'-'}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
+      <td><span class="badge badge-danger">${days} day${days>1?'s':''}</span></td>
+      <td><strong style="color:var(--danger)">${fmt(getInvoiceBalance(inv))}</strong></td>
+      <td>
+        <div class="flex-gap">
+          <button class="btn btn-sm btn-success" onclick="openAddPayment('${inv.customerId}','${inv.id}')">Record Pay</button>
+          <button class="btn btn-sm btn-ghost" onclick="openReminder('${inv.id}')">📱 Remind</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===================== REMINDER =====================
+function openReminder(invId){
+  const inv=DB.invoices.find(x=>x.id===invId);if(!inv)return;
+  const c=DB.customers.find(x=>x.id===inv.customerId);if(!c)return;
+  const bal=getInvoiceBalance(inv);
+  const days=daysDiff(inv.dueDate);
+  const overdueText=days>0?`This invoice is *${days} days overdue*.`:`This invoice was due on ${fmtDate(inv.dueDate)}.`;
+  const msg=`Dear ${c.name},\n\nThis is a gentle reminder from *Mauli Enterprises* regarding your outstanding payment.\n\n📋 Invoice: *${inv.invoiceNum}*\n💰 Amount Due: *₹${bal.toFixed(2)}*\n📅 Due Date: *${fmtDate(inv.dueDate)}*\n${overdueText}\n\nKindly arrange payment at the earliest. For any queries, please contact us.\n\nThank you,\nMauli Enterprises`;
+  document.getElementById('reminder-info').innerHTML=`<strong>${c.name}</strong> — ${inv.invoiceNum} — ${fmt(bal)} due`;
+  const phone=c.phone.replace(/\D/g,'');
+  document.getElementById('wa-link').href=`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
+  const subject=`Payment Reminder — Invoice ${inv.invoiceNum} — Mauli Enterprises`;
+  const body=`Dear ${c.name},\n\nThis is a reminder regarding your outstanding payment.\n\nInvoice: ${inv.invoiceNum}\nAmount Due: ₹${bal.toFixed(2)}\nDue Date: ${fmtDate(inv.dueDate)}\n${overdueText}\n\nPlease arrange payment at the earliest.\n\nThank you,\nMauli Enterprises`;
+  document.getElementById('email-link').href=`mailto:${c.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  addLog('payment',`Reminder sent to: ${c.name} | Invoice: ${inv.invoiceNum} | Balance: ₹${bal.toFixed(2)}`);
+  saveDB();renderActivityLog();
+  openModal('modal-reminder');
+}
+
+// ===================== ACTIVITY LOG =====================
+function setLogFilter(f,el){
+  logFilter=f;
+  document.querySelectorAll('#log-filter-chips .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderActivityLog();
+}
+function renderActivityLog(){
+  let list=DB.activityLog;
+  if(logFilter!=='all')list=list.filter(l=>l.type===logFilter);
+  const container=document.getElementById('activity-log-list');
+  if(!list.length){container.innerHTML=`<div class="empty-state" style="padding:40px"><h4>No activity yet</h4><p>All your actions will appear here</p></div>`;return;}
+  const dotClass={customer:'log-dot-blue',invoice:'log-dot-gold',payment:'log-dot-green',reminder:'log-dot-purple'};
+  container.innerHTML=list.map(l=>`
+    <div class="log-item">
+      <div class="log-dot ${dotClass[l.type]||'log-dot-blue'}" style="margin-top:5px"></div>
+      <div>
+        <div class="log-text">${l.msg}</div>
+        <div class="log-time">${fmtDate(l.date)} ${new Date(l.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})} &nbsp;·&nbsp; <strong>User:</strong> ${l.user}</div>
+      </div>
+    </div>`).join('');
+}
+function exportLog(){
+  const rows=DB.activityLog.map(l=>({Date:fmtDate(l.date),Time:new Date(l.date).toLocaleTimeString('en-IN'),Type:l.type,Activity:l.msg,User:l.user}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Activity Log');
+  XLSX.writeFile(wb,`MauliEnterprises_ActivityLog_${today()}.xlsx`);
+}
+
+// ===================== GITHUB SYNC =====================
+function openGitHubSync(){
+  const saved=JSON.parse(localStorage.getItem('gh_config')||'{}');
+  document.getElementById('gh-user').value=saved.user||'';
+  document.getElementById('gh-repo').value=saved.repo||'mauli-data';
+  document.getElementById('gh-token').value=saved.token||'';
+  document.getElementById('gh-status').innerHTML='';
+  openModal('modal-github');
+}
+async function syncToGitHub(){
+  const user=document.getElementById('gh-user').value.trim();
+  const repo=document.getElementById('gh-repo').value.trim();
+  const token=document.getElementById('gh-token').value.trim();
+  if(!user||!repo||!token){alert('Please fill all GitHub fields.');return;}
+  localStorage.setItem('gh_config',JSON.stringify({user,repo,token}));
+  const status=document.getElementById('gh-status');
+  status.innerHTML='<div class="alert alert-warning">Syncing...</div>';
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(DB,null,2))));
+  const filename='mauli_data.json';
+  try{
+    // check if file exists
+    let sha='';
+    const check=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${filename}`,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}});
+    if(check.ok){const data=await check.json();sha=data.sha;}
+    // create or update
+    const body={message:`Mauli Enterprises data sync — ${new Date().toLocaleString('en-IN')}`,content};
+    if(sha)body.sha=sha;
+    const res=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${filename}`,{method:'PUT',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},body:JSON.stringify(body)});
+    if(res.ok){
+      addLog('customer',`Data synced to GitHub: ${user}/${repo}`);saveDB();
+      status.innerHTML='<div class="alert alert-success">✓ Data successfully synced to GitHub!</div>';
+      renderActivityLog();
+    } else {
+      const err=await res.json();
+      status.innerHTML=`<div class="alert alert-danger">Error: ${err.message}. Make sure the repo exists and token has 'repo' permission.</div>`;
+    }
+  }catch(e){status.innerHTML=`<div class="alert alert-danger">Network error. Check internet connection.</div>`;}
+}
+
+// ===================== UI HELPERS =====================
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+document.addEventListener('click',function(e){
+  const sb=document.getElementById('sidebar');
+  if(window.innerWidth<=900&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menu-toggle')){sb.classList.remove('open');}
+});
+
+const pageTitles={dashboard:'Dashboard',customers:'Customers',invoices:'Invoices',payments:'Payments',overdues:'Overdue Invoices',activity:'Activity Log'};
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+name+"'"))n.classList.add('active');});
+  document.getElementById('pageTitle').textContent=pageTitles[name]||name;
+  if(name==='dashboard')renderDashboard();
+  else if(name==='customers')renderCustomers();
+  else if(name==='invoices')renderInvoices();
+  else if(name==='payments')renderPayments();
+  else if(name==='overdues')renderOverdues();
+  else if(name==='activity')renderActivityLog();
+  if(window.innerWidth<=900)document.getElementById('sidebar').classList.remove('open');
+}
+
+// ===================== INIT =====================
+window.addEventListener('load',function(){
+  loadDB();
+  const d=new Date();
+  document.getElementById('topbar-date').textContent=d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('topbar-user').textContent='Admin';
+  renderDashboard();
+});
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.classList.remove('open');});
+});
+
+// PWA install
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
