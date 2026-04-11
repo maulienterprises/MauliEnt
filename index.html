@@ -29,11 +29,11 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
 /* ===== LOGIN ===== */
-#login-screen{align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a6fd4 0%,#1355a8 50%,#0d3f8a 100%)}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a6fd4 0%,#1355a8 50%,#0d3f8a 100%)}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:380px;box-shadow:var(--shadow)}
 .login-logo{text-align:center;margin-bottom:24px}
 .login-logo img{width:64px;height:64px;border-radius:12px;object-fit:contain}
-.login-logo h2{font-family:'Arial Narrow',Arial,sans-serif;font-size:1.4rem;margin-top:10px}
+.login-logo h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-top:10px;color:var(--accent)}
 .login-logo p{color:var(--muted);font-size:0.82rem;margin-top:4px}
 .form-group{margin-bottom:16px}
 .form-group label{display:block;font-size:0.82rem;color:var(--muted);margin-bottom:6px;font-weight:500}
@@ -44,11 +44,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .btn-login:hover{opacity:0.9}
 .login-error{color:var(--danger);font-size:0.83rem;margin-top:10px;text-align:center;display:none}
 /* ===== APP SHELL ===== */
-#app{min-height:100vh}
+#app{display:none;min-height:100vh}
 .topbar{background:#1a6fd4;border-bottom:1px solid #1355a8;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:72px;position:sticky;top:0;z-index:100}
 .topbar-left{display:flex;align-items:center;gap:14px}
 .topbar-logo{width:48px;height:48px;border-radius:10px;object-fit:contain}
-.topbar-title{font-family:'Arial Narrow',Arial,sans-serif;font-size:1.35rem;color:#fff}
+.topbar-title{font-family:'Arial Narrow',Arial,sans-serif;font-size:1.35rem;letter-spacing:0.03em}
+.brand-pill{background:#fff;border-radius:20px;padding:5px 14px;display:inline-flex;align-items:center;gap:0;line-height:1}
 .topbar-sub{font-size:0.78rem;color:rgba(255,255,255,0.75)}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px;cursor:pointer}
@@ -186,25 +187,12 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   ⚡ Data was updated in another tab. &nbsp;<button onclick="reloadStaleData()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:3px 12px;cursor:pointer;font-size:0.82rem;font-family:inherit">Refresh Now</button>&nbsp;<button onclick="document.getElementById('stale-tab-banner').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1rem;margin-left:8px">✕</button>
 </div>
 
-<!-- Prevent login flash on refresh — hide login instantly if session exists -->
-<script>
-  (function(){
-    try {
-      if(sessionStorage.getItem('mauli_session_token') && sessionStorage.getItem('mauli_current_user')){
-        document.documentElement.style.setProperty('--login-display','none');
-        document.documentElement.style.setProperty('--app-display','block');
-      }
-    } catch(e){}
-  })();
-</script>
-<style>
-  #login-screen{ display: var(--login-display, flex); }
-  #app{ display: var(--app-display, none); }
-</style>
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
       <img src="./logo.png" onerror="this.style.display='none'" alt="Logo">
-      <h2><span style="color:#1e293b;font-weight:700">MAULI</span> <span style="color:#9c1c1c;font-weight:400">ENTERPRISES</span></h2>
+      <h2 style="font-family:'Arial Narrow',Arial,sans-serif;font-size:1.4rem;margin-top:10px;color:var(--accent)"><span style="font-weight:700;color:#000">MAULI</span> <span style="font-weight:400;color:#9c1c1c">ENTERPRISES</span></h2>
       <p>Invoice Manager</p>
     </div>
     <div class="form-group">
@@ -228,7 +216,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="topbar-left">
       <img src="./logo.png" class="topbar-logo" onerror="this.style.display='none'" alt="Logo">
       <div>
-        <div class="topbar-title"><span style="color:#fff;font-weight:700">MAULI</span> <span style="color:#9c1c1c;font-weight:400">ENTERPRISES</span></div>
+        <div class="topbar-title"><span class="brand-pill"><span style="font-weight:700;color:#000;font-family:'Arial Narrow',Arial,sans-serif">MAULI</span>&nbsp;<span style="font-weight:400;color:#9c1c1c;font-family:'Arial Narrow',Arial,sans-serif">ENTERPRISES</span></span></div>
         <div class="topbar-sub">Invoice Manager</div>
       </div>
     </div>
