@@ -51,7 +51,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .topbar-title{font-family:'Playfair Display',serif;font-size:1.35rem;color:#fff}
 .topbar-sub{font-size:0.78rem;color:rgba(255,255,255,0.75)}
 .topbar-right{display:flex;align-items:center;gap:12px}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px;cursor:pointer}
+@keyframes pulse-red{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.4)}}
 .sync-label{font-size:0.75rem;color:rgba(255,255,255,0.8)}
 .user-chip{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:5px 14px;font-size:0.78rem;display:flex;align-items:center;gap:8px;color:#fff}
 .role-tag{font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.25);color:#fff}
@@ -501,6 +502,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
             <strong style="color:var(--danger)">⚠ Warning:</strong> This action is irreversible. Take a backup first if needed.
           </div>
         </div>
+
+        <div class="backup-card">
+          <h3>📥 Restore from Backup</h3>
           <p>Upload a previously downloaded ZIP backup to restore all data. <strong style="color:var(--danger)">This will overwrite current data.</strong></p>
           <div class="upload-area" onclick="document.getElementById('backup-upload').click()">
             <div style="font-size:2rem">📂</div>
@@ -885,32 +889,53 @@ async function save(key) {
     return;
   }
 
-  if (!_db) { console.warn('Firestore not ready'); return; }
+  // Always save to localStorage as immediate fallback
+  try { localStorage.setItem('mauli_' + key, JSON.stringify(DB[key])); } catch(e) {}
 
-  const collection = key; // 'customers','invoices','payments','creditNotes','log'
+  if (!_db) {
+    toast('⚠ Firebase not connected. Data saved locally — will sync when connection restores.', 'error');
+    updateSyncStatus('error');
+    return;
+  }
+
   const items = DB[key];
-
   if (!Array.isArray(items)) return;
 
-  try {
-    const { writeBatch, doc, collection: col } = window._firebaseModules;
-    const colRef = col(_db, collection);
-    const CHUNK = 400;
-    for (let i = 0; i < items.length; i += CHUNK) {
-      const batch = writeBatch(_db);
-      items.slice(i, i + CHUNK).forEach(item => {
-        batch.set(doc(colRef, String(item.id)), item);
-      });
-      await batch.commit();
+  updateSyncStatus('syncing');
+
+  // Try up to 3 times with delay
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { writeBatch, doc, collection: col } = window._firebaseModules;
+      const colRef = col(_db, key);
+      const CHUNK = 400;
+      for (let i = 0; i < items.length; i += CHUNK) {
+        const batch = writeBatch(_db);
+        items.slice(i, i + CHUNK).forEach(item => {
+          batch.set(doc(colRef, String(item.id)), item);
+        });
+        await batch.commit();
+      }
+      updateSyncStatus('synced');
+      if (key === 'users') {
+        try { localStorage.setItem('mauli_users_cache', JSON.stringify(DB.users)); } catch(e) {}
+      }
+      return; // success — exit
+    } catch(e) {
+      console.error(`Firestore save error (attempt ${attempt}):`, e);
+      if (attempt < 3) {
+        await new Promise(r => setTimeout(r, 1000 * attempt)); // wait 1s, 2s before retry
+      } else {
+        updateSyncStatus('error');
+        // Check if it's an ad blocker / network block
+        const isBlocked = e.message?.includes('blocked') || e.code === 'unavailable' || e.message?.includes('ERR_BLOCKED');
+        if (isBlocked) {
+          toast('❌ Firebase blocked by ad blocker or network. Disable ad blocker for this site.', 'error');
+        } else {
+          toast(`❌ Save failed: ${e.message}. Data kept locally.`, 'error');
+        }
+      }
     }
-    updateSyncStatus('synced');
-    // Keep users cache in localStorage up-to-date (emergency fallback)
-    if (key === 'users') {
-      try { localStorage.setItem('mauli_users_cache', JSON.stringify(DB.users)); } catch(e) {}
-    }
-  } catch(e) {
-    console.error('Firestore save error:', e);
-    updateSyncStatus('error');
   }
 }
 
@@ -1030,9 +1055,19 @@ function stopRealtimeListeners() {
 function updateSyncStatus(state) {
   const dot = document.getElementById('sync-dot');
   if (!dot) return;
-  if (state === 'synced')  dot.style.background = 'var(--success)';
-  else if (state === 'syncing') dot.style.background = 'var(--warning)';
-  else dot.style.background = 'var(--danger)';
+  if (state === 'synced') {
+    dot.style.background = 'var(--success)';
+    dot.style.animation = 'none';
+    dot.title = 'Firebase synced';
+  } else if (state === 'syncing') {
+    dot.style.background = 'var(--warning)';
+    dot.style.animation = 'none';
+    dot.title = 'Syncing...';
+  } else {
+    dot.style.background = 'var(--danger)';
+    dot.style.animation = 'pulse-red 1s infinite';
+    dot.title = 'Sync error — check ad blocker or internet connection';
+  }
 }
 
 // Live clock in topbar
@@ -1731,8 +1766,12 @@ async function deleteInvoice(id) {
 }
 
 function getPaidAmount(invoiceId) {
-  const payments = DB.payments.filter(p => p.invoiceId === invoiceId).reduce((s, p) => s + parseFloat(p.amount), 0);
-  const credits  = (DB.creditNotes || []).filter(cn => cn.invoiceId === invoiceId).reduce((s, cn) => s + parseFloat(cn.amount), 0);
+  const payments = DB.payments
+    .filter(p => p.invoiceId === invoiceId && p.method !== 'Cancelled')
+    .reduce((s, p) => s + parseFloat(p.amount), 0);
+  const credits = (DB.creditNotes || [])
+    .filter(cn => cn.invoiceId === invoiceId)
+    .reduce((s, cn) => s + parseFloat(cn.amount), 0);
   return payments + credits;
 }
 
@@ -2087,11 +2126,22 @@ async function saveRevisePayment() {
   const inv = DB.invoices.find(i => i.id === p.invoiceId);
   const c   = DB.customers.find(c => c.id === p.customerId);
 
-  // Mark original payment as revised
-  p.method = 'Cancelled';
-  p.notes  = `[REVISED — ${reason}]${notes ? ': ' + notes : ''}`;
+  // Cancel ALL entries in the same group (handles multi-invoice payments)
+  const cancelNote = `[REVISED — ${reason}]${notes ? ': ' + notes : ''}`;
+  if (p.groupId) {
+    DB.payments.forEach(px => {
+      if (px.groupId === p.groupId) {
+        px.method = 'Cancelled';
+        px.notes  = cancelNote;
+      }
+    });
+  } else {
+    // Single payment — cancel just this one
+    p.method = 'Cancelled';
+    p.notes  = cancelNote;
+  }
 
-  // Add penalty to invoice amount if charges apply
+  // Add penalty charge to invoice amount
   if (applyCharge && chargeAmt > 0 && inv) {
     const idx = DB.invoices.findIndex(i => i.id === inv.id);
     if (idx !== -1) {
@@ -2103,10 +2153,11 @@ async function saveRevisePayment() {
 
   await save('payments');
   addLog('correction', `Payment revised for ${inv?.invNo} (${c?.name}) — ${reason}${notes ? ': ' + notes : ''}${applyCharge ? ' | Charge ₹' + fmt(chargeAmt) : ''}`);
-  toast('Payment revised!', 'info');
+  toast('Payment revised! Invoice balance restored.', 'info');
   closeModal('modal-revise-payment');
   renderPayments();
   renderInvoices();
+  renderOverdue();
   renderDashboard();
 }
 
