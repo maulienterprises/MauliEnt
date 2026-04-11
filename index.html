@@ -354,6 +354,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <span style="color:var(--muted);font-size:0.82rem">to</span>
         <input type="date" id="inv-date-to" class="filter-btn" onchange="renderInvoices()" style="min-width:140px;padding:7px 10px" title="To date">
         <button class="filter-btn" onclick="clearInvDateFilter()" title="Clear date filter" style="padding:7px 10px">✕ All Dates</button>
+        <span style="color:var(--muted);font-size:0.82rem">₹</span>
+        <input type="number" id="inv-amt-min" class="filter-btn" placeholder="Min Amt" oninput="renderInvoices()" style="min-width:100px;padding:7px 10px" title="Min amount" min="0">
+        <span style="color:var(--muted);font-size:0.82rem">–</span>
+        <input type="number" id="inv-amt-max" class="filter-btn" placeholder="Max Amt" oninput="renderInvoices()" style="min-width:100px;padding:7px 10px" title="Max amount" min="0">
+        <button class="filter-btn" onclick="clearInvAmtFilter()" title="Clear amount filter" style="padding:7px 10px">✕ Amt</button>
       </div>
       <div id="inv-date-label" style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;margin-top:-4px"></div>
       <div class="table-wrap"><table>
@@ -389,6 +394,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <span style="color:var(--muted);font-size:0.82rem">to</span>
         <input type="date" id="pay-date-to" class="filter-btn" onchange="renderPayments()" style="min-width:140px;padding:7px 10px" title="To date">
         <button class="filter-btn" onclick="clearPayDateFilter()" style="padding:7px 10px">✕ All Dates</button>
+        <span style="color:var(--muted);font-size:0.82rem">₹</span>
+        <input type="number" id="pay-amt-min" class="filter-btn" placeholder="Min Amt" oninput="renderPayments()" style="min-width:100px;padding:7px 10px" title="Min amount" min="0">
+        <span style="color:var(--muted);font-size:0.82rem">–</span>
+        <input type="number" id="pay-amt-max" class="filter-btn" placeholder="Max Amt" oninput="renderPayments()" style="min-width:100px;padding:7px 10px" title="Max amount" min="0">
+        <button class="filter-btn" onclick="clearPayAmtFilter()" style="padding:7px 10px">✕ Amt</button>
       </div>
       <div class="table-wrap"><table>
         <thead><tr><th>Date</th><th>Customer</th><th>Invoice #</th><th>Receipt No</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Actions</th></tr></thead>
@@ -517,16 +527,23 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('customers')">👥 Customers JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('invoices')">🧾 Invoices JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('payments')">💳 Payments JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('creditNotes')">📝 Credit Notes JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('log')">📋 Activity Log JSON</button>
           </div>
         </div>
 
         <div class="backup-card" style="border:1px solid #e74c3c40">
-          <h3 style="color:var(--danger)">🧹 Clear Test Data</h3>
-          <p>Permanently delete all <strong>Customers, Invoices, Payments</strong> and <strong>Credit Notes</strong> from Firebase. <strong style="color:var(--danger)">User accounts will NOT be deleted.</strong></p>
-          <button class="btn btn-danger" onclick="clearTestData()">🗑 Clear Test Data</button>
-          <div class="backup-info" style="margin-top:12px;background:#e74c3c10;border:1px solid #e74c3c30">
-            <strong style="color:var(--danger)">⚠ Warning:</strong> This action is irreversible. Take a backup first if needed.
+          <h3 style="color:var(--danger)">🧹 Clear Data</h3>
+          <p>Permanently delete specific collections from Firebase. <strong style="color:var(--danger)">User accounts will NOT be deleted.</strong></p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+            <button class="btn btn-danger btn-sm" onclick="clearCollection('customers')">👥 Delete All Customers</button>
+            <button class="btn btn-danger btn-sm" onclick="clearCollection('invoices')">🧾 Delete All Invoices</button>
+            <button class="btn btn-danger btn-sm" onclick="clearCollection('payments')">💳 Delete All Payments</button>
+            <button class="btn btn-danger btn-sm" onclick="clearCollection('creditNotes')">📝 Delete All Credit Notes</button>
+            <button class="btn btn-danger btn-sm" style="background:#7f1d1d;border:1px solid #991b1b" onclick="clearTestData()">🗑 Delete Everything (All Above)</button>
+          </div>
+          <div class="backup-info" style="background:#e74c3c10;border:1px solid #e74c3c30">
+            <strong style="color:var(--danger)">⚠ Warning:</strong> All actions are irreversible. Take a backup first if needed.
           </div>
         </div>
 
@@ -574,6 +591,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <span style="color:var(--muted);font-size:0.82rem">to</span>
         <input type="date" id="cn-date-to" class="filter-btn" onchange="renderCreditNotes()" style="min-width:140px;padding:7px 10px" title="To date">
         <button class="filter-btn" onclick="clearCNDateFilter()" style="padding:7px 10px">✕ All Dates</button>
+        <span style="color:var(--muted);font-size:0.82rem">₹</span>
+        <input type="number" id="cn-amt-min" class="filter-btn" placeholder="Min Amt" oninput="renderCreditNotes()" style="min-width:100px;padding:7px 10px" title="Min amount" min="0">
+        <span style="color:var(--muted);font-size:0.82rem">–</span>
+        <input type="number" id="cn-amt-max" class="filter-btn" placeholder="Max Amt" oninput="renderCreditNotes()" style="min-width:100px;padding:7px 10px" title="Max amount" min="0">
+        <button class="filter-btn" onclick="clearCNAmtFilter()" style="padding:7px 10px">✕ Amt</button>
       </div>
       <div class="stat-grid" style="margin:12px 0">
         <div class="stat-card blue"><div class="stat-label">Total Credit Notes</div><div class="stat-value" id="cn-stat-count">0</div><div class="stat-sub">All time</div></div>
@@ -1800,8 +1822,9 @@ function openInvoiceModal(id=null) {
 
 function populateInvoiceCustomers(selectedId) {
   const sel = document.getElementById('im-customer');
+  const sorted = [...DB.customers].sort((a,b) => a.name.localeCompare(b.name,'en-IN'));
   sel.innerHTML = '<option value="">-- Select Customer --</option>' +
-    DB.customers.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
+    sorted.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
 }
 
 function checkDupInvoice() {
@@ -1918,12 +1941,22 @@ function clearInvDateFilter() {
   renderInvoices();
 }
 
+function clearInvAmtFilter() {
+  const mn = document.getElementById('inv-amt-min');
+  const mx = document.getElementById('inv-amt-max');
+  if (mn) mn.value = '';
+  if (mx) mx.value = '';
+  renderInvoices();
+}
+
 function renderInvoices() {
   const search      = document.getElementById('inv-search').value.toLowerCase();
   const custFilter2 = document.getElementById('inv-cust-filter').value;
   const statusF     = document.getElementById('inv-status-filter').value;
   const dateFrom    = document.getElementById('inv-date-from')?.value || '';
   const dateTo      = document.getElementById('inv-date-to')?.value || '';
+  const amtMin      = parseFloat(document.getElementById('inv-amt-min')?.value) || null;
+  const amtMax      = parseFloat(document.getElementById('inv-amt-max')?.value) || null;
   const tbody       = document.getElementById('inv-table');
   const label       = document.getElementById('inv-date-label');
 
@@ -1936,13 +1969,18 @@ function renderInvoices() {
   let list = DB.invoices.filter(inv => {
     const c = DB.customers.find(c => c.id === inv.customerId);
     const textMatch = [inv.invNo, c?.name, inv.description].join(' ').toLowerCase().includes(search);
-    const custMatch = !custFilter2 || inv.customerId === parseInt(custFilter2);
+    const custMatch = !custFilter2 || String(inv.customerId) === custFilter2;
     const statusMatch = !statusF || getInvoiceStatus(inv) === statusF;
     let dateMatch = true;
     if (dateFrom) dateMatch = dateMatch && inv.date >= dateFrom;
     if (dateTo)   dateMatch = dateMatch && inv.date <= dateTo;
-    return textMatch && custMatch && statusMatch && dateMatch;
-  }).sort((a,b) => new Date(b.date) - new Date(a.date));
+    const amt = parseFloat(inv.amount);
+    const amtMatch = (amtMin === null || amt >= amtMin) && (amtMax === null || amt <= amtMax);
+    return textMatch && custMatch && statusMatch && dateMatch && amtMatch;
+  }).sort((a,b) => {
+    const ka = invNoSortKey(a.invNo), kb = invNoSortKey(b.invNo);
+    if (ka < kb) return -1; if (ka > kb) return 1; return 0;
+  });
 
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">🧾</div><p>No invoices found for this filter.</p></div></td></tr>`;
@@ -1979,7 +2017,8 @@ function renderInvoices() {
 }
 
 function updateCustomerDropdowns() {
-  const custOpts = '<option value="">All Customers</option>' + DB.customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const sortedCustomers = [...DB.customers].sort((a, b) => a.name.localeCompare(b.name, 'en-IN'));
+  const custOpts = '<option value="">All Customers</option>' + sortedCustomers.map(c => `<option value="${String(c.id)}">${c.name}</option>`).join('');
   document.getElementById('inv-cust-filter').innerHTML = custOpts;
   // Payment customer filter
   const payEl = document.getElementById('pay-cust-filter');
@@ -2030,8 +2069,9 @@ function openPaymentModalForInvoice(invoiceId) {
 
 function populatePaymentCustomers(selectedId) {
   const sel = document.getElementById('pm-customer');
+  const sorted = [...DB.customers].sort((a,b) => a.name.localeCompare(b.name,'en-IN'));
   sel.innerHTML = '<option value="">-- Select Customer --</option>' +
-    DB.customers.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
+    sorted.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
 }
 
 function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
@@ -2295,6 +2335,14 @@ function populatePaymentInvoices() {} // kept as stub
 
 function updateBalanceDue() {} // kept as stub
 
+function clearPayAmtFilter() {
+  const mn = document.getElementById('pay-amt-min');
+  const mx = document.getElementById('pay-amt-max');
+  if (mn) mn.value = '';
+  if (mx) mx.value = '';
+  renderPayments();
+}
+
 function clearPayDateFilter() {
   const f = document.getElementById('pay-date-from');
   const t = document.getElementById('pay-date-to');
@@ -2309,6 +2357,8 @@ function renderPayments() {
   const methodF  = document.getElementById('pay-method-filter')?.value || '';
   const dateFrom = document.getElementById('pay-date-from')?.value || '';
   const dateTo   = document.getElementById('pay-date-to')?.value || '';
+  const amtMin   = parseFloat(document.getElementById('pay-amt-min')?.value) || null;
+  const amtMax   = parseFloat(document.getElementById('pay-amt-max')?.value) || null;
   const tbody    = document.getElementById('pay-table');
 
   // Group payments by groupId — each group = one payment session
@@ -2364,7 +2414,9 @@ function renderPayments() {
     let dateMatch = true;
     if (dateFrom) dateMatch = dateMatch && p.date >= dateFrom;
     if (dateTo)   dateMatch = dateMatch && p.date <= dateTo;
-    return textMatch && custMatch && methodMatch && dateMatch;
+    const pAmt = parseFloat(p.amount);
+    const amtMatch = (amtMin === null || pAmt >= amtMin) && (amtMax === null || pAmt <= amtMax);
+    return textMatch && custMatch && methodMatch && dateMatch && amtMatch;
   }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
   if (!list.length) {
@@ -2513,6 +2565,14 @@ async function deleteCreditNote(id) {
   renderDashboard();
 }
 
+function clearCNAmtFilter() {
+  const mn = document.getElementById('cn-amt-min');
+  const mx = document.getElementById('cn-amt-max');
+  if (mn) mn.value = '';
+  if (mx) mx.value = '';
+  renderCreditNotes();
+}
+
 function clearCNDateFilter() {
   const f = document.getElementById('cn-date-from');
   const t = document.getElementById('cn-date-to');
@@ -2527,19 +2587,23 @@ function renderCreditNotes() {
   const reasonF = document.getElementById('cn-reason-filter')?.value || '';
   const dateFrom = document.getElementById('cn-date-from')?.value || '';
   const dateTo   = document.getElementById('cn-date-to')?.value || '';
+  const amtMin   = parseFloat(document.getElementById('cn-amt-min')?.value) || null;
+  const amtMax   = parseFloat(document.getElementById('cn-amt-max')?.value) || null;
   const tbody   = document.getElementById('cn-table');
   if (!tbody) return;
 
   let list = (DB.creditNotes || []).filter(cn => {
-    const c   = DB.customers.find(c => c.id === cn.customerId);
-    const inv = DB.invoices.find(i => i.id === cn.invoiceId);
+    const c   = DB.customers.find(c => String(c.id) === String(cn.customerId));
+    const inv = DB.invoices.find(i => String(i.id) === String(cn.invoiceId));
     const textMatch   = [cn.cnNumber, c?.name, inv?.invNo, cn.reason, cn.notes].join(' ').toLowerCase().includes(search);
     const custMatch   = !custF   || String(cn.customerId) === custF;
     const reasonMatch = !reasonF || cn.reason === reasonF;
     let dateMatch = true;
     if (dateFrom) dateMatch = dateMatch && cn.date >= dateFrom;
     if (dateTo)   dateMatch = dateMatch && cn.date <= dateTo;
-    return textMatch && custMatch && reasonMatch && dateMatch;
+    const cnAmt = parseFloat(cn.amount);
+    const amtMatch = (amtMin === null || cnAmt >= amtMin) && (amtMax === null || cnAmt <= amtMax);
+    return textMatch && custMatch && reasonMatch && dateMatch && amtMatch;
   }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
   // Update stat cards
@@ -3009,6 +3073,7 @@ function downloadSingleBackup(type) {
     customers: { data: DB.customers, name: 'customers' },
     invoices: { data: DB.invoices, name: 'invoices' },
     payments: { data: DB.payments, name: 'payments' },
+    creditNotes: { data: DB.creditNotes || [], name: 'credit_notes' },
     log: { data: DB.log, name: 'activity_log' }
   };
   const item = map[type];
@@ -3189,6 +3254,7 @@ async function handleImport(input) {
 
       if (importType === 'customers') {
         const newItems = [];
+        let idBase = Date.now();
         for (const r of rows) {
           const name = String(r.Name || '').trim();
           const phone = String(r.Phone || '').trim();
@@ -3196,7 +3262,7 @@ async function handleImport(input) {
           const wa = String(r.WhatsappReminder||'').trim().toLowerCase();
           const em = String(r.EmailReminder||'').trim().toLowerCase();
           const item = {
-            id: Date.now() + Math.random(),
+            id: idBase++,
             name, phone,
             email: r.Email||'', company: r.Company||'',
             city: String(r.Pincode||'').replace(/\.0$/, ''),
@@ -3222,15 +3288,29 @@ async function handleImport(input) {
 
       } else if (importType === 'invoices') {
         const newItems = [];
+        let idBase = Date.now();
         for (const r of rows) {
           if (!r.CustomerName || !r.InvoiceNo) continue;
           const c = DB.customers.find(c => c.name.toLowerCase() === String(r.CustomerName).toLowerCase());
           if (!c) continue;
-          const item = { id: Date.now() + Math.random(), customerId: c.id, invNo: String(r.InvoiceNo), date: fmtExcelDate(r.InvoiceDate), dueDate: fmtExcelDate(r.DueDate), amount: parseFloat(r.Amount)||0, description: r.Description||'' };
+          const item = {
+            id: idBase++,
+            customerId: c.id,
+            invNo: String(r.InvoiceNo),
+            date: fmtExcelDate(r.InvoiceDate),
+            dueDate: fmtExcelDate(r.DueDate),
+            amount: parseFloat(r.Amount)||0,
+            description: r.Description||''
+          };
           DB.invoices.push(item);
           newItems.push(item);
           count++;
         }
+        // Sort invoices serially after import
+        DB.invoices.sort((a,b) => {
+          const ka = invNoSortKey(a.invNo), kb = invNoSortKey(b.invNo);
+          if (ka < kb) return -1; if (ka > kb) return 1; return 0;
+        });
         try { localStorage.setItem('mauli_invoices', JSON.stringify(DB.invoices)); } catch(e) {}
         setImportProgress(40, `Uploading ${count} invoices…`, 'Saving to Firebase in batches');
         await saveChunked('invoices', newItems);
@@ -3306,6 +3386,15 @@ function exportXLSX(data, filename) {
 // ============================================================
 function fmt(n) { return parseFloat(n||0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function today() { return new Date().toISOString().split('T')[0]; }
+// Sort invoice numbers like INV-2425-1, INV-2425-10, INV-2425-157 numerically
+function invNoSortKey(invNo) {
+  const s = String(invNo || '');
+  const parts = s.split('-');
+  return parts.map((p, i) => {
+    const n = parseInt(p);
+    return isNaN(n) ? p.toLowerCase() : String(n).padStart(10, '0');
+  }).join('-');
+}
 function fmtDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); } catch { return d; } }
 function fmtExcelDate(v) {
   if (!v) return today();
@@ -3338,8 +3427,9 @@ function updateLedgerDropdown() {
   const sel = document.getElementById('ledger-cust');
   if (!sel) return;
   const current = sel.value;
+  const sorted = [...DB.customers].sort((a,b) => a.name.localeCompare(b.name,'en-IN'));
   sel.innerHTML = '<option value="">— All Customers —</option>' +
-    DB.customers.map(c => `<option value="${c.id}" ${String(c.id) === current ? 'selected' : ''}>${c.name}</option>`).join('');
+    sorted.map(c => `<option value="${String(c.id)}" ${String(c.id) === current ? 'selected' : ''}>${c.name}</option>`).join('');
 }
 
 function clearLedgerDateFilter() {
@@ -3351,15 +3441,16 @@ function clearLedgerDateFilter() {
 }
 
 function renderLedger() {
-  const custId       = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const custIdRaw    = document.getElementById('ledger-cust')?.value || '';
   const statusFilter = document.getElementById('ledger-status')?.value || 'total';
   const dateFrom     = document.getElementById('ledger-date-from')?.value || '';
   const dateTo       = document.getElementById('ledger-date-to')?.value || '';
   const tbody        = document.getElementById('ledger-table');
   if (!tbody) return;
 
-  let invList = custId
-    ? DB.invoices.filter(i => i.customerId === custId)
+  // Use string comparison for IDs to avoid Firestore float/int type mismatches
+  let invList = custIdRaw
+    ? DB.invoices.filter(i => String(i.customerId) === custIdRaw)
     : [...DB.invoices];
 
   if (dateFrom) invList = invList.filter(i => i.date && i.date >= dateFrom);
@@ -3367,8 +3458,8 @@ function renderLedger() {
   if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
   else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
 
-  // Compute summary totals from full set (ignoring month/status filter for totals)
-  const allForCust = custId ? DB.invoices.filter(i => i.customerId === custId) : [...DB.invoices];
+  // Compute summary totals from full set for selected customer
+  const allForCust = custIdRaw ? DB.invoices.filter(i => String(i.customerId) === custIdRaw) : [...DB.invoices];
   const totalInvoiced = allForCust.reduce((s,i) => s + parseFloat(i.amount), 0);
   const totalPaidAmt  = allForCust.reduce((s,i) => s + getPaidAmount(i.id), 0);
   const totalUnpaid   = totalInvoiced - totalPaidAmt;
@@ -3389,11 +3480,11 @@ function renderLedger() {
 
   const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
   tbody.innerHTML = invList.map((inv, idx) => {
-    const c    = DB.customers.find(c => c.id === inv.customerId);
+    const c    = DB.customers.find(c => String(c.id) === String(inv.customerId));
     const paid = getPaidAmount(inv.id);
     const bal  = parseFloat(inv.amount) - paid;
     const status = getInvoiceStatus(inv);
-    const hasCN = (DB.creditNotes||[]).some(cn => cn.invoiceId === inv.id);
+    const hasCN = (DB.creditNotes||[]).some(cn => String(cn.invoiceId) === String(inv.id));
     return `<tr>
       <td>${idx + 1}</td>
       <td><strong>${c?.name || '—'}</strong>${c?.company ? `<br><small style="color:var(--muted)">${c.company}</small>` : ''}</td>
@@ -3409,11 +3500,9 @@ function renderLedger() {
 }
 
 function exportLedger() {
-  const custId      = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const custIdRaw    = document.getElementById('ledger-cust')?.value || '';
   const statusFilter = document.getElementById('ledger-status')?.value || 'total';
-  const monthF      = document.getElementById('ledger-month')?.value || '';
-  let invList = custId ? DB.invoices.filter(i => i.customerId === custId) : [...DB.invoices];
-  if (monthF) invList = invList.filter(i => i.date && i.date.startsWith(monthF));
+  let invList = custIdRaw ? DB.invoices.filter(i => String(i.customerId) === custIdRaw) : [...DB.invoices];
   if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
   else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
   const data = invList.map((inv, idx) => {
@@ -3693,24 +3782,70 @@ function printPaymentReceipt(paymentId) {
 // ============================================================
 // CLEAR TEST DATA (Dev only)
 // ============================================================
+// ---- Clear a single collection ----
+async function clearCollection(key) {
+  if (currentUser?.role !== 'dev') return toast('Only Dev can do this.', 'error');
+  const labels = { customers: 'Customers', invoices: 'Invoices', payments: 'Payments', creditNotes: 'Credit Notes' };
+  const label = labels[key] || key;
+  if (!confirm(`⚠ This will permanently delete ALL ${label} from Firebase.\n\nAre you absolutely sure?`)) return;
+  if (!confirm(`Second confirmation — delete ALL ${label}? This cannot be undone.`)) return;
+
+  toast(`Deleting ${label}...`, 'info');
+  stopRealtimeListeners();
+
+  // Clear locally
+  DB[key] = [];
+  try { localStorage.removeItem('mauli_' + key); } catch(e) {}
+  renderAll();
+
+  // Clear from Firestore
+  let fsErrors = 0;
+  if (_db) {
+    try {
+      const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
+      const snap = await getDocs(col(_db, key));
+      const allDocs = snap.docs;
+      for (let i = 0; i < allDocs.length; i += 400) {
+        try {
+          const batch = writeBatch(_db);
+          allDocs.slice(i, i + 400).forEach(d => batch.delete(doc(col(_db, key), d.id)));
+          await batch.commit();
+        } catch(batchErr) {
+          console.warn('Batch delete error:', batchErr);
+          fsErrors++;
+        }
+      }
+    } catch(e) {
+      console.warn('Firestore clear error:', e);
+      fsErrors++;
+    }
+  }
+
+  addLog('delete', `Dev deleted all ${label}`);
+  try { await save('log'); } catch(e) {}
+  startRealtimeListeners();
+
+  if (fsErrors > 0) {
+    toast(`⚠ Local ${label} cleared. Firebase may be blocked — disable ad blocker and retry.`, 'error');
+  } else {
+    toast(`✅ All ${label} deleted successfully!`, 'success');
+  }
+}
+
 async function clearTestData() {
   if (currentUser?.role !== 'dev') return toast('Only Dev can do this.', 'error');
-  if (!confirm('\u26a0 This will permanently delete ALL Customers, Invoices, Payments and Credit Notes from Firebase.\n\nUser accounts will NOT be affected.\n\nAre you absolutely sure?')) return;
-  if (!confirm('Second confirmation \u2014 this cannot be undone. Proceed?')) return;
-  toast('Clearing test data...', 'info');
+  if (!confirm('⚠ This will permanently delete ALL Customers, Invoices, Payments and Credit Notes from Firebase.\n\nUser accounts will NOT be affected.\n\nAre you absolutely sure?')) return;
+  if (!confirm('Second confirmation — this cannot be undone. Proceed?')) return;
+  toast('Clearing all data...', 'info');
 
-  // Step 1: Clear local DB + localStorage immediately (works even without Firebase)
   const CLEAR_KEYS = ['customers','invoices','payments','creditNotes'];
   CLEAR_KEYS.forEach(k => {
     DB[k] = [];
     try { localStorage.removeItem('mauli_' + k); } catch(e) {}
   });
   renderAll();
-
-  // Step 2: Stop realtime listeners to prevent them re-populating DB mid-delete
   stopRealtimeListeners();
 
-  // Step 3: Delete from Firestore - handle blocked requests gracefully
   let fsErrors = 0;
   if (_db) {
     try {
@@ -3740,16 +3875,14 @@ async function clearTestData() {
     }
   }
 
-  addLog('delete', 'Dev cleared all test data (customers, invoices, payments, credit notes)');
+  addLog('delete', 'Dev cleared all data (customers, invoices, payments, credit notes)');
   try { await save('log'); } catch(e) {}
-
-  // Step 4: Restart listeners
   startRealtimeListeners();
 
   if (fsErrors > 0) {
-    toast('\u26a0 Local data cleared. Firebase may be blocked by ad blocker \u2014 disable it and retry for full cloud clear.', 'error');
+    toast('⚠ Local data cleared. Firebase may be blocked by ad blocker — disable it and retry for full cloud clear.', 'error');
   } else {
-    toast('\u2705 All test data cleared! Users are untouched.', 'success');
+    toast('✅ All data cleared! Users are untouched.', 'success');
   }
 }
 
