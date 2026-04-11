@@ -151,12 +151,15 @@ tr:hover td{background:rgba(26,111,212,0.04)}
 .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 @media(max-width:600px){
   .form-row-2,.form-row-3{grid-template-columns:1fr}
-  .topbar-title{display:none}
+  .topbar-sub{display:none}
+  .topbar-logo{width:36px;height:36px}
+  .brand-pill{padding:4px 10px}
+  .brand-pill span{font-size:1rem}
   .user-chip .role-tag{display:none}
   .sync-label{display:none}
   .topbar-right{gap:6px}
   .user-chip{padding:4px 10px;font-size:0.72rem}
-  .btn-signout{padding:5px 10px;font-size:0.72rem;border-radius:6px;white-space:nowrap}
+  .btn-signout{padding:5px 9px;font-size:0.72rem;border-radius:6px;white-space:nowrap}
 }
 .log-entry{background:var(--input-bg);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:0.82rem;border-left:3px solid var(--border)}
 .log-entry.correction{border-left-color:var(--warning)}
@@ -3249,20 +3252,22 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
     .info-box{background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px}
     .info-box label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:3px}
     .info-box strong{font-size:13px;color:#1e293b}
-    .action-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+    .action-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+    .wa-note{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px 14px;font-size:11.5px;color:#15803d;margin-bottom:16px;display:none;line-height:1.6}
     .act-btn{border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-    .print-btn{background:#16a34a;color:#fff}
-    .print-btn:hover{background:#15803d}
-    .email-btn{background:#1a6fd4;color:#fff}
-    .email-btn:hover{background:#1355a8}
-    .wa-btn{background:#25d366;color:#fff}
-    .wa-btn:hover{background:#1ebe5d}
-    @media print{.action-bar{display:none}body{padding:12px}}
+    .print-btn{background:#16a34a;color:#fff}.print-btn:hover{background:#15803d}
+    .email-btn{background:#1a6fd4;color:#fff}.email-btn:hover{background:#1355a8}
+    .wa-btn{background:#25d366;color:#fff}.wa-btn:hover{background:#1ebe5d}
+    @media print{.action-bar,.wa-note{display:none}body{padding:12px}}
   </style></head><body>
   <div class="action-bar">
     <button onclick="window.print()" class="act-btn print-btn">🖨 Print / Save PDF</button>
     ${emailBtn}
     ${waBtn}
+  </div>
+  <div class="wa-note" id="wa-note">
+    ℹ️ <strong>Step 1:</strong> Save this page as PDF using Print → "Save as PDF".<br>
+    <strong>Step 2:</strong> WhatsApp will open — attach the saved PDF from your device and send.
   </div>
   ${htmlContent}
   <script>
@@ -3271,13 +3276,14 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
     function sendEmail(){
       if(!_email) return alert('No email address on record for this customer.');
       var subject = encodeURIComponent('Document from MAULI ENTERPRISES');
-      var body = encodeURIComponent('Dear Customer,\\n\\nPlease find your document from Mauli Enterprises.\\n\\nRegards,\\nMauli Enterprises');
+      var body = encodeURIComponent('Dear Customer,\\n\\nPlease find your document from Mauli Enterprises attached.\\n\\nRegards,\\nMauli Enterprises');
       window.open('mailto:' + _email + '?subject=' + subject + '&body=' + body);
     }
     function sendWhatsApp(){
       if(!_phone) return alert('No phone number on record for this customer.');
-      var msg = encodeURIComponent('Dear Customer,\\n\\nPlease find below your document from *MAULI ENTERPRISES*.\\n\\nKindly save this for your records.\\n\\nThank you,\\nMauli Enterprises');
-      window.open('https://wa.me/' + _phone + '?text=' + msg, '_blank');
+      document.getElementById('wa-note').style.display = 'block';
+      var msg = encodeURIComponent('Dear Customer,\\n\\nPlease find your document from *MAULI ENTERPRISES* attached.\\n\\nKindly save it for your records.\\n\\nThank you,\\nMauli Enterprises');
+      setTimeout(function(){ window.open('https://wa.me/' + _phone + '?text=' + msg, '_blank'); }, 800);
     }
   <\/script>
   </body></html>`);
