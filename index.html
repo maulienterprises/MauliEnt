@@ -1047,6 +1047,15 @@ function startRealtimeListeners() {
     });
     _unsubscribers.push(unsub);
   });
+
+  // Live log listener — only for Dev so all users' logs appear instantly
+  if (currentUser?.role === 'dev') {
+    const unsub = onSnapshot(col(_db, 'log'), (snap) => {
+      DB.log = snap.docs.map(d => d.data()).sort((a,b) => new Date(b.time) - new Date(a.time));
+      if (document.getElementById('tab-log')?.classList.contains('active')) renderLog();
+    }, (err) => { console.error('Log listener error:', err); });
+    _unsubscribers.push(unsub);
+  }
 }
 
 function stopRealtimeListeners() {
@@ -3298,10 +3307,26 @@ function printLedgerStatement() {
         </tr>
       </tbody>
     </table>
-    <div class="footer">This is a computer generated statement. &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.phone}</div>`;
+    <div class="footer">
+      <div style="margin-bottom:6px;font-style:italic;color:#94a3b8">This is a computer generated statement. No signature required.</div>
+      <div>Thank you for your business! &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name}</div>
+    </div>`;
 
   buildPrintWindow(html);
   addLog('edit', `Printed Ledger Statement for ${custName}`);
+}
+
+function getNextReceiptNo() {
+  // Find the highest receipt number already used across all payments
+  let max = 0;
+  DB.payments.forEach(p => {
+    if (p.receiptNo) {
+      const n = parseInt(String(p.receiptNo).replace(/\D/g, '')) || 0;
+      if (n > max) max = n;
+    }
+  });
+  const next = max + 1;
+  return 'RCP-' + String(next).padStart(4, '0');
 }
 
 function printPaymentReceipt(paymentId) {
@@ -3319,7 +3344,22 @@ function printPaymentReceipt(paymentId) {
 
   const totalPaid = grpPayments.reduce((s,x) => s + parseFloat(x.amount), 0);
   const totalDisc = discPayments.reduce((s,x) => s + parseFloat(x.amount), 0);
-  const receiptNo = 'RCP-' + String(paymentId).slice(-6);
+
+  // Auto receipt number — reuse existing or assign next available
+  let receiptNo = p.receiptNo;
+  if (!receiptNo) {
+    receiptNo = getNextReceiptNo();
+    // Persist receipt number on the first entry of this group
+    const idx = DB.payments.findIndex(x => x.id === p.id);
+    if (idx !== -1) {
+      DB.payments[idx].receiptNo = receiptNo;
+      // Also tag all group entries with the same receipt no
+      if (p.groupId) {
+        DB.payments.forEach((x, i) => { if (x.groupId === p.groupId) DB.payments[i].receiptNo = receiptNo; });
+      }
+      save('payments');
+    }
+  }
 
   const invRows = grpPayments.map(x => {
     const inv = DB.invoices.find(i => i.id === x.invoiceId);
@@ -3359,14 +3399,13 @@ function printPaymentReceipt(paymentId) {
       Total Received: ₹${fmt(totalPaid)}${totalDisc > 0 ? `  <span style="font-size:13px;color:#d97706">(+₹${fmt(totalDisc)} discount)</span>` : ''}
     </div>
     ${p.notes ? `<div style="margin-top:8px;font-size:12px;color:#64748b">Notes: ${p.notes}</div>` : ''}
-    <div style="margin-top:32px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
-      <div>Received By: ___________________</div>
-      <div>Authorised Signatory</div>
-    </div>
-    <div class="footer">Thank you for your payment! &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.phone}</div>`;
+    <div class="footer">
+      <div style="margin-bottom:6px;font-style:italic;color:#94a3b8">This is a computer generated receipt. No signature required.</div>
+      <div>Thank you for your payment! &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name}</div>
+    </div>`;
 
   buildPrintWindow(html);
-  addLog('edit', `Printed Payment Receipt for ${c?.name}`);
+  addLog('edit', `Printed Payment Receipt ${receiptNo} for ${c?.name}`);
 }
 
 // ============================================================
