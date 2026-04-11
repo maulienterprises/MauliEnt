@@ -2655,7 +2655,7 @@ function renderOverdue() {
   const list = DB.invoices.filter(inv => {
     const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
     return bal > 0 && new Date(inv.dueDate) < today;
-  });
+  }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)); // oldest due date first = most overdue on top
 
   const alert = document.getElementById('overdue-alert');
   alert.style.display = list.length ? 'flex' : 'none';
