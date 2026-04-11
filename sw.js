@@ -1,6 +1,5 @@
-const CACHE_NAME = 'mauli-ent-v2';
+const CACHE_NAME = 'mauli-ent-v3';
 
-// Files to cache — missing files are skipped gracefully
 const CACHE_FILES = [
   './',
   './index.html',
@@ -12,7 +11,6 @@ const CACHE_FILES = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
-      // Cache each file individually — skip any that return 404 or fail
       for (const file of CACHE_FILES) {
         try {
           const resp = await fetch(file);
@@ -34,14 +32,13 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Only intercept same-origin GET requests
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== location.origin) return;
 
   event.respondWith(
     caches.match(event.request).then(cached => {
-      if (cached) return cached;
+      // Always try network first, fall back to cache
       return fetch(event.request).then(resp => {
         if (resp.ok) {
           const clone = resp.clone();
