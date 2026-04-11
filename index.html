@@ -460,19 +460,21 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
             </select>
           </div>
         </div>
-        <!-- Tab Access — only shown for Emp role -->
+        <!-- Tab Access Permissions — shown for admin and emp roles -->
         <div id="uf-tab-access-section" style="display:none;margin-top:4px">
-          <div style="font-size:0.82rem;color:var(--muted);font-weight:500;margin-bottom:8px">🔐 Tab Access <span style="color:var(--accent);font-size:0.75rem">(Employee role only)</span></div>
-          <div style="background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px" id="uf-tab-checkboxes">
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" value="dashboard" class="tab-access-cb"> 📊 Dashboard</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" value="customers" class="tab-access-cb"> 👥 Customers</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" value="invoices" class="tab-access-cb" checked> 🧾 Invoices</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" value="payments" class="tab-access-cb"> 💳 Payments</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" value="overdue" class="tab-access-cb"> ⚠ Overdue</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" value="creditnotes" class="tab-access-cb"> 📝 Credit Notes</label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" value="ledger" class="tab-access-cb"> 📒 Ledger</label>
+          <div style="font-size:0.82rem;color:var(--muted);font-weight:500;margin-bottom:8px">
+            🔐 Tab Access <span id="uf-tab-access-label" style="color:var(--accent);font-size:0.75rem"></span>
           </div>
-          <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">ℹ At least one tab must be selected. Invoices is checked by default.</div>
+          <div style="background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="dashboard"> 📊 Dashboard</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="customers"> 👥 Customers</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="invoices"> 🧾 Invoices</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="payments"> 💳 Payments</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="overdue"> ⚠ Overdue</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="creditnotes"> 📝 Credit Notes</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="ledger"> 📒 Ledger</label>
+          </div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">ℹ Select which tabs this user can see. At least one tab required.</div>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
           <button class="btn btn-outline btn-sm" onclick="closeUserForm()">Cancel</button>
@@ -481,7 +483,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       </div>
 
       <div class="table-wrap"><table>
-        <thead><tr><th>#</th><th>Name</th><th>Username</th><th>Role / Tab Access</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>Username</th><th>Role</th><th>Tab Access</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="users-table-body"></tbody>
       </table></div>
 
@@ -1368,7 +1370,7 @@ function signOut(reason) {
   stopRealtimeListeners();
   // Sign out of Firebase so Firestore rules block any further access
   if (window._firebaseAuth) {
-    try { window._firebaseAuth.signOut(window._firebaseAuth.auth); } catch(e) {}
+    Promise.resolve().then(() => window._firebaseAuth.signOut(window._firebaseAuth.auth)).catch(() => {});
   }
   document.getElementById('idle-warning-overlay').style.display = 'none';
   document.getElementById('stale-tab-banner').style.display = 'none';
@@ -1437,41 +1439,64 @@ function resetIdleTimer() {
   toast('Session extended.', 'success');
 }
 
-// All available tabs that can be granted to emp
-const ALL_EMP_TABS = ['dashboard','customers','invoices','payments','overdue','creditnotes','ledger'];
+// Tabs configurable by Dev for admin/emp
+const CONFIGURABLE_TABS = [
+  {key:'dashboard',   label:'\U0001f4ca Dashboard'},
+  {key:'customers',   label:'\U0001f465 Customers'},
+  {key:'invoices',    label:'\U0001f9fe Invoices'},
+  {key:'payments',    label:'\U0001f4b3 Payments'},
+  {key:'overdue',     label:'\u26a0 Overdue'},
+  {key:'creditnotes', label:'\U0001f4dd Credit Notes'},
+  {key:'ledger',      label:'\U0001f4d2 Ledger'}
+];
 
 function applyRoleAccess(role, user) {
   const nav = document.getElementById('main-nav');
   const resolvedUser = user || currentUser;
 
-  if (role === 'emp') {
-    // Get per-user tab permissions (default: invoices only)
-    const tabAccess = resolvedUser?.tabAccess || ['invoices'];
+  if (role === 'emp' || role === 'admin') {
+    const defaultTabs = role === 'admin'
+      ? ['dashboard','customers','invoices','payments','overdue','creditnotes','ledger']
+      : ['invoices'];
+    const tabAccess = (resolvedUser?.tabAccess && resolvedUser.tabAccess.length > 0)
+      ? resolvedUser.tabAccess : defaultTabs;
 
-    // Hide all nav buttons first
-    nav.querySelectorAll('.nav-btn').forEach(b => b.style.display = 'none');
-
-    let firstAllowedTab = null;
     nav.querySelectorAll('.nav-btn').forEach(b => {
+      if (b.classList.contains('dev-only')) { b.style.display = 'none'; return; }
       const onclick = b.getAttribute('onclick') || '';
       const match = onclick.match(/'([a-z]+)'/);
-      if (!match) return;
-      const tabName = match[1];
-      if (tabAccess.includes(tabName)) {
-        b.style.display = '';
-        if (!firstAllowedTab) firstAllowedTab = tabName;
+      const tabKey = match ? match[1] : null;
+      if (!tabKey) return;
+      // mgr-only tabs only shown if in tabAccess AND role is admin
+      if (b.classList.contains('mgr-only')) {
+        b.style.display = (role === 'admin' && tabAccess.includes(tabKey)) ? '' : 'none';
+        return;
       }
+      b.style.display = tabAccess.includes(tabKey) ? '' : 'none';
     });
 
-    // Activate first allowed tab
+    const firstTab = tabAccess[0] || (role === 'admin' ? 'dashboard' : 'invoices');
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     nav.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if (firstAllowedTab) {
-      const panel = document.getElementById('tab-' + firstAllowedTab);
-      if (panel) panel.classList.add('active');
-      const btn = nav.querySelector(`[onclick*="'${firstAllowedTab}'"]`);
-      if (btn) btn.classList.add('active');
-    }
+    const panel = document.getElementById('tab-' + firstTab);
+    if (panel) panel.classList.add('active');
+    const btn = nav.querySelector("[onclick*=\"'" + firstTab + "'\"]");
+    if (btn) btn.classList.add('active');
+  } else {
+    // dev: full access, start on Dashboard
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    nav.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const dashPanel = document.getElementById('tab-dashboard');
+    if (dashPanel) dashPanel.classList.add('active');
+    const dashBtn = nav.querySelector('[onclick*="\'dashboard\'"]');
+    if (dashBtn) dashBtn.classList.add('active');
+  }
+}
+    });
+    // activate invoice panel
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const invPanel = document.getElementById('tab-invoices');
+    if (invPanel) invPanel.classList.add('active');
   } else {
     // dev/admin: ensure Dashboard is the active tab on login
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -2732,7 +2757,14 @@ function sendEmail()    { sendReminderEmail(); }
 // ============================================================
 function toggleTabAccessSection() {
   const role = document.getElementById('uf-role').value;
-  document.getElementById('uf-tab-access-section').style.display = role === 'emp' ? '' : 'none';
+  const section = document.getElementById('uf-tab-access-section');
+  const label = document.getElementById('uf-tab-access-label');
+  if (role === 'emp' || role === 'admin') {
+    section.style.display = '';
+    label.textContent = role === 'admin' ? '(Admin — defaults to all tabs)' : '(Employee — defaults to Invoices only)';
+  } else {
+    section.style.display = 'none';
+  }
 }
 
 function openUserForm(id=null) {
@@ -2746,8 +2778,12 @@ function openUserForm(id=null) {
   document.getElementById('uf-status').value = u?.active !== false ? 'true' : 'false';
   document.getElementById('uf-password').value = '';
   document.getElementById('uf-confirm').value = '';
-  // Populate tab access checkboxes
-  const tabAccess = u?.tabAccess || ['invoices'];
+  // Load saved tabAccess into checkboxes (or defaults per role)
+  const role = u?.role || '';
+  const defaultTabs = role === 'admin'
+    ? ['dashboard','customers','invoices','payments','overdue','creditnotes','ledger']
+    : ['invoices'];
+  const tabAccess = (u?.tabAccess && u.tabAccess.length > 0) ? u.tabAccess : defaultTabs;
   document.querySelectorAll('.tab-access-cb').forEach(cb => {
     cb.checked = tabAccess.includes(cb.value);
   });
@@ -2763,23 +2799,24 @@ function closeUserForm() {
 
 async function saveUserFromApp() {
   const firstName = document.getElementById('uf-firstname').value.trim();
-  const lastName = document.getElementById('uf-lastname').value.trim();
-  const username = document.getElementById('uf-username').value.trim().toLowerCase();
-  const role = document.getElementById('uf-role').value;
-  const active = document.getElementById('uf-status').value === 'true';
-  const password = document.getElementById('uf-password').value;
-  const confirm = document.getElementById('uf-confirm').value;
-
-  // Collect tab access for emp role
-  let tabAccess = ['invoices'];
-  if (role === 'emp') {
-    tabAccess = Array.from(document.querySelectorAll('.tab-access-cb:checked')).map(cb => cb.value);
-    if (tabAccess.length === 0) return toast('Select at least one tab for this Employee.', 'error');
-  }
+  const lastName  = document.getElementById('uf-lastname').value.trim();
+  const username  = document.getElementById('uf-username').value.trim().toLowerCase();
+  const role      = document.getElementById('uf-role').value;
+  const active    = document.getElementById('uf-status').value === 'true';
+  const password  = document.getElementById('uf-password').value;
+  const confirm   = document.getElementById('uf-confirm').value;
 
   if (!firstName) return toast('First name required.', 'error');
-  if (!username) return toast('Username required.', 'error');
-  if (!role) return toast('Select a role.', 'error');
+  if (!username)  return toast('Username required.', 'error');
+  if (!role)      return toast('Select a role.', 'error');
+
+  // Collect tab access for admin/emp
+  let tabAccess = null;
+  if (role === 'emp' || role === 'admin') {
+    const checked = Array.from(document.querySelectorAll('.tab-access-cb:checked')).map(cb => cb.value);
+    if (checked.length === 0) return toast('Select at least one tab for this user.', 'error');
+    tabAccess = checked;
+  }
 
   if (!editingUserId) {
     if (!password) return toast('Password required.', 'error');
@@ -2787,19 +2824,31 @@ async function saveUserFromApp() {
     if (password !== confirm) return toast('Passwords do not match.', 'error');
     if (DB.users.find(u => u.username === username)) return toast('Username already exists.', 'error');
     const { hash, salt } = await pbkdf2Hash(password, null);
-    DB.users.push({ id: Date.now(), firstName, lastName, username, role, passwordHash: `pbkdf2:${salt}:${hash}`, active, tabAccess });
+    const newUser = { id: Date.now(), firstName, lastName, username, role, passwordHash: `pbkdf2:${salt}:${hash}`, active };
+    if (tabAccess) newUser.tabAccess = tabAccess;
+    DB.users.push(newUser);
     addLog('create', `Dev created user: ${username} (${role})`);
     toast('User created!', 'success');
   } else {
     const idx = DB.users.findIndex(u => u.id === editingUserId);
     if (idx === -1) return;
-    DB.users[idx] = { ...DB.users[idx], firstName, lastName, username, role, active, tabAccess };
+    DB.users[idx] = { ...DB.users[idx], firstName, lastName, username, role, active };
+    if (tabAccess) DB.users[idx].tabAccess = tabAccess;
+    else delete DB.users[idx].tabAccess;
     if (password) {
       if (password.length < 6) return toast('Password min 6 chars.', 'error');
       if (password !== confirm) return toast('Passwords do not match.', 'error');
       const { hash, salt } = await pbkdf2Hash(password, null);
       DB.users[idx].passwordHash = `pbkdf2:${salt}:${hash}`;
     }
+    addLog('edit', `Dev edited user: ${username}`);
+    toast('User updated!', 'success');
+  }
+
+  save('users');
+  closeUserForm();
+  renderUsersTable();
+}
     addLog('edit', `Dev edited user: ${username}`);
     toast('User updated!', 'success');
   }
@@ -2840,19 +2889,45 @@ function renderUsersTable() {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No users found.</td></tr>`;
     return;
   }
+  const roleMap   = { dev:'Developer', admin:'Admin', emp:'Employee' };
+  const roleColor = { dev:'var(--accent)', admin:'var(--warning)', emp:'var(--success)' };
+  const tabLabels = { dashboard:'Dashboard', customers:'Customers', invoices:'Invoices',
+                      payments:'Payments', overdue:'Overdue', creditnotes:'Credit Notes', ledger:'Ledger' };
+  tbody.innerHTML = DB.users.map((u, i) => {
+    let tabCell = '<span style="color:var(--muted);font-size:0.78rem">All tabs</span>';
+    if ((u.role === 'emp' || u.role === 'admin') && u.tabAccess && u.tabAccess.length) {
+      tabCell = u.tabAccess.map(t =>
+        `<span style="display:inline-block;margin:2px;font-size:0.68rem;background:#e8f0fc;color:var(--accent);border:1px solid #c3d6f5;border-radius:10px;padding:1px 7px">${tabLabels[t]||t}</span>`
+      ).join('');
+    } else if (u.role === 'dev') {
+      tabCell = '<span style="color:var(--muted);font-size:0.78rem">Full access</span>';
+    }
+    return `
+    <tr>
+      <td>${i+1}</td>
+      <td>${u.firstName} ${u.lastName||''} ${u.id===currentUser?.id?'<span style="color:var(--muted);font-size:0.75rem">(you)</span>':''}</td>
+      <td><code>${u.username}</code></td>
+      <td><span class="chip" style="background:${roleColor[u.role]}20;color:${roleColor[u.role]};border:1px solid ${roleColor[u.role]}40">${roleMap[u.role]||u.role}</span></td>
+      <td style="max-width:220px">${tabCell}</td>
+      <td><span class="${u.active!==false?'chip-active':'chip-inactive'} chip">${u.active!==false?'● Active':'● Inactive'}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-outline btn-xs" onclick="openUserForm(${u.id})">✏️ Edit</button>
+          <button class="btn btn-xs" style="background:${u.active!==false?'#e74c3c20':'#2ecc7120'};color:${u.active!==false?'var(--danger)':'var(--success)'};border:1px solid ${u.active!==false?'#e74c3c40':'#2ecc7140'}" onclick="toggleUserActive(${u.id})">${u.active!==false?'🔴 Deactivate':'🟢 Activate'}</button>
+          ${u.id!==currentUser?.id?`<button class="btn btn-danger btn-xs" onclick="deleteUserFromApp(${u.id})">🗑</button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
   const roleMap = { dev: 'Developer', admin: 'Admin', emp: 'Employee' };
   const roleClass = { dev: 'var(--accent)', admin: 'var(--warning)', emp: 'var(--success)' };
-  const tabLabels = { dashboard:'Dashboard', customers:'Customers', invoices:'Invoices', payments:'Payments', overdue:'Overdue', creditnotes:'Credit Notes', ledger:'Ledger' };
-  tbody.innerHTML = DB.users.map((u, i) => {
-    const tabAccessHtml = u.role === 'emp'
-      ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">${(u.tabAccess||['invoices']).map(t => `<span style="font-size:0.68rem;background:#e8f0fc;color:var(--accent);border:1px solid #c3d6f5;border-radius:10px;padding:1px 7px">${tabLabels[t]||t}</span>`).join('')}</div>`
-      : '';
-    return `
+  tbody.innerHTML = DB.users.map((u, i) => `
     <tr>
       <td>${i+1}</td>
       <td>${u.firstName} ${u.lastName || ''} ${u.id === currentUser?.id ? '<span style="color:var(--muted);font-size:0.75rem">(you)</span>' : ''}</td>
       <td><code>${u.username}</code></td>
-      <td><span class="chip" style="background:${roleClass[u.role]}20;color:${roleClass[u.role]};border:1px solid ${roleClass[u.role]}40">${roleMap[u.role]||u.role}</span>${tabAccessHtml}</td>
+      <td><span class="chip" style="background:${roleClass[u.role]}20;color:${roleClass[u.role]};border:1px solid ${roleClass[u.role]}40">${roleMap[u.role]||u.role}</span></td>
       <td><span class="${u.active !== false ? 'chip-active' : 'chip-inactive'} chip">${u.active !== false ? '● Active' : '● Inactive'}</span></td>
       <td>
         <div class="action-btns">
@@ -2861,8 +2936,8 @@ function renderUsersTable() {
           ${u.id !== currentUser?.id ? `<button class="btn btn-danger btn-xs" onclick="deleteUserFromApp(${u.id})">🗑</button>` : ''}
         </div>
       </td>
-    </tr>`;
-  }).join('');
+    </tr>
+  `).join('');
 }
 
 // ============================================================
@@ -3040,38 +3115,51 @@ async function handleImport(input) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      // Normalize column headers: strip trailing " *" and trim whitespace
+
+      // Normalize column headers: strip trailing " *" spaces so
+      // "Name *" and "Phone *" map to "Name" and "Phone"
       const rawRows = XLSX.utils.sheet_to_json(ws);
       const rows = rawRows.map(r => {
-        const normalized = {};
-        for (const key of Object.keys(r)) {
-          const cleanKey = key.replace(/\s*\*\s*$/, '').trim();
-          normalized[cleanKey] = r[key];
+        const n = {};
+        for (const k of Object.keys(r)) {
+          n[k.replace(/\s*\*\s*$/, '').trim()] = r[k];
         }
-        return normalized;
+        return n;
       }).filter(r => {
-        // Skip header-instruction rows (rows where Name contains warning text)
-        const name = String(r.Name || '');
-        return !name.startsWith('⚠') && !name.startsWith('Columns marked');
+        // Skip the template instruction row (starts with ⚠)
+        const name = String(r['Name'] || r['Name *'] || '');
+        return name && !name.startsWith('⚠') && !name.toLowerCase().startsWith('columns marked');
       });
+
       let count = 0;
 
       if (importType === 'customers') {
         for (const r of rows) {
-          if (!r.Name || !r.Phone) continue;
+          const name = String(r.Name || '').trim();
+          const phone = String(r.Phone || '').trim();
+          if (!name || !phone || phone === 'nan') continue;
           const wa = String(r.WhatsappReminder||'').trim().toLowerCase();
           const em = String(r.EmailReminder||'').trim().toLowerCase();
           DB.customers.push({
             id: Date.now() + Math.random(),
-            name: r.Name, phone: String(r.Phone),
+            name, phone,
             email: r.Email||'', company: r.Company||'',
-            city: r.Pincode||'', address: r.Address||'', gst: r.GST||'',
+            city: String(r.Pincode||'').replace(/\.0$/, ''),
+            address: r.Address||'', gst: r.GST||'',
             creditDays: parseInt(r.CreditDays) || 60,
             whatsapp: wa === 'yes', emailRem: em === 'yes'
           });
           count++;
         }
-        await save('customers');
+        // Save locally first so UI updates even if Firebase is blocked
+        try { localStorage.setItem('mauli_customers', JSON.stringify(DB.customers)); } catch(e) {}
+        toast(`✅ Imported ${count} customers!`, 'success');
+        closeModal('modal-import');
+        renderAll();
+        addLog('create', `Imported ${count} customers from Excel`);
+        // Fire-and-forget Firebase save — ad blocker won't block the UI
+        save('customers').catch(e => console.warn('Firebase save blocked:', e));
+        return;
       } else if (importType === 'invoices') {
         for (const r of rows) {
           if (!r.CustomerName || !r.InvoiceNo) continue;
@@ -3080,7 +3168,8 @@ async function handleImport(input) {
           DB.invoices.push({ id: Date.now() + Math.random(), customerId: c.id, invNo: String(r.InvoiceNo), date: fmtExcelDate(r.InvoiceDate), dueDate: fmtExcelDate(r.DueDate), amount: parseFloat(r.Amount)||0, description: r.Description||'' });
           count++;
         }
-        await save('invoices');
+        try { localStorage.setItem('mauli_invoices', JSON.stringify(DB.invoices)); } catch(e) {}
+        save('invoices').catch(e => console.warn('Firebase save blocked:', e));
       } else if (importType === 'payments') {
         for (const r of rows) {
           if (!r.InvoiceNo || !r.Amount) continue;
@@ -3089,10 +3178,11 @@ async function handleImport(input) {
           DB.payments.push({ id: Date.now() + Math.random(), customerId: inv.customerId, invoiceId: inv.id, amount: parseFloat(r.Amount)||0, date: fmtExcelDate(r.PaymentDate), method: r.Method||'Cash', ref: r.Reference||'' });
           count++;
         }
-        await save('payments');
+        try { localStorage.setItem('mauli_payments', JSON.stringify(DB.payments)); } catch(e) {}
+        save('payments').catch(e => console.warn('Firebase save blocked:', e));
       }
 
-      await addLog('create', `Imported ${count} ${importType} from Excel`);
+      addLog('create', `Imported ${count} ${importType} from Excel`);
       toast(`Imported ${count} ${importType}!`, 'success');
       closeModal('modal-import');
       renderAll();
@@ -3533,31 +3623,61 @@ function printPaymentReceipt(paymentId) {
 // ============================================================
 async function clearTestData() {
   if (currentUser?.role !== 'dev') return toast('Only Dev can do this.', 'error');
-  if (!confirm('⚠ This will permanently delete ALL Customers, Invoices, Payments and Credit Notes from Firebase.\n\nUser accounts will NOT be affected.\n\nAre you absolutely sure?')) return;
-  if (!confirm('Second confirmation — this cannot be undone. Proceed?')) return;
-  if (!_db) return toast('Firestore not ready.', 'error');
+  if (!confirm('\u26a0 This will permanently delete ALL Customers, Invoices, Payments and Credit Notes from Firebase.\n\nUser accounts will NOT be affected.\n\nAre you absolutely sure?')) return;
+  if (!confirm('Second confirmation \u2014 this cannot be undone. Proceed?')) return;
   toast('Clearing test data...', 'info');
-  try {
-    stopRealtimeListeners(); // Stop listeners to prevent race condition
-    const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
-    for (const key of ['customers','invoices','payments','creditNotes']) {
-      const snap = await getDocs(col(_db, key));
-      const docs = snap.docs;
-      for (let i = 0; i < docs.length; i += 400) {
-        const batch = writeBatch(_db);
-        docs.slice(i, i + 400).forEach(d => batch.delete(doc(col(_db, key), d.id)));
-        await batch.commit();
+
+  // Step 1: Clear local DB + localStorage immediately (works even without Firebase)
+  const CLEAR_KEYS = ['customers','invoices','payments','creditNotes'];
+  CLEAR_KEYS.forEach(k => {
+    DB[k] = [];
+    try { localStorage.removeItem('mauli_' + k); } catch(e) {}
+  });
+  renderAll();
+
+  // Step 2: Stop realtime listeners to prevent them re-populating DB mid-delete
+  stopRealtimeListeners();
+
+  // Step 3: Delete from Firestore - handle blocked requests gracefully
+  let fsErrors = 0;
+  if (_db) {
+    try {
+      const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
+      for (const key of CLEAR_KEYS) {
+        try {
+          const snap = await getDocs(col(_db, key));
+          const allDocs = snap.docs;
+          for (let i = 0; i < allDocs.length; i += 400) {
+            try {
+              const batch = writeBatch(_db);
+              allDocs.slice(i, i + 400).forEach(d => batch.delete(doc(col(_db, key), d.id)));
+              await batch.commit();
+            } catch(batchErr) {
+              console.warn('Batch delete error for', key, batchErr);
+              fsErrors++;
+            }
+          }
+        } catch(collErr) {
+          console.warn('Could not read collection', key, collErr);
+          fsErrors++;
+        }
       }
+    } catch(e) {
+      console.warn('Firestore clear error:', e);
+      fsErrors++;
     }
-    DB.customers = []; DB.invoices = []; DB.payments = []; DB.creditNotes = [];
-    addLog('delete', 'Dev cleared all test data (customers, invoices, payments, credit notes)');
-    await save('log');
-    renderAll();
-    toast('✅ Test data cleared! Users are untouched.', 'success');
-    startRealtimeListeners();
-  } catch(e) {
-    toast('Error: ' + e.message, 'error');
-    startRealtimeListeners();
+  }
+
+  addLog('delete', 'Dev cleared all test data (customers, invoices, payments, credit notes)');
+  try { await save('log'); } catch(e) {}
+
+  // Step 4: Restart listeners
+  startRealtimeListeners();
+
+  if (fsErrors > 0) {
+    toast('\u26a0 Local data cleared. Firebase may be blocked by ad blocker \u2014 disable it and retry for full cloud clear.', 'error');
+  } else {
+    toast('\u2705 All test data cleared! Users are untouched.', 'success');
   }
 }
 
