@@ -367,7 +367,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">Payment History</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('payments')">📥 Import Excel</button>
           <button class="btn btn-outline btn-sm" onclick="exportPayments()">📤 Export</button>
           <button class="btn btn-primary btn-sm" onclick="openPaymentModal()">➕ Record Payment</button>
         </div>
@@ -392,7 +391,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <button class="filter-btn" onclick="clearPayDateFilter()" style="padding:7px 10px">✕ All Dates</button>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Date</th><th>Customer</th><th>Invoice #</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Date</th><th>Customer</th><th>Invoice #</th><th>Receipt No</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>Actions</th></tr></thead>
         <tbody id="pay-table"></tbody>
       </table></div>
     </div>
@@ -860,17 +859,45 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   <div class="modal">
     <h3 id="import-title">Import from Excel</h3>
     <p id="import-cols" style="color:var(--muted);font-size:0.82rem;margin-bottom:16px"></p>
-    <div class="upload-area" onclick="document.getElementById('import-file').click()">
+
+    <!-- Normal upload area (shown before file is selected) -->
+    <div id="import-upload-area" class="upload-area" onclick="document.getElementById('import-file').click()">
       <div style="font-size:2rem">📂</div>
       <p style="color:var(--muted);font-size:0.85rem;margin-top:8px">Click to select Excel file</p>
       <p style="color:var(--muted);font-size:0.75rem">Supports .xlsx and .xls</p>
     </div>
+
+    <!-- Loading overlay (shown while parsing + uploading) -->
+    <div id="import-loading" style="display:none;text-align:center;padding:32px 16px">
+      <div style="position:relative;width:72px;height:72px;margin:0 auto 20px">
+        <!-- Spinner ring -->
+        <svg width="72" height="72" viewBox="0 0 72 72" style="position:absolute;top:0;left:0">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="var(--border)" stroke-width="5"/>
+          <circle cx="36" cy="36" r="30" fill="none" stroke="var(--accent)" stroke-width="5"
+            stroke-dasharray="188" stroke-dashoffset="140" stroke-linecap="round"
+            style="transform-origin:center;animation:spin 1s linear infinite"/>
+        </svg>
+        <!-- Icon in center -->
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem" id="import-loading-icon">📥</div>
+      </div>
+      <div id="import-loading-label" style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:6px">Reading file…</div>
+      <div id="import-loading-sub" style="font-size:0.82rem;color:var(--muted);margin-bottom:18px">Please wait</div>
+      <!-- Progress bar -->
+      <div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden;max-width:320px;margin:0 auto 10px">
+        <div id="import-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width 0.3s ease"></div>
+      </div>
+      <div id="import-progress-text" style="font-size:0.78rem;color:var(--muted)">0%</div>
+    </div>
+
     <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="handleImport(this)">
-    <div class="modal-footer">
+    <div class="modal-footer" id="import-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-import')">Cancel</button>
     </div>
   </div>
 </div>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
 
 
 <script>
@@ -2174,6 +2201,12 @@ async function savePayment() {
   }
   addLog('create', `Payment ₹${fmt(totalReceived)} [${method}] for invoices ${invNos.join(', ')} (${c?.name})`);
 
+  // Auto-assign receipt number immediately on save (FY-aware)
+  const receiptNo = getNextReceiptNo(date);
+  DB.payments.forEach((x, i) => {
+    if (x.groupId === groupId) DB.payments[i].receiptNo = receiptNo;
+  });
+
   await save('payments');
   toast('Payment recorded!', 'success');
   closeModal('modal-payment');
@@ -2354,6 +2387,7 @@ function renderPayments() {
       <td>${fmtDate(p.date)}</td>
       <td>${c?.name || '—'}</td>
       <td>${invDisplay}</td>
+      <td><span style="font-size:0.78rem;font-weight:600;color:var(--accent)">${p.receiptNo || '—'}</span></td>
       <td style="${mStyle}">₹${fmt(p.amount)}${discBadge}</td>
       <td><span style="font-size:0.8rem;font-weight:600;${p.method==='Cancelled'?'color:var(--danger)':p.method==='Cash Discount'?'color:var(--warning)':''}">${p.method}</span></td>
       <td>${p.ref || '—'}</td>
@@ -3053,11 +3087,10 @@ function renderBackupHistory() {
 // ============================================================
 function openImportModal(type) {
   importType = type;
-  const titles = { customers: 'Import Customers from Excel', invoices: 'Import Invoices from Excel', payments: 'Import Payments from Excel' };
+  const titles = { customers: 'Import Customers from Excel', invoices: 'Import Invoices from Excel' };
   const cols = {
     customers: 'Required columns: Name*, Phone*, Email, Company, Pincode, Address, GST, CreditDays, WhatsappReminder, EmailReminder',
-    invoices: 'Required columns: CustomerName, InvoiceNo, InvoiceDate, DueDate, Amount, Description',
-    payments: 'Required columns: InvoiceNo, CustomerName, Amount, PaymentDate, Method, Reference'
+    invoices: 'Required columns: CustomerName, InvoiceNo, InvoiceDate, DueDate, Amount, Description'
   };
   document.getElementById('import-title').textContent = titles[type];
   document.getElementById('import-cols').textContent = cols[type];
@@ -3065,17 +3098,76 @@ function openImportModal(type) {
   openModal('modal-import');
 }
 
+// ---- Import loading UI helpers ----
+function showImportLoading(icon, label, sub) {
+  document.getElementById('import-upload-area').style.display = 'none';
+  document.getElementById('import-footer').style.display = 'none';
+  document.getElementById('import-loading').style.display = 'block';
+  document.getElementById('import-loading-icon').textContent = icon;
+  document.getElementById('import-loading-label').textContent = label;
+  document.getElementById('import-loading-sub').textContent = sub;
+  setImportProgress(0);
+}
+function setImportProgress(pct, label, sub) {
+  document.getElementById('import-progress-bar').style.width = pct + '%';
+  document.getElementById('import-progress-text').textContent = Math.round(pct) + '%';
+  if (label) document.getElementById('import-loading-label').textContent = label;
+  if (sub)   document.getElementById('import-loading-sub').textContent = sub;
+}
+function resetImportModal() {
+  document.getElementById('import-upload-area').style.display = '';
+  document.getElementById('import-footer').style.display = '';
+  document.getElementById('import-loading').style.display = 'none';
+  document.getElementById('import-file').value = '';
+  setImportProgress(0);
+}
+
+// Chunked Firebase save for large imports — uploads in batches of 400
+async function saveChunked(key, newItems) {
+  if (!_db) {
+    try { localStorage.setItem('mauli_' + key, JSON.stringify(DB[key])); } catch(e) {}
+    toast('⚠ Firebase not connected. Data saved locally.', 'error');
+    return;
+  }
+  const { writeBatch, doc, collection: col } = window._firebaseModules;
+  const colRef = col(_db, key);
+  const CHUNK = 400;
+  const total = newItems.length;
+  updateSyncStatus('syncing');
+  for (let i = 0; i < total; i += CHUNK) {
+    const chunk = newItems.slice(i, i + CHUNK);
+    const batch = writeBatch(_db);
+    chunk.forEach(item => batch.set(doc(colRef, String(item.id)), item));
+    await batch.commit();
+    const pct = Math.min(100, Math.round(((i + chunk.length) / total) * 100));
+    setImportProgress(
+      40 + pct * 0.6,
+      `Uploading to Firebase… (${i + chunk.length} / ${total})`,
+      `Batch ${Math.ceil((i + CHUNK) / CHUNK)} of ${Math.ceil(total / CHUNK)}`
+    );
+    // Small yield so UI can repaint between batches
+    await new Promise(r => setTimeout(r, 30));
+  }
+  updateSyncStatus('synced');
+}
+
 async function handleImport(input) {
   const file = input.files[0];
   if (!file) return;
+
+  showImportLoading('📂', 'Reading file…', 'Parsing your Excel sheet');
+
   const reader = new FileReader();
   reader.onload = async (e) => {
     try {
+      setImportProgress(10, 'Parsing rows…', 'Building data from columns');
+      // Yield so the UI can repaint before heavy XLSX parse
+      await new Promise(r => setTimeout(r, 40));
+
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
 
-      // Normalize column headers: strip trailing " *" spaces so
-      // "Name *" and "Phone *" map to "Name" and "Phone"
+      // Normalize column headers: strip trailing " *"
       const rawRows = XLSX.utils.sheet_to_json(ws);
       const rows = rawRows.map(r => {
         const n = {};
@@ -3085,20 +3177,25 @@ async function handleImport(input) {
         return n;
       }).filter(r => {
         // Skip the template instruction row (starts with ⚠)
-        const name = String(r['Name'] || r['Name *'] || '');
+        // Check all possible first-column keys across all import types
+        const name = String(r['Name'] || r['Name *'] || r['CustomerName'] || r['CustomerName *'] || r['InvoiceNo'] || r['InvoiceNo *'] || '');
         return name && !name.startsWith('⚠') && !name.toLowerCase().startsWith('columns marked');
       });
+
+      setImportProgress(25, `Processing ${rows.length} rows…`, 'Validating and building records');
+      await new Promise(r => setTimeout(r, 40));
 
       let count = 0;
 
       if (importType === 'customers') {
+        const newItems = [];
         for (const r of rows) {
           const name = String(r.Name || '').trim();
           const phone = String(r.Phone || '').trim();
           if (!name || !phone || phone === 'nan') continue;
           const wa = String(r.WhatsappReminder||'').trim().toLowerCase();
           const em = String(r.EmailReminder||'').trim().toLowerCase();
-          DB.customers.push({
+          const item = {
             id: Date.now() + Math.random(),
             name, phone,
             email: r.Email||'', company: r.Company||'',
@@ -3106,50 +3203,55 @@ async function handleImport(input) {
             address: r.Address||'', gst: r.GST||'',
             creditDays: parseInt(r.CreditDays) || 60,
             whatsapp: wa === 'yes', emailRem: em === 'yes'
-          });
+          };
+          DB.customers.push(item);
+          newItems.push(item);
           count++;
         }
-        // Save locally first so UI updates even if Firebase is blocked
         try { localStorage.setItem('mauli_customers', JSON.stringify(DB.customers)); } catch(e) {}
-        toast(`✅ Imported ${count} customers!`, 'success');
-        closeModal('modal-import');
-        renderAll();
+        setImportProgress(40, `Uploading ${count} customers…`, 'Saving to Firebase in batches');
+        await saveChunked('customers', newItems);
         addLog('create', `Imported ${count} customers from Excel`);
-        // Fire-and-forget Firebase save — ad blocker won't block the UI
-        save('customers').catch(e => console.warn('Firebase save blocked:', e));
+        setImportProgress(100, '✅ Done!', `${count} customers imported`);
+        await new Promise(r => setTimeout(r, 700));
+        closeModal('modal-import');
+        resetImportModal();
+        renderAll();
+        toast(`✅ Imported ${count} customers!`, 'success');
         return;
+
       } else if (importType === 'invoices') {
+        const newItems = [];
         for (const r of rows) {
           if (!r.CustomerName || !r.InvoiceNo) continue;
           const c = DB.customers.find(c => c.name.toLowerCase() === String(r.CustomerName).toLowerCase());
           if (!c) continue;
-          DB.invoices.push({ id: Date.now() + Math.random(), customerId: c.id, invNo: String(r.InvoiceNo), date: fmtExcelDate(r.InvoiceDate), dueDate: fmtExcelDate(r.DueDate), amount: parseFloat(r.Amount)||0, description: r.Description||'' });
+          const item = { id: Date.now() + Math.random(), customerId: c.id, invNo: String(r.InvoiceNo), date: fmtExcelDate(r.InvoiceDate), dueDate: fmtExcelDate(r.DueDate), amount: parseFloat(r.Amount)||0, description: r.Description||'' };
+          DB.invoices.push(item);
+          newItems.push(item);
           count++;
         }
         try { localStorage.setItem('mauli_invoices', JSON.stringify(DB.invoices)); } catch(e) {}
-        save('invoices').catch(e => console.warn('Firebase save blocked:', e));
-      } else if (importType === 'payments') {
-        for (const r of rows) {
-          if (!r.InvoiceNo || !r.Amount) continue;
-          const inv = DB.invoices.find(i => i.invNo === String(r.InvoiceNo));
-          if (!inv) continue;
-          DB.payments.push({ id: Date.now() + Math.random(), customerId: inv.customerId, invoiceId: inv.id, amount: parseFloat(r.Amount)||0, date: fmtExcelDate(r.PaymentDate), method: r.Method||'Cash', ref: r.Reference||'' });
-          count++;
-        }
-        try { localStorage.setItem('mauli_payments', JSON.stringify(DB.payments)); } catch(e) {}
-        save('payments').catch(e => console.warn('Firebase save blocked:', e));
+        setImportProgress(40, `Uploading ${count} invoices…`, 'Saving to Firebase in batches');
+        await saveChunked('invoices', newItems);
+        addLog('create', `Imported ${count} invoices from Excel`);
       }
 
-      addLog('create', `Imported ${count} ${importType} from Excel`);
-      toast(`Imported ${count} ${importType}!`, 'success');
+      setImportProgress(100, '✅ Done!', `${count} ${importType} imported`);
+      await new Promise(r => setTimeout(r, 700));
       closeModal('modal-import');
+      resetImportModal();
       renderAll();
+      toast(`✅ Imported ${count} ${importType}!`, 'success');
+
     } catch(err) {
+      resetImportModal();
       toast('Import failed: ' + err.message, 'error');
     }
   };
   reader.readAsArrayBuffer(file);
 }
+
 
 // ============================================================
 // EXPORT
@@ -3484,17 +3586,29 @@ function printLedgerStatement() {
   addLog('edit', `Printed Ledger Statement for ${custName}`);
 }
 
-function getNextReceiptNo() {
-  // Find the highest receipt number already used across all payments
+function getFYTag(dateStr) {
+  // Returns e.g. "2425" for any date in FY 2024-25 (Apr 2024 - Mar 2025)
+  const d = new Date(dateStr);
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1; // 1-12
+  // FY starts April; if Jan-Mar, FY started previous calendar year
+  const fyStart = m >= 4 ? y : y - 1;
+  const fyEnd   = fyStart + 1;
+  return String(fyStart).slice(-2) + String(fyEnd).slice(-2); // "2425"
+}
+
+function getNextReceiptNo(dateStr) {
+  const fyTag  = getFYTag(dateStr); // e.g. "2425"
+  const prefix = 'RC-' + fyTag + '-';
+  // Find the highest sequence number already used within this FY
   let max = 0;
   DB.payments.forEach(p => {
-    if (p.receiptNo) {
-      const n = parseInt(String(p.receiptNo).replace(/\D/g, '')) || 0;
+    if (p.receiptNo && String(p.receiptNo).startsWith(prefix)) {
+      const n = parseInt(String(p.receiptNo).replace(prefix, '')) || 0;
       if (n > max) max = n;
     }
   });
-  const next = max + 1;
-  return 'RCP-' + String(next).padStart(4, '0');
+  return prefix + String(max + 1).padStart(4, '0'); // "RC-2425-0001"
 }
 
 function printPaymentReceipt(paymentId) {
@@ -3516,7 +3630,7 @@ function printPaymentReceipt(paymentId) {
   // Auto receipt number — reuse existing or assign next available
   let receiptNo = p.receiptNo;
   if (!receiptNo) {
-    receiptNo = getNextReceiptNo();
+    receiptNo = getNextReceiptNo(p.date);
     // Persist receipt number on the first entry of this group
     const idx = DB.payments.findIndex(x => x.id === p.id);
     if (idx !== -1) {
