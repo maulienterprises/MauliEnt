@@ -673,7 +673,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     </div>
     <div class="form-group"><label>Description</label><input type="text" id="im-desc" placeholder="Invoice description"></div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-invoice')">Cancel</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-invoice');document.getElementById('dup-global').style.display='none'">Cancel</button>
       <button class="btn btn-primary" onclick="saveInvoice()">Save Invoice</button>
     </div>
   </div>
@@ -1636,6 +1636,7 @@ function openInvoiceModal(id=null) {
   document.getElementById('im-amount').value = inv?.amount || '';
   document.getElementById('im-desc').value = inv?.description || '';
   document.getElementById('inv-dup-warn').style.display = 'none';
+  document.getElementById('dup-global').style.display = 'none';
   populateInvoiceCustomers(inv?.customerId);
   openModal('modal-invoice');
 }
@@ -1648,9 +1649,14 @@ function populateInvoiceCustomers(selectedId) {
 
 function checkDupInvoice() {
   const val = document.getElementById('im-invno').value.trim();
+  if (!val) {
+    document.getElementById('inv-dup-warn').style.display = 'none';
+    document.getElementById('dup-global').style.display = 'none';
+    return;
+  }
   const isDup = DB.invoices.some(i => i.invNo === val && i.id !== editingInvoiceId);
   document.getElementById('inv-dup-warn').style.display = isDup ? 'block' : 'none';
-  if (isDup) document.getElementById('dup-global').style.display = 'block';
+  document.getElementById('dup-global').style.display = isDup ? 'block' : 'none';
 }
 
 function autoFillDueDate() {
@@ -1702,6 +1708,7 @@ async function saveInvoice() {
 
   save('invoices');
   closeModal('modal-invoice');
+  document.getElementById('dup-global').style.display = 'none';
   renderInvoices();
   renderDashboard();
 }
@@ -2015,21 +2022,23 @@ async function savePayment() {
   document.getElementById('pm-remaining-warn').style.display = 'none';
 
   const c = DB.customers.find(c => c.id === customerId);
+  const groupId = 'grp_' + Date.now(); // shared ID for all entries in this payment session
+  const invNos = [];
+
   for (const alloc of allocations) {
     const inv = DB.invoices.find(i => i.id === alloc.invId);
+    invNos.push(inv?.invNo || '—');
     if (alloc.adj > 0) {
-      DB.payments.push({ id: Date.now() + Math.random(), customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived });
     }
     if (alloc.disc > 0 && alloc.adj === 0) {
-      // Pure cash discount with no actual payment
-      DB.payments.push({ id: Date.now() + Math.random(), customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived });
     }
     if (alloc.disc > 0 && alloc.adj > 0) {
-      // Also record cash discount as separate payment entry
-      DB.payments.push({ id: Date.now() + Math.random(), customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc, totalReceived });
     }
-    addLog('create', `Payment ₹${fmt(alloc.adj)} [${method}]${alloc.disc > 0 ? ' + Cash Disc ₹' + fmt(alloc.disc) : ''} for invoice ${inv?.invNo} (${c?.name})`);
   }
+  addLog('create', `Payment ₹${fmt(totalReceived)} [${method}] for invoices ${invNos.join(', ')} (${c?.name})`);
 
   await save('payments');
   toast('Payment recorded!', 'success');
@@ -2123,10 +2132,54 @@ function renderPayments() {
   const dateTo   = document.getElementById('pay-date-to')?.value || '';
   const tbody    = document.getElementById('pay-table');
 
-  let list = DB.payments.filter(p => {
-    const c   = DB.customers.find(c => c.id === p.customerId);
+  // Group payments by groupId — each group = one payment session
+  // Payments without groupId = old single-invoice payments, show as-is
+  const grouped = {};
+  const singles = [];
+
+  DB.payments.forEach(p => {
+    if (p.groupId) {
+      if (!grouped[p.groupId]) grouped[p.groupId] = [];
+      grouped[p.groupId].push(p);
+    } else {
+      singles.push(p);
+    }
+  });
+
+  // Build display list — one entry per group + singles
+  let list = [];
+
+  // Groups — represent as one record using first entry's metadata
+  Object.values(grouped).forEach(grp => {
+    const first = grp[0];
+    const totalAmt = grp.filter(p => p.method !== 'Cash Discount').reduce((s,p) => s + parseFloat(p.amount), 0);
+    const totalDisc = grp.filter(p => p.method === 'Cash Discount').reduce((s,p) => s + parseFloat(p.amount), 0);
+    const invNos = [...new Set(grp.map(p => DB.invoices.find(i => i.id === p.invoiceId)?.invNo).filter(Boolean))];
+    list.push({
+      _isGroup: true,
+      _groupId: first.groupId,
+      _firstId: first.id,
+      customerId: first.customerId,
+      date: first.date,
+      method: first.method,
+      ref: first.ref,
+      notes: first.notes,
+      amount: first.totalReceived || totalAmt,
+      cashDisc: totalDisc,
+      invNos
+    });
+  });
+
+  // Singles
+  singles.forEach(p => {
     const inv = DB.invoices.find(i => i.id === p.invoiceId);
-    const textMatch   = [c?.name, inv?.invNo, p.method, p.ref, p.notes].join(' ').toLowerCase().includes(search);
+    list.push({ ...p, _isGroup: false, invNos: [inv?.invNo || '—'] });
+  });
+
+  // Apply filters
+  list = list.filter(p => {
+    const c = DB.customers.find(c => c.id === p.customerId);
+    const textMatch   = [c?.name, p.invNos?.join(' '), p.method, p.ref, p.notes].join(' ').toLowerCase().includes(search);
     const custMatch   = !custF   || String(p.customerId) === custF;
     const methodMatch = !methodF || p.method === methodF;
     let dateMatch = true;
@@ -2140,27 +2193,29 @@ function renderPayments() {
     return;
   }
 
-  const methodStyle = {
-    'Cancelled':     'color:var(--danger)',
-    'Cash Discount': 'color:var(--warning)',
-  };
+  const methodStyle = { 'Cancelled': 'color:var(--danger)', 'Cash Discount': 'color:var(--warning)' };
 
   tbody.innerHTML = list.map(p => {
-    const c   = DB.customers.find(c => c.id === p.customerId);
-    const inv = DB.invoices.find(i => i.id === p.invoiceId);
+    const c    = DB.customers.find(c => c.id === p.customerId);
     const mStyle = methodStyle[p.method] || 'color:var(--success)';
+    const invDisplay = p.invNos && p.invNos.length > 1
+      ? `<span title="${p.invNos.join(', ')}">${p.invNos[0]} <span style="color:var(--accent);font-size:0.72rem">+${p.invNos.length - 1} more</span></span>`
+      : (p.invNos?.[0] || '—');
+    const discBadge = p.cashDisc > 0
+      ? `<br><span style="font-size:0.7rem;color:var(--warning)">Disc: ₹${fmt(p.cashDisc)}</span>` : '';
+    const reviseId = p._isGroup ? p._firstId : p.id;
     return `<tr>
       <td>${fmtDate(p.date)}</td>
       <td>${c?.name || '—'}</td>
-      <td>${inv?.invNo || '—'}</td>
-      <td style="${mStyle}">₹${fmt(p.amount)}</td>
+      <td>${invDisplay}</td>
+      <td style="${mStyle}">₹${fmt(p.amount)}${discBadge}</td>
       <td><span style="font-size:0.8rem;font-weight:600;${p.method==='Cancelled'?'color:var(--danger)':p.method==='Cash Discount'?'color:var(--warning)':''}">${p.method}</span></td>
       <td>${p.ref || '—'}</td>
       <td style="color:var(--muted);font-size:0.82rem">${p.notes || '—'}</td>
       <td>
         <div class="action-btns">
-          <button class="btn btn-outline btn-xs" onclick="openRevisePaymentModal(${p.id})" title="Revise Payment">✏️ Revise</button>
-          <button class="btn btn-outline btn-xs" onclick="printPaymentReceipt(${p.id})" title="Print Receipt">🧾 PDF</button>
+          <button class="btn btn-outline btn-xs" onclick="openRevisePaymentModal(${reviseId})" title="Revise Payment">✏️ Revise</button>
+          <button class="btn btn-outline btn-xs" onclick="printPaymentReceipt(${reviseId})" title="Print Receipt">🧾 PDF</button>
         </div>
       </td>
     </tr>`;
@@ -2717,7 +2772,7 @@ async function downloadFullBackup() {
   DB.backupHistory.unshift({ name: fname + '.zip', date: new Date().toISOString(), type: 'full' });
   if (DB.backupHistory.length > 20) DB.backupHistory = DB.backupHistory.slice(0, 20);
   save('backupHistory');
-  renderBackupHistory();
+  if (document.getElementById('tab-backup')?.classList.contains('active')) renderBackupHistory();
 
   addLog('create', `Full backup downloaded: ${fname}.zip`);
   toast(`Backup downloaded: ${fname}.zip`, 'success');
@@ -2779,7 +2834,7 @@ async function restoreBackup(input) {
     save('backupHistory');
 
     renderAll();
-    renderBackupHistory();
+    if (document.getElementById('tab-backup')?.classList.contains('active')) renderBackupHistory();
     toast('✅ Backup restored successfully!', 'success');
   } catch(e) {
     toast('❌ Failed to restore backup: ' + e.message, 'error');
@@ -3164,12 +3219,34 @@ function printLedgerStatement() {
 }
 
 function printPaymentReceipt(paymentId) {
-  const p   = DB.payments.find(p => p.id === paymentId);
+  const p = DB.payments.find(p => p.id === paymentId);
   if (!p) return;
-  const c   = DB.customers.find(c => c.id === p.customerId);
-  const inv = DB.invoices.find(i => i.id === p.invoiceId);
+  const c = DB.customers.find(c => c.id === p.customerId);
 
+  // Collect all payments in the same group (or just this one if no group)
+  const grpPayments = p.groupId
+    ? DB.payments.filter(x => x.groupId === p.groupId && x.method !== 'Cash Discount')
+    : [p];
+  const discPayments = p.groupId
+    ? DB.payments.filter(x => x.groupId === p.groupId && x.method === 'Cash Discount')
+    : [];
+
+  const totalPaid = grpPayments.reduce((s,x) => s + parseFloat(x.amount), 0);
+  const totalDisc = discPayments.reduce((s,x) => s + parseFloat(x.amount), 0);
   const receiptNo = 'RCP-' + String(paymentId).slice(-6);
+
+  const invRows = grpPayments.map(x => {
+    const inv = DB.invoices.find(i => i.id === x.invoiceId);
+    const disc = discPayments.find(d => d.invoiceId === x.invoiceId);
+    return `<tr>
+      <td><strong>${inv?.invNo || '—'}</strong></td>
+      <td>${fmtDate(inv?.date)}</td>
+      <td>₹${fmt(inv?.amount || 0)}</td>
+      <td style="color:#16a34a;font-weight:700">₹${fmt(x.amount)}</td>
+      <td style="color:#d97706">${disc ? '₹' + fmt(disc.amount) : '—'}</td>
+    </tr>`;
+  }).join('');
+
   const html = `
     <div class="header">
       <div>
@@ -3189,19 +3266,11 @@ function printPaymentReceipt(paymentId) {
       <div class="info-box"><label>Payment Method</label><strong>${p.method}</strong>${p.ref ? '<br><span style="color:#64748b;font-size:11px">Ref: '+p.ref+'</span>' : ''}</div>
     </div>
     <table>
-      <thead><tr><th>Invoice #</th><th>Invoice Date</th><th>Invoice Amount</th><th>Payment Amount</th>${p.cashDisc > 0 ? '<th>Cash Discount</th>' : ''}</tr></thead>
-      <tbody>
-        <tr>
-          <td><strong>${inv?.invNo || '—'}</strong></td>
-          <td>${fmtDate(inv?.date)}</td>
-          <td>₹${fmt(inv?.amount || 0)}</td>
-          <td style="color:#16a34a;font-weight:700">₹${fmt(p.amount)}</td>
-          ${p.cashDisc > 0 ? `<td style="color:#d97706">₹${fmt(p.cashDisc)}</td>` : ''}
-        </tr>
-      </tbody>
+      <thead><tr><th>Invoice #</th><th>Invoice Date</th><th>Invoice Amt</th><th>Paid Amt</th><th>Cash Disc</th></tr></thead>
+      <tbody>${invRows}</tbody>
     </table>
     <div style="text-align:right;font-size:16px;font-weight:700;color:#1a6fd4;margin:10px 0">
-      Amount Received: ₹${fmt(p.amount)}
+      Total Received: ₹${fmt(totalPaid)}${totalDisc > 0 ? `  <span style="font-size:13px;color:#d97706">(+₹${fmt(totalDisc)} discount)</span>` : ''}
     </div>
     ${p.notes ? `<div style="margin-top:8px;font-size:12px;color:#64748b">Notes: ${p.notes}</div>` : ''}
     <div style="margin-top:32px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
@@ -3211,7 +3280,7 @@ function printPaymentReceipt(paymentId) {
     <div class="footer">Thank you for your payment! &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.phone}</div>`;
 
   buildPrintWindow(html);
-  addLog('edit', `Printed Payment Receipt for ${c?.name} — Invoice ${inv?.invNo}`);
+  addLog('edit', `Printed Payment Receipt for ${c?.name}`);
 }
 
 // ============================================================
