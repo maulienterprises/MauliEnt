@@ -49,7 +49,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .topbar-left{display:flex;align-items:center;gap:14px}
 .topbar-logo{width:48px;height:48px;border-radius:10px;object-fit:contain}
 .topbar-title{font-family:'Arial Narrow',Arial,sans-serif;font-size:1.35rem;letter-spacing:0.03em}
-.brand-pill{background:#fff;border-radius:20px;padding:5px 14px;display:inline-flex;align-items:center;gap:0;line-height:1}
+.brand-pill{background:#fff;border-radius:20px;padding:5px 14px;display:inline-flex;align-items:center;line-height:1}
 .topbar-sub{font-size:0.78rem;color:rgba(255,255,255,0.75)}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px;cursor:pointer}
@@ -149,7 +149,15 @@ tr:hover td{background:rgba(26,111,212,0.04)}
 .section-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-@media(max-width:600px){.form-row-2,.form-row-3{grid-template-columns:1fr}.topbar-title{display:none}.user-chip .role-tag{display:none}}
+@media(max-width:600px){
+  .form-row-2,.form-row-3{grid-template-columns:1fr}
+  .topbar-title{display:none}
+  .user-chip .role-tag{display:none}
+  .sync-label{display:none}
+  .topbar-right{gap:6px}
+  .user-chip{padding:4px 10px;font-size:0.72rem}
+  .btn-signout{padding:5px 10px;font-size:0.72rem;border-radius:6px;white-space:nowrap}
+}
 .log-entry{background:var(--input-bg);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:0.82rem;border-left:3px solid var(--border)}
 .log-entry.correction{border-left-color:var(--warning)}
 .log-entry.create{border-left-color:var(--success)}
@@ -3210,15 +3218,22 @@ const MAULI_LETTERHEAD = {
   phone: '7972848641'
 };
 
-function buildPrintWindow(htmlContent) {
+function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
   const win = window.open('', '_blank', 'width=800,height=900');
+  const emailBtn = customerEmail
+    ? `<button onclick="sendEmail()" class="act-btn email-btn">✉ Email to Customer</button>`
+    : `<button disabled class="act-btn email-btn" title="No email on record" style="opacity:0.45;cursor:not-allowed">✉ Email to Customer</button>`;
+  const waBtn = customerPhone
+    ? `<button onclick="sendWhatsApp()" class="act-btn wa-btn">📲 WhatsApp to Customer</button>`
+    : `<button disabled class="act-btn wa-btn" title="No phone on record" style="opacity:0.45;cursor:not-allowed">📲 WhatsApp to Customer</button>`;
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Mauli Enterprises</title>
+  <title>MAULI ENTERPRISES</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;padding:28px;font-size:13px}
     .header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1a6fd4;padding-bottom:14px;margin-bottom:18px}
-    .co-name{font-size:20px;font-weight:700;color:#1a6fd4;margin-bottom:4px}
+    .co-name{font-size:20px;margin-bottom:4px;font-family:'Arial Narrow',Arial,sans-serif;letter-spacing:0.03em}
+    .co-name .m{font-weight:700;color:#000}.co-name .e{font-weight:400;color:#9c1c1c}
     .co-sub{font-size:11px;color:#64748b;line-height:1.7}
     .logo{width:56px;height:56px;border-radius:8px;object-fit:contain}
     .section-title{font-size:15px;font-weight:700;color:#1355a8;margin:16px 0 10px;padding-bottom:4px;border-bottom:1px solid #cbd5e1}
@@ -3234,9 +3249,37 @@ function buildPrintWindow(htmlContent) {
     .info-box{background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px}
     .info-box label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:3px}
     .info-box strong{font-size:13px;color:#1e293b}
-    @media print{body{padding:12px}.no-print{display:none}}
-  </style></head><body>${htmlContent}
-  <script>window.onload=function(){window.print();}<\/script>
+    .action-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+    .act-btn{border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+    .print-btn{background:#16a34a;color:#fff}
+    .print-btn:hover{background:#15803d}
+    .email-btn{background:#1a6fd4;color:#fff}
+    .email-btn:hover{background:#1355a8}
+    .wa-btn{background:#25d366;color:#fff}
+    .wa-btn:hover{background:#1ebe5d}
+    @media print{.action-bar{display:none}body{padding:12px}}
+  </style></head><body>
+  <div class="action-bar">
+    <button onclick="window.print()" class="act-btn print-btn">🖨 Print / Save PDF</button>
+    ${emailBtn}
+    ${waBtn}
+  </div>
+  ${htmlContent}
+  <script>
+    var _email = ${customerEmail ? JSON.stringify(customerEmail) : 'null'};
+    var _phone = ${customerPhone ? JSON.stringify(String(customerPhone).replace(/\\D/g,'')) : 'null'};
+    function sendEmail(){
+      if(!_email) return alert('No email address on record for this customer.');
+      var subject = encodeURIComponent('Document from MAULI ENTERPRISES');
+      var body = encodeURIComponent('Dear Customer,\\n\\nPlease find your document from Mauli Enterprises.\\n\\nRegards,\\nMauli Enterprises');
+      window.open('mailto:' + _email + '?subject=' + subject + '&body=' + body);
+    }
+    function sendWhatsApp(){
+      if(!_phone) return alert('No phone number on record for this customer.');
+      var msg = encodeURIComponent('Dear Customer,\\n\\nPlease find below your document from *MAULI ENTERPRISES*.\\n\\nKindly save this for your records.\\n\\nThank you,\\nMauli Enterprises');
+      window.open('https://wa.me/' + _phone + '?text=' + msg, '_blank');
+    }
+  <\/script>
   </body></html>`);
   win.document.close();
 }
@@ -3281,7 +3324,7 @@ function printLedgerStatement() {
   const html = `
     <div class="header">
       <div>
-        <div class="co-name">${MAULI_LETTERHEAD.name}</div>
+        <div class="co-name"><span class="m">MAULI</span> <span class="e">ENTERPRISES</span></div>
         <div class="co-sub">
           ${MAULI_LETTERHEAD.address}<br>
           GSTIN: ${MAULI_LETTERHEAD.gstin} &nbsp;|&nbsp; Ph: ${MAULI_LETTERHEAD.phone} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.email}
@@ -3310,10 +3353,11 @@ function printLedgerStatement() {
     </table>
     <div class="footer">
       <div style="margin-bottom:6px;font-style:italic;color:#94a3b8">This is a computer generated statement. No signature required.</div>
-      <div>Thank you for your business! &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name}</div>
+      <div>Thank you for your business! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
     </div>`;
 
-  buildPrintWindow(html);
+  const ledgerCust = custId ? DB.customers.find(c => c.id === custId) : null;
+  buildPrintWindow(html, ledgerCust?.email || null, ledgerCust?.phone || null);
   addLog('edit', `Printed Ledger Statement for ${custName}`);
 }
 
@@ -3377,7 +3421,7 @@ function printPaymentReceipt(paymentId) {
   const html = `
     <div class="header">
       <div>
-        <div class="co-name">${MAULI_LETTERHEAD.name}</div>
+        <div class="co-name"><span class="m">MAULI</span> <span class="e">ENTERPRISES</span></div>
         <div class="co-sub">
           ${MAULI_LETTERHEAD.address}<br>
           GSTIN: ${MAULI_LETTERHEAD.gstin} &nbsp;|&nbsp; Ph: ${MAULI_LETTERHEAD.phone} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.email}
@@ -3402,10 +3446,10 @@ function printPaymentReceipt(paymentId) {
     ${p.notes ? `<div style="margin-top:8px;font-size:12px;color:#64748b">Notes: ${p.notes}</div>` : ''}
     <div class="footer">
       <div style="margin-bottom:6px;font-style:italic;color:#94a3b8">This is a computer generated receipt. No signature required.</div>
-      <div>Thank you for your payment! &nbsp;|&nbsp; ${MAULI_LETTERHEAD.name}</div>
+      <div>Thank you for your payment! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
     </div>`;
 
-  buildPrintWindow(html);
+  buildPrintWindow(html, c?.email || null, c?.phone || null);
   addLog('edit', `Printed Payment Receipt ${receiptNo} for ${c?.name}`);
 }
 
