@@ -3232,13 +3232,16 @@ function buildPrintWindow(htmlContent) {
 }
 
 function printLedgerStatement() {
-  const custId = parseInt(document.getElementById('ledger-cust')?.value) || null;
-  const dateFrom = document.getElementById('ledger-date-from')?.value || '';
-  const dateTo   = document.getElementById('ledger-date-to')?.value || '';
+  const custId       = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const statusFilter = document.getElementById('ledger-status')?.value || 'total';
+  const dateFrom     = document.getElementById('ledger-date-from')?.value || '';
+  const dateTo       = document.getElementById('ledger-date-to')?.value || '';
 
   let invList = custId ? DB.invoices.filter(i => i.customerId === custId) : [...DB.invoices];
   if (dateFrom) invList = invList.filter(i => i.date >= dateFrom);
   if (dateTo)   invList = invList.filter(i => i.date <= dateTo);
+  if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
+  else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
   invList.sort((a,b) => new Date(a.date) - new Date(b.date));
 
   const custName = custId ? DB.customers.find(c => c.id === custId)?.name || 'All Customers' : 'All Customers';
@@ -3276,9 +3279,10 @@ function printLedgerStatement() {
       </div>
       <img src="./logo.png" class="logo" onerror="this.style.display='none'">
     </div>
-    <div class="section-title">Statement of Account — ${custName}</div>
+    <div class="section-title">Statement of Account — ${custName}${statusFilter !== 'total' ? ' (' + statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1) + ' Invoices)' : ''}</div>
     <div class="info-grid">
       <div class="info-box"><label>Period</label><strong>${dateFrom ? fmtDate(dateFrom) : 'All'} ${dateTo ? '→ ' + fmtDate(dateTo) : ''}</strong></div>
+      <div class="info-box"><label>Status Filter</label><strong>${statusFilter === 'total' ? 'All Invoices' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1) + ' Only'}</strong></div>
       <div class="info-box"><label>Generated On</label><strong>${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</strong></div>
     </div>
     <table>
