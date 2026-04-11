@@ -954,6 +954,8 @@ async function load() {
       const snap = await getDocs(col(_db, key));
       DB[key] = snap.docs.map(d => d.data());
     }
+    // Sort log newest first
+    DB.log.sort((a, b) => new Date(b.time) - new Date(a.time));
 
     // One-time migration: if Firestore is empty but localStorage has data, upload it
     if (DB.customers.length === 0) {
@@ -1030,7 +1032,7 @@ function startRealtimeListeners() {
   stopRealtimeListeners();
   const { onSnapshot, collection: col } = window._firebaseModules;
 
-  const liveKeys = ['customers','invoices','payments','creditNotes','log'];
+  const liveKeys = ['customers','invoices','payments','creditNotes'];
   liveKeys.forEach(key => {
     const unsub = onSnapshot(col(_db, key), (snap) => {
       const newData = snap.docs.map(d => d.data());
@@ -1473,9 +1475,19 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // ACTIVITY LOG
 // ============================================================
 async function addLog(type, msg) {
-  DB.log.unshift({ type, msg, user: currentUser?.username || 'system', time: new Date().toISOString() });
+  const entry = { id: Date.now() + Math.random(), type, msg, user: currentUser?.username || 'system', time: new Date().toISOString() };
+  DB.log.unshift(entry);
   if (DB.log.length > 500) DB.log = DB.log.slice(0, 500);
-  save('log');
+  // Save only this single log entry to Firestore — much faster than rewriting all 500
+  try { localStorage.setItem('mauli_log', JSON.stringify(DB.log)); } catch(e) {}
+  if (_db) {
+    try {
+      const { doc, setDoc, collection: col } = window._firebaseModules;
+      await setDoc(doc(col(_db, 'log'), String(entry.id)), entry);
+    } catch(e) {
+      console.error('Log save error:', e);
+    }
+  }
 }
 
 function renderLog() {
@@ -1489,10 +1501,29 @@ function renderLog() {
   `).join('');
 }
 
-function clearLog() {
+async function clearLog() {
   if (!confirm('Clear all activity log entries?')) return;
+  if (currentUser?.role !== 'dev') return toast('Only Dev can clear the log.', 'error');
+  const oldLog = [...DB.log];
   DB.log = [];
-  save('log');
+  try { localStorage.setItem('mauli_log', '[]'); } catch(e) {}
+  // Delete all log documents from Firestore
+  if (_db) {
+    try {
+      const { writeBatch, doc, collection: col } = window._firebaseModules;
+      const CHUNK = 400;
+      for (let i = 0; i < oldLog.length; i += CHUNK) {
+        const batch = writeBatch(_db);
+        oldLog.slice(i, i + CHUNK).forEach(entry => {
+          batch.delete(doc(col(_db, 'log'), String(entry.id)));
+        });
+        await batch.commit();
+      }
+      toast('Activity log cleared.', 'success');
+    } catch(e) {
+      toast('Log cleared locally. Firebase error: ' + e.message, 'error');
+    }
+  }
   renderLog();
 }
 
