@@ -1492,21 +1492,6 @@ function applyRoleAccess(role, user) {
     if (dashBtn) dashBtn.classList.add('active');
   }
 }
-    });
-    // activate invoice panel
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    const invPanel = document.getElementById('tab-invoices');
-    if (invPanel) invPanel.classList.add('active');
-  } else {
-    // dev/admin: ensure Dashboard is the active tab on login
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    nav.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    const dashPanel = document.getElementById('tab-dashboard');
-    if (dashPanel) dashPanel.classList.add('active');
-    const dashBtn = nav.querySelector('[onclick*="\'dashboard\'"]');
-    if (dashBtn) dashBtn.classList.add('active');
-  }
-}
 
 function roleLabel(r) {
   return { dev: 'Dev', admin: 'Admin', emp: 'Emp' }[r] || r;
@@ -2849,14 +2834,6 @@ async function saveUserFromApp() {
   closeUserForm();
   renderUsersTable();
 }
-    addLog('edit', `Dev edited user: ${username}`);
-    toast('User updated!', 'success');
-  }
-
-  save('users');
-  closeUserForm();
-  renderUsersTable();
-}
 
 async function toggleUserActive(id) {
   const u = DB.users.find(u => u.id === id);
@@ -2919,25 +2896,6 @@ function renderUsersTable() {
       </td>
     </tr>`;
   }).join('');
-}
-  const roleMap = { dev: 'Developer', admin: 'Admin', emp: 'Employee' };
-  const roleClass = { dev: 'var(--accent)', admin: 'var(--warning)', emp: 'var(--success)' };
-  tbody.innerHTML = DB.users.map((u, i) => `
-    <tr>
-      <td>${i+1}</td>
-      <td>${u.firstName} ${u.lastName || ''} ${u.id === currentUser?.id ? '<span style="color:var(--muted);font-size:0.75rem">(you)</span>' : ''}</td>
-      <td><code>${u.username}</code></td>
-      <td><span class="chip" style="background:${roleClass[u.role]}20;color:${roleClass[u.role]};border:1px solid ${roleClass[u.role]}40">${roleMap[u.role]||u.role}</span></td>
-      <td><span class="${u.active !== false ? 'chip-active' : 'chip-inactive'} chip">${u.active !== false ? '● Active' : '● Inactive'}</span></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn btn-outline btn-xs" onclick="openUserForm(${u.id})">✏️ Edit</button>
-          <button class="btn btn-xs" style="background:${u.active!==false?'#e74c3c20':'#2ecc7120'};color:${u.active!==false?'var(--danger)':'var(--success)'};border:1px solid ${u.active!==false?'#e74c3c40':'#2ecc7140'}" onclick="toggleUserActive(${u.id})">${u.active !== false ? '🔴 Deactivate' : '🟢 Activate'}</button>
-          ${u.id !== currentUser?.id ? `<button class="btn btn-danger btn-xs" onclick="deleteUserFromApp(${u.id})">🗑</button>` : ''}
-        </div>
-      </td>
-    </tr>
-  `).join('');
 }
 
 // ============================================================
