@@ -1816,6 +1816,8 @@ function renderCustomers() {
     return getCustomerStatus(c.id) === custFilter;
   });
 
+  list.sort((a, b) => a.name.localeCompare(b.name, 'en-IN'));
+
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">👥</div><p>No customers found.</p></div></td></tr>`;
     return;
