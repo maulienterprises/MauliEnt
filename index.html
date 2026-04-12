@@ -1017,6 +1017,27 @@ async function save(key) {
 }
 
 // ---- Firestore load (one-time fetch on login) ----
+// Normalize all numeric IDs to integers after loading from Firestore.
+// Firestore float64 storage can cause drift on large timestamp-based IDs
+// (e.g. customerId 1775918938303 may come back as 1775918938303.1707).
+function normalizeIds() {
+  DB.customers.forEach(c => { if (c.id != null) c.id = Math.round(parseFloat(c.id)); });
+  DB.invoices.forEach(i => {
+    if (i.id != null)         i.id         = Math.round(parseFloat(i.id));
+    if (i.customerId != null) i.customerId = Math.round(parseFloat(i.customerId));
+  });
+  DB.payments.forEach(p => {
+    if (p.id != null)         p.id         = Math.round(parseFloat(p.id));
+    if (p.customerId != null) p.customerId = Math.round(parseFloat(p.customerId));
+    if (p.invoiceId  != null) p.invoiceId  = Math.round(parseFloat(p.invoiceId));
+  });
+  (DB.creditNotes || []).forEach(cn => {
+    if (cn.id != null)         cn.id         = Math.round(parseFloat(cn.id));
+    if (cn.customerId != null) cn.customerId = Math.round(parseFloat(cn.customerId));
+    if (cn.invoiceId  != null) cn.invoiceId  = Math.round(parseFloat(cn.invoiceId));
+  });
+}
+
 async function load() {
   // Load local-only keys
   try { DB.backupHistory = JSON.parse(localStorage.getItem(LOCAL_KEYS.backupHistory)) || []; } catch { DB.backupHistory = []; }
@@ -1033,6 +1054,11 @@ async function load() {
     }
     // Sort log newest first
     DB.log.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    // Normalize IDs: Firestore stores numbers as float64 which can introduce
+    // decimal drift on large integers (e.g. 1775918938303 → 1775918938303.1707).
+    // Round all id / customerId / invoiceId fields to integer on load.
+    normalizeIds();
 
     // One-time migration: if Firestore is empty but localStorage has data, upload it
     if (DB.customers.length === 0) {
@@ -2086,14 +2112,20 @@ function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
 }
 
 function getAllInvoicesForCustomer(custId) {
-  // Normalize both sides: convert to number for comparison to handle
-  // cases where customerId may be stored as string or number in Firestore
-  const custIdNum = parseFloat(custId);
-  const custIdStr = String(custId).trim();
+  // IDs may have floating-point drift when stored/read from Firestore
+  // (e.g. 1775918938303 stored as integer may come back as 1775918938303.1707)
+  // Fix: compare using Math.round() on both sides to strip decimal noise,
+  // and also fall back to string prefix match for extra safety.
+  const custIdInt = Math.round(parseFloat(custId));
   return DB.invoices
     .filter(i => {
       const cid = i.customerId;
-      return parseFloat(cid) === custIdNum || String(cid).trim() === custIdStr;
+      if (cid == null) return false;
+      // Primary: round both to integer and compare
+      if (Math.round(parseFloat(cid)) === custIdInt) return true;
+      // Fallback: string comparison (handles string-stored IDs)
+      if (String(cid).trim() === String(custId).trim()) return true;
+      return false;
     })
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 }
@@ -3325,7 +3357,7 @@ async function handleImport(input) {
           const wa = String(r.WhatsappReminder||'').trim().toLowerCase();
           const em = String(r.EmailReminder||'').trim().toLowerCase();
           const item = {
-            id: idBase++,
+            id: Math.round(idBase++),
             name, phone,
             email: r.Email||'', company: r.Company||'',
             city: String(r.Pincode||'').replace(/\.0$/, ''),
@@ -3357,8 +3389,8 @@ async function handleImport(input) {
           const c = DB.customers.find(c => c.name.toLowerCase() === String(r.CustomerName).toLowerCase());
           if (!c) continue;
           const item = {
-            id: idBase++,
-            customerId: c.id,
+            id: Math.round(idBase++),
+            customerId: Math.round(c.id),
             invNo: String(r.InvoiceNo),
             date: fmtExcelDate(r.InvoiceDate),
             dueDate: fmtExcelDate(r.DueDate),
