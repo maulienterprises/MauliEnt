@@ -4005,6 +4005,9 @@ if ('serviceWorker' in navigator) {
   const token = getSessionToken();
   const cachedUser = (() => { try { return JSON.parse(sessionStorage.getItem('mauli_current_user')); } catch { return null; } })();
   if (token && cachedUser) {
+    // Hide login screen IMMEDIATELY (before Firebase loads) to prevent flash
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
     // Re-hydrate currentUser immediately so UI can restore
     currentUser = cachedUser;
     // Wait for Firebase to be ready then finish loading
@@ -4018,8 +4021,6 @@ if ('serviceWorker' in navigator) {
       const waitDB = setInterval(async () => {
         if (!_db) return;
         clearInterval(waitDB);
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
         document.getElementById('topbar-name').textContent = cachedUser.firstName + (cachedUser.lastName ? ' ' + cachedUser.lastName : '');
         document.getElementById('topbar-role').textContent = roleLabel(cachedUser.role);
         const isDev = cachedUser.role === 'dev';
