@@ -1871,7 +1871,7 @@ function autoFillDueDate() {
   if (!dateVal) return;
   // Only auto-fill if due date is empty or was auto-filled (not manually changed)
   if (dueEl.dataset.manuallySet === 'true') return;
-  const custId = parseInt(document.getElementById('im-customer').value);
+  const custId = parseFloat(document.getElementById('im-customer').value);
   const cust = DB.customers.find(c => c.id === custId);
   const days = cust?.creditDays ?? 60;
   const d = new Date(dateVal);
@@ -1880,7 +1880,7 @@ function autoFillDueDate() {
 }
 
 async function saveInvoice() {
-  const customerId = parseInt(document.getElementById('im-customer').value);
+  const customerId = parseFloat(document.getElementById('im-customer').value);
   const invNo = document.getElementById('im-invno').value.trim();
   const date = document.getElementById('im-date').value;
   const dueDate = document.getElementById('im-due').value;
@@ -2102,7 +2102,7 @@ function populatePaymentCustomers(selectedId) {
 }
 
 function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
-  const custId = forceCustomerId || parseInt(document.getElementById('pm-customer').value);
+  const custId = forceCustomerId || parseFloat(document.getElementById('pm-customer').value);
   document.getElementById('pm-invoice-rows').innerHTML = '';
   if (!custId) { updatePayRemaining(); return; }
   // Sync the select so addPayInvoiceRow can read custId from the DOM
@@ -2257,7 +2257,7 @@ function updatePayRemaining() {
 }
 
 async function savePayment() {
-  const customerId = parseInt(document.getElementById('pm-customer').value);
+  const customerId = parseFloat(document.getElementById('pm-customer').value);
   const date       = document.getElementById('pm-date').value;
   const method     = document.getElementById('pm-method').value;
   const ref        = document.getElementById('pm-ref').value.trim();
@@ -2615,7 +2615,7 @@ function updateCNBalance() {
 }
 
 async function saveCreditNote() {
-  const customerId = parseInt(document.getElementById('cn-customer').value);
+  const customerId = parseFloat(document.getElementById('cn-customer').value);
   const invoiceId  = parseInt(document.getElementById('cn-invoice').value);
   const cnNumber   = document.getElementById('cn-number').value.trim();
   const date       = document.getElementById('cn-date').value;
