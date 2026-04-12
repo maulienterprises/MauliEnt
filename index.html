@@ -1403,7 +1403,7 @@ async function doLogin() {
   const token = generateToken();
   setSessionToken(token);
   // Cache user (no password hash) so refresh can restore session
-  try { sessionStorage.setItem('mauli_current_user', JSON.stringify({ id: user.id, firstName: user.firstName, lastName: user.lastName, username: user.username, role: user.role })); } catch(e) {}
+  try { sessionStorage.setItem('mauli_current_user', JSON.stringify({ id: user.id, firstName: user.firstName, lastName: user.lastName, username: user.username, role: user.role, tabAccess: user.tabAccess || null })); } catch(e) {}
 
   currentUser = user;
   document.getElementById('login-error').style.display = 'none';
@@ -3021,6 +3021,13 @@ async function saveUserFromApp() {
     }
     addLog('edit', `Dev edited user: ${username}`);
     toast('User updated!', 'success');
+    // If the edited user is currently logged in, update their live session so
+    // tab access changes take effect immediately without requiring a re-login
+    if (currentUser && currentUser.id === editingUserId) {
+      currentUser = { ...currentUser, role, tabAccess: tabAccess || undefined };
+      try { sessionStorage.setItem('mauli_current_user', JSON.stringify({ id: currentUser.id, firstName: currentUser.firstName, lastName: currentUser.lastName, username: currentUser.username, role: currentUser.role, tabAccess: currentUser.tabAccess || null })); } catch(e) {}
+      applyRoleAccess(role, currentUser);
+    }
   }
 
   save('users');
