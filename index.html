@@ -557,6 +557,24 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           </div>
           <input type="file" id="backup-upload" accept=".zip" style="display:none" onchange="restoreBackup(this)">
         </div>
+
+        <div class="backup-card">
+          <h3>📄 Import Single JSON</h3>
+          <p>Restore a single collection from a previously downloaded <strong>JSON backup file</strong>. <strong style="color:var(--danger)">Overwrites only that collection.</strong></p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-customers').click()">👥 Import Customers JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-invoices').click()">🧾 Import Invoices JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-payments').click()">💳 Import Payments JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-creditNotes').click()">📝 Import Credit Notes JSON</button>
+          </div>
+          <input type="file" id="json-import-customers"   accept=".json" style="display:none" onchange="restoreSingleJSON(this,'customers')">
+          <input type="file" id="json-import-invoices"    accept=".json" style="display:none" onchange="restoreSingleJSON(this,'invoices')">
+          <input type="file" id="json-import-payments"    accept=".json" style="display:none" onchange="restoreSingleJSON(this,'payments')">
+          <input type="file" id="json-import-creditNotes" accept=".json" style="display:none" onchange="restoreSingleJSON(this,'creditNotes')">
+          <div class="backup-info">
+            <strong>ℹ Tip:</strong> Use files exported from <em>Selective Backup</em> above (e.g. <code>customers_…json</code>). Only the selected collection will be overwritten; all other data stays intact.
+          </div>
+        </div>
       </div>
 
       <div class="section-card">
@@ -1871,7 +1889,7 @@ function autoFillDueDate() {
   if (!dateVal) return;
   // Only auto-fill if due date is empty or was auto-filled (not manually changed)
   if (dueEl.dataset.manuallySet === 'true') return;
-  const custId = parseFloat(document.getElementById('im-customer').value);
+  const custId = Number(document.getElementById('im-customer').value);
   const cust = DB.customers.find(c => c.id === custId);
   const days = cust?.creditDays ?? 60;
   const d = new Date(dateVal);
@@ -1880,7 +1898,10 @@ function autoFillDueDate() {
 }
 
 async function saveInvoice() {
-  const customerId = parseFloat(document.getElementById('im-customer').value);
+  // Use Number() (not parseInt) so customerId preserves the same float value
+  // as stored on the customer record (e.g. 1775918938303.378), matching 1.8.4 behaviour.
+  const customerIdRaw = document.getElementById('im-customer').value;
+  const customerId = Number(customerIdRaw);
   const invNo = document.getElementById('im-invno').value.trim();
   const date = document.getElementById('im-date').value;
   const dueDate = document.getElementById('im-due').value;
@@ -2102,7 +2123,7 @@ function populatePaymentCustomers(selectedId) {
 }
 
 function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
-  const custId = forceCustomerId || parseFloat(document.getElementById('pm-customer').value);
+  const custId = forceCustomerId || parseInt(document.getElementById('pm-customer').value);
   document.getElementById('pm-invoice-rows').innerHTML = '';
   if (!custId) { updatePayRemaining(); return; }
   // Sync the select so addPayInvoiceRow can read custId from the DOM
@@ -2257,7 +2278,7 @@ function updatePayRemaining() {
 }
 
 async function savePayment() {
-  const customerId = parseFloat(document.getElementById('pm-customer').value);
+  const customerId = parseInt(document.getElementById('pm-customer').value);
   const date       = document.getElementById('pm-date').value;
   const method     = document.getElementById('pm-method').value;
   const ref        = document.getElementById('pm-ref').value.trim();
@@ -2615,7 +2636,7 @@ function updateCNBalance() {
 }
 
 async function saveCreditNote() {
-  const customerId = parseFloat(document.getElementById('cn-customer').value);
+  const customerId = parseInt(document.getElementById('cn-customer').value);
   const invoiceId  = parseInt(document.getElementById('cn-invoice').value);
   const cnNumber   = document.getElementById('cn-number').value.trim();
   const date       = document.getElementById('cn-date').value;
@@ -3231,6 +3252,44 @@ async function restoreBackup(input) {
     toast('✅ Backup restored successfully!', 'success');
   } catch(e) {
     toast('❌ Failed to restore backup: ' + e.message, 'error');
+  }
+  input.value = '';
+}
+
+async function restoreSingleJSON(input, collectionKey) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.name.endsWith('.json')) { toast('Please select a valid .json file.', 'error'); input.value = ''; return; }
+
+  const labels = { customers: 'Customers', invoices: 'Invoices', payments: 'Payments', creditNotes: 'Credit Notes' };
+  const label  = labels[collectionKey] || collectionKey;
+
+  if (!confirm(`⚠ This will OVERWRITE all current ${label} data with the contents of:\n\n"${file.name}"\n\nAll other data (${Object.values(labels).filter(l=>l!==label).join(', ')}) will remain unchanged.\n\nAre you sure?`)) {
+    input.value = '';
+    return;
+  }
+
+  try {
+    const txt  = await file.text();
+    const data = JSON.parse(txt);
+
+    if (!Array.isArray(data)) throw new Error('JSON file must contain an array of records.');
+
+    DB[collectionKey] = data;
+    await save(collectionKey);
+
+    addLog('edit', `Single JSON imported for ${label}: ${file.name} (${data.length} records)`);
+    await save('log');
+
+    DB.backupHistory.unshift({ name: file.name, date: new Date().toISOString(), type: 'restore' });
+    if (DB.backupHistory.length > 20) DB.backupHistory = DB.backupHistory.slice(0, 20);
+    save('backupHistory');
+
+    renderAll();
+    if (document.getElementById('tab-backup')?.classList.contains('active')) renderBackupHistory();
+    toast(`✅ ${label} imported successfully! (${data.length} records)`, 'success');
+  } catch(e) {
+    toast('❌ Failed to import JSON: ' + e.message, 'error');
   }
   input.value = '';
 }
