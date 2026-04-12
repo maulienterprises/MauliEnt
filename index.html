@@ -1911,11 +1911,12 @@ async function deleteInvoice(id) {
 }
 
 function getPaidAmount(invoiceId) {
+  const invIdStr = String(invoiceId);
   const payments = DB.payments
-    .filter(p => p.invoiceId === invoiceId && p.method !== 'Cancelled')
+    .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled')
     .reduce((s, p) => s + parseFloat(p.amount), 0);
   const credits = (DB.creditNotes || [])
-    .filter(cn => cn.invoiceId === invoiceId)
+    .filter(cn => String(cn.invoiceId) === invIdStr)
     .reduce((s, cn) => s + parseFloat(cn.amount), 0);
   return payments + credits;
 }
@@ -2080,21 +2081,25 @@ function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
   if (!custId) { updatePayRemaining(); return; }
   // Sync the select so addPayInvoiceRow can read custId from the DOM
   const sel = document.getElementById('pm-customer');
-  if (sel && custId && !sel.value) sel.value = custId;
-  addPayInvoiceRow(forceInvoiceId);
+  if (sel && custId && !sel.value) sel.value = String(custId);
+  addPayInvoiceRow(forceInvoiceId, custId);
 }
 
 function getPendingInvoicesForCustomer(custId) {
-  // Aging: oldest due date first. Use string comparison for Firestore ID safety.
+  // Use string comparison for Firestore ID safety (IDs may be int or string after round-trip)
+  const custIdStr = String(custId);
   return DB.invoices
-    .filter(i => String(i.customerId) === String(custId) && getInvoiceStatus(i) !== 'paid')
+    .filter(i => String(i.customerId) === custIdStr && getInvoiceStatus(i) !== 'paid')
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 }
 
-function addPayInvoiceRow(preselectInvId) {
-  const custIdRaw = document.getElementById('pm-customer').value;
+function addPayInvoiceRow(preselectInvId, forceCustId) {
+  const custIdRaw = forceCustId != null ? String(forceCustId) : document.getElementById('pm-customer').value;
   const custId = parseInt(custIdRaw);
   if (!custId) { toast('Select a customer first.', 'error'); return; }
+  // Also ensure the select reflects the customer (for manual "+ Add Another Invoice" clicks)
+  const pmSel = document.getElementById('pm-customer');
+  if (pmSel && !pmSel.value && custId) pmSel.value = String(custId);
   const container = document.getElementById('pm-invoice-rows');
   const rowId = 'prow_' + Date.now();
   const pending = getPendingInvoicesForCustomer(custId);
