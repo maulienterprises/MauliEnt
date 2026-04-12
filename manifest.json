@@ -1,6 +1,6 @@
 {
   "name": "Mauli Enterprises — Invoice Tracker",
-  "short_name": "Mauli Invoices",
+  "short_name": "Mauli Enterprises",
   "description": "Invoice & payment tracking for Mauli Enterprises",
   "start_url": "./index.html",
   "display": "standalone",
