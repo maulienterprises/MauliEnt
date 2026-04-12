@@ -32,7 +32,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a6fd4 0%,#1355a8 50%,#0d3f8a 100%)}
 .login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:380px;box-shadow:var(--shadow)}
 .login-logo{text-align:center;margin-bottom:24px}
-.login-logo img{width:64px;height:64px;border-radius:12px;object-fit:contain}
+.login-logo img{width:76px;height:76px;border-radius:6px;object-fit:contain;box-shadow:0 2px 12px rgba(0,0,0,0.18)}
 .login-logo h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-top:10px;color:var(--accent)}
 .login-logo p{color:var(--muted);font-size:0.82rem;margin-top:4px}
 .form-group{margin-bottom:16px}
@@ -46,9 +46,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 #app{display:none;min-height:100vh}
 .topbar{background:#1a6fd4;border-bottom:1px solid #1355a8;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:72px;position:sticky;top:0;z-index:100}
 .topbar-left{display:flex;align-items:center;gap:14px}
-.topbar-logo{width:48px;height:48px;border-radius:10px;object-fit:contain}
+.topbar-logo{width:48px;height:48px;border-radius:6px;object-fit:contain}
 .topbar-title{font-family:'Arial Narrow', Arial, sans-serif;font-size: 1.9rem;letter-spacing: 0.5px;}
-.brand-pill{background: #fff;border-radius: 6px;padding: 8px 14px;display: inline-flex;align-items: center;line-height: 1;box-shadow: 0 2px 8px rgba(0,0,0,0.15);}
+.brand-pill{background: #fff;border-radius: 6px;padding: 0 14px;height: 48px;display: inline-flex;align-items: center;line-height: 1;box-shadow: 0 2px 8px rgba(0,0,0,0.15);}
 .topbar-sub{font-size:0.78rem;color:rgba(255,255,255,0.75)}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px;cursor:pointer}
@@ -202,8 +202,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   <div class="login-box">
     <div class="login-logo">
       <img src="./logo.png" id="login-logo-img" onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='flex'" alt="Logo">
-      <div id="login-logo-fallback" style="display:none;width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#1a6fd4,#1355a8);align-items:center;justify-content:center;margin:0 auto;box-shadow:0 4px 14px rgba(26,111,212,0.35)"><span style="font-family:'Arial Narrow',Arial,sans-serif;font-weight:700;color:#fff;font-size:1.3rem;letter-spacing:1px">ME</span></div>
-      <h2 style="font-family:'Arial Narrow',Arial,sans-serif;font-size:1.4rem;margin-top:10px;color:var(--accent)"><span style="font-weight:700;color:#000">MAULI</span> <span style="font-weight:400;color:#9c1c1c">ENTERPRISES</span></h2>
+      <div id="login-logo-fallback" style="display:none;width:76px;height:76px;border-radius:6px;background:linear-gradient(135deg,#1a6fd4,#1355a8);align-items:center;justify-content:center;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,0.18)"><span style="font-family:'Arial Narrow',Arial,sans-serif;font-weight:700;color:#fff;font-size:1.3rem;letter-spacing:1px">ME</span></div>
+      <h2 style="font-family:'Arial Narrow',Arial,sans-serif;font-size:1.9rem;margin-top:12px;color:var(--accent)"><span style="font-weight:700;color:#000">MAULI</span> <span style="font-weight:400;color:#9c1c1c">ENTERPRISES</span></h2>
     </div>
     <div class="form-group">
       <label>Username</label>
