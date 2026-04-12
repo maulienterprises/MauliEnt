@@ -160,8 +160,7 @@ tr:hover td{background:rgba(26,111,212,0.04)}
   .sync-label{display:none}
   .topbar-right{gap:6px}
   .user-chip{padding:4px 10px;font-size:0.72rem}
-  .btn-signout{padding:5px 9px;font-size:0.72rem;border-radius:6px;white-space:nowrap;width:34px;height:34px;display:flex;align-items:center;justify-content:center;padding:0}
-  .signout-text{display:none}
+  .btn-signout{padding:5px 9px;font-size:0.72rem;border-radius:6px;white-space:nowrap}
 }
 .log-entry{background:var(--input-bg);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:0.82rem;border-left:3px solid var(--border)}
 .log-entry.correction{border-left-color:var(--warning)}
@@ -238,7 +237,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <span id="topbar-name">—</span>
         <span class="role-tag" id="topbar-role">—</span>
       </div>
-      <button class="btn-signout" onclick="signOut()">⏻<span class="signout-text"> Sign Out</span></button>
+      <button class="btn-signout" onclick="signOut()">⏻ Sign Out</button>
     </div>
   </div>
 
@@ -2079,18 +2078,22 @@ function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
   const custId = forceCustomerId || parseInt(document.getElementById('pm-customer').value);
   document.getElementById('pm-invoice-rows').innerHTML = '';
   if (!custId) { updatePayRemaining(); return; }
+  // Sync the select so addPayInvoiceRow can read custId from the DOM
+  const sel = document.getElementById('pm-customer');
+  if (sel && custId && !sel.value) sel.value = custId;
   addPayInvoiceRow(forceInvoiceId);
 }
 
 function getPendingInvoicesForCustomer(custId) {
-  // Aging: oldest due date first
+  // Aging: oldest due date first. Use string comparison for Firestore ID safety.
   return DB.invoices
-    .filter(i => i.customerId === custId && getInvoiceStatus(i) !== 'paid')
+    .filter(i => String(i.customerId) === String(custId) && getInvoiceStatus(i) !== 'paid')
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 }
 
 function addPayInvoiceRow(preselectInvId) {
-  const custId = parseInt(document.getElementById('pm-customer').value);
+  const custIdRaw = document.getElementById('pm-customer').value;
+  const custId = parseInt(custIdRaw);
   if (!custId) { toast('Select a customer first.', 'error'); return; }
   const container = document.getElementById('pm-invoice-rows');
   const rowId = 'prow_' + Date.now();
@@ -3623,26 +3626,29 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
 }
 
 function printLedgerStatement() {
-  const custId       = parseInt(document.getElementById('ledger-cust')?.value) || null;
+  const custIdRaw    = document.getElementById('ledger-cust')?.value || '';
+  const custId       = custIdRaw ? parseInt(custIdRaw) : null;
   const statusFilter = document.getElementById('ledger-status')?.value || 'total';
   const dateFrom     = document.getElementById('ledger-date-from')?.value || '';
   const dateTo       = document.getElementById('ledger-date-to')?.value || '';
 
-  let invList = custId ? DB.invoices.filter(i => i.customerId === custId) : [...DB.invoices];
+  let invList = custIdRaw
+    ? DB.invoices.filter(i => String(i.customerId) === custIdRaw)
+    : [...DB.invoices];
   if (dateFrom) invList = invList.filter(i => i.date >= dateFrom);
   if (dateTo)   invList = invList.filter(i => i.date <= dateTo);
   if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
   else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
   invList.sort((a,b) => new Date(a.date) - new Date(b.date));
 
-  const custName = custId ? DB.customers.find(c => c.id === custId)?.name || 'All Customers' : 'All Customers';
+  const custName = custIdRaw ? DB.customers.find(c => String(c.id) === custIdRaw)?.name || 'All Customers' : 'All Customers';
   const totalInvoiced = invList.reduce((s,i) => s + parseFloat(i.amount), 0);
   const totalPaid     = invList.reduce((s,i) => s + getPaidAmount(i.id), 0);
   const totalDue      = totalInvoiced - totalPaid;
 
   const statusMap = { paid:'paid', pending:'pending', partial:'partial', overdue:'overdue' };
   const rows = invList.map((inv, idx) => {
-    const c    = DB.customers.find(c => c.id === inv.customerId);
+    const c    = DB.customers.find(c => String(c.id) === String(inv.customerId));
     const paid = getPaidAmount(inv.id);
     const bal  = parseFloat(inv.amount) - paid;
     const st   = getInvoiceStatus(inv);
@@ -3694,7 +3700,7 @@ function printLedgerStatement() {
       <div>Thank you for your business! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
     </div>`;
 
-  const ledgerCust = custId ? DB.customers.find(c => c.id === custId) : null;
+  const ledgerCust = custIdRaw ? DB.customers.find(c => String(c.id) === custIdRaw) : null;
   buildPrintWindow(html, ledgerCust?.email || null, ledgerCust?.phone || null);
   addLog('edit', `Printed Ledger Statement for ${custName}`);
 }
