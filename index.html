@@ -2085,30 +2085,44 @@ function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
   addPayInvoiceRow(forceInvoiceId, custId);
 }
 
-function getPendingInvoicesForCustomer(custId) {
-  // Use string comparison for Firestore ID safety (IDs may be int or string after round-trip)
+function getAllInvoicesForCustomer(custId) {
   const custIdStr = String(custId);
   return DB.invoices
-    .filter(i => String(i.customerId) === custIdStr && getInvoiceStatus(i) !== 'paid')
+    .filter(i => String(i.customerId) === custIdStr)
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+}
+
+function getPendingInvoicesForCustomer(custId) {
+  return getAllInvoicesForCustomer(custId).filter(i => getInvoiceStatus(i) !== 'paid');
 }
 
 function addPayInvoiceRow(preselectInvId, forceCustId) {
   const custIdRaw = forceCustId != null ? String(forceCustId) : document.getElementById('pm-customer').value;
   const custId = parseInt(custIdRaw);
   if (!custId) { toast('Select a customer first.', 'error'); return; }
-  // Also ensure the select reflects the customer (for manual "+ Add Another Invoice" clicks)
   const pmSel = document.getElementById('pm-customer');
   if (pmSel && !pmSel.value && custId) pmSel.value = String(custId);
   const container = document.getElementById('pm-invoice-rows');
   const rowId = 'prow_' + Date.now();
-  const pending = getPendingInvoicesForCustomer(custId);
 
-  const opts = pending.map(i => {
+  // Show ALL invoices for the customer — unpaid/partial first, paid ones shown but greyed out
+  const allInvoices = getAllInvoicesForCustomer(custId);
+  const unpaid = allInvoices.filter(i => getInvoiceStatus(i) !== 'paid');
+  const paidInvs = allInvoices.filter(i => getInvoiceStatus(i) === 'paid');
+
+  const makeOpt = (i, isPaid) => {
     const bal = parseFloat(i.amount) - getPaidAmount(i.id);
-    const isSelected = preselectInvId && i.id === preselectInvId ? 'selected' : '';
-    return `<option value="${i.id}" data-amount="${parseFloat(i.amount)}" data-bal="${bal.toFixed(2)}" ${isSelected}>${i.invNo} — ₹${fmt(parseFloat(i.amount))} (bal ₹${fmt(bal)})</option>`;
-  }).join('');
+    const isSelected = preselectInvId && String(i.id) === String(preselectInvId) ? 'selected' : '';
+    const label = isPaid
+      ? `${i.invNo} — ₹${fmt(parseFloat(i.amount))} [PAID]`
+      : `${i.invNo} — ₹${fmt(parseFloat(i.amount))} (bal ₹${fmt(bal)})`;
+    return `<option value="${i.id}" data-amount="${parseFloat(i.amount)}" data-bal="${bal.toFixed(2)}" ${isSelected} ${isPaid ? 'style="color:#94a3b8"' : ''}>${label}</option>`;
+  };
+
+  const opts = [
+    unpaid.length  ? `<optgroup label="Unpaid / Partial">${unpaid.map(i => makeOpt(i, false)).join('')}</optgroup>` : '',
+    paidInvs.length ? `<optgroup label="Already Paid">${paidInvs.map(i => makeOpt(i, true)).join('')}</optgroup>` : ''
+  ].join('');
 
   const div = document.createElement('div');
   div.id = rowId;
