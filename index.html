@@ -3456,7 +3456,7 @@ async function handleImport(input) {
           if (!c) continue;
           const item = {
             id: Math.round(idBase++),
-            customerId: Math.round(c.id),
+            customerId: c.id,   // use c.id as-is — Math.round() was stripping decimal precision
             invNo: String(r.InvoiceNo),
             date: fmtExcelDate(r.InvoiceDate),
             dueDate: fmtExcelDate(r.DueDate),
