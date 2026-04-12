@@ -2086,9 +2086,15 @@ function onPayCustomerChange(forceCustomerId, forceInvoiceId) {
 }
 
 function getAllInvoicesForCustomer(custId) {
-  const custIdStr = String(custId);
+  // Normalize both sides: convert to number for comparison to handle
+  // cases where customerId may be stored as string or number in Firestore
+  const custIdNum = parseFloat(custId);
+  const custIdStr = String(custId).trim();
   return DB.invoices
-    .filter(i => String(i.customerId) === custIdStr)
+    .filter(i => {
+      const cid = i.customerId;
+      return parseFloat(cid) === custIdNum || String(cid).trim() === custIdStr;
+    })
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 }
 
@@ -2107,6 +2113,17 @@ function addPayInvoiceRow(preselectInvId, forceCustId) {
 
   // Show ALL invoices for the customer — unpaid/partial first, paid ones shown but greyed out
   const allInvoices = getAllInvoicesForCustomer(custId);
+
+  // Guard: if no invoices found at all, show a clear message
+  if (!allInvoices.length) {
+    const noInvMsg = document.createElement('div');
+    noInvMsg.style.cssText = 'background:#f39c1215;border:1px solid var(--warning);border-radius:8px;padding:10px 14px;color:var(--warning);font-size:0.83rem;margin-bottom:8px';
+    noInvMsg.textContent = '⚠ No invoices found for this customer. Please create an invoice first.';
+    container.appendChild(noInvMsg);
+    updatePayRemaining();
+    return;
+  }
+
   const unpaid = allInvoices.filter(i => getInvoiceStatus(i) !== 'paid');
   const paidInvs = allInvoices.filter(i => getInvoiceStatus(i) === 'paid');
 
