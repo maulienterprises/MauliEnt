@@ -43,13 +43,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .btn-login{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:13px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit}
 .btn-login:hover{opacity:0.9}
 .login-error{color:var(--danger);font-size:0.83rem;margin-top:10px;text-align:center;display:none}
-/* ===== APP SHELL ===== */
 #app{display:none;min-height:100vh}
 .topbar{background:#1a6fd4;border-bottom:1px solid #1355a8;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:72px;position:sticky;top:0;z-index:100}
 .topbar-left{display:flex;align-items:center;gap:14px}
 .topbar-logo{width:48px;height:48px;border-radius:10px;object-fit:contain}
-.topbar-title{font-family:'Arial Narrow',Arial,sans-serif;font-size:1.35rem;letter-spacing:0.03em}
-.brand-pill{background:#fff;border-radius:20px;padding:5px 14px;display:inline-flex;align-items:center;line-height:1}
+.topbar-title{font-family:'Arial Narrow', Arial, sans-serif;font-size: 1.9rem;letter-spacing: 0.5px;}
+.brand-pill{background: #fff;border-radius: 6px;padding: 8px 14px;display: inline-flex;align-items: center;line-height: 1;box-shadow: 0 2px 8px rgba(0,0,0,0.15);}
 .topbar-sub{font-size:0.78rem;color:rgba(255,255,255,0.75)}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px;cursor:pointer}
@@ -202,9 +201,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <img src="./logo.png" onerror="this.style.display='none'" alt="Logo">
+      <img src="./logo.png" id="login-logo-img" onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='flex'" alt="Logo">
+      <div id="login-logo-fallback" style="display:none;width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#1a6fd4,#1355a8);align-items:center;justify-content:center;margin:0 auto;box-shadow:0 4px 14px rgba(26,111,212,0.35)"><span style="font-family:'Arial Narrow',Arial,sans-serif;font-weight:700;color:#fff;font-size:1.3rem;letter-spacing:1px">ME</span></div>
       <h2 style="font-family:'Arial Narrow',Arial,sans-serif;font-size:1.4rem;margin-top:10px;color:var(--accent)"><span style="font-weight:700;color:#000">MAULI</span> <span style="font-weight:400;color:#9c1c1c">ENTERPRISES</span></h2>
-      <p>Invoice Manager</p>
     </div>
     <div class="form-group">
       <label>Username</label>
@@ -228,7 +227,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <img src="./logo.png" class="topbar-logo" onerror="this.style.display='none'" alt="Logo">
       <div>
         <div class="topbar-title"><span class="brand-pill"><span style="font-weight:700;color:#000;font-family:'Arial Narrow',Arial,sans-serif">MAULI</span>&nbsp;<span style="font-weight:400;color:#9c1c1c;font-family:'Arial Narrow',Arial,sans-serif">ENTERPRISES</span></span></div>
-        <div class="topbar-sub">Invoice Manager</div>
       </div>
     </div>
     <div class="topbar-right">
@@ -2492,19 +2490,42 @@ function openCNModalForInvoice(invoiceId) {
 
 function populateCNCustomers(selectedId) {
   const sel = document.getElementById('cn-customer');
+  const sorted = [...DB.customers].sort((a, b) => a.name.localeCompare(b.name, 'en-IN'));
   sel.innerHTML = '<option value="">-- Select Customer --</option>' +
-    DB.customers.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
+    sorted.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
   if (selectedId) populateCNInvoices();
 }
 
 function populateCNInvoices() {
-  const custId = parseInt(document.getElementById('cn-customer').value);
+  const custIdRaw = document.getElementById('cn-customer').value;
   const sel = document.getElementById('cn-invoice');
-  const invs = DB.invoices.filter(i => i.customerId === custId);
+  if (!custIdRaw) {
+    sel.innerHTML = '<option value="">-- Select Invoice --</option>';
+    document.getElementById('cn-balance').textContent = 'Invoice balance: \u20b90';
+    return;
+  }
+  // Sort: unpaid/partial invoices first (by date desc), then paid ones
+  const invs = DB.invoices
+    .filter(i => String(i.customerId) === String(custIdRaw))
+    .sort((a, b) => {
+      const balA = parseFloat(a.amount) - getPaidAmount(a.id);
+      const balB = parseFloat(b.amount) - getPaidAmount(b.id);
+      if (balA > 0 && balB <= 0) return -1;
+      if (balA <= 0 && balB > 0) return 1;
+      return new Date(b.date) - new Date(a.date);
+    });
+  if (!invs.length) {
+    sel.innerHTML = '<option value="">-- No invoices found --</option>';
+    document.getElementById('cn-balance').textContent = 'No invoices for this customer.';
+    return;
+  }
   sel.innerHTML = '<option value="">-- Select Invoice --</option>' +
     invs.map(i => {
       const bal = parseFloat(i.amount) - getPaidAmount(i.id);
-      return `<option value="${i.id}">${i.invNo} — ₹${fmt(i.amount)} (bal: ₹${fmt(bal)})</option>`;
+      const label = bal > 0.005
+        ? i.invNo + ' \u2014 \u20b9' + fmt(i.amount) + ' (bal: \u20b9' + fmt(bal) + ')'
+        : i.invNo + ' \u2014 \u20b9' + fmt(i.amount) + ' [Paid]';
+      return '<option value="' + i.id + '">' + label + '</option>';
     }).join('');
   updateCNBalance();
 }
