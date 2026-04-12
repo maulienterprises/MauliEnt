@@ -152,8 +152,10 @@ tr:hover td{background:rgba(26,111,212,0.04)}
   .form-row-2,.form-row-3{grid-template-columns:1fr}
   .topbar-sub{display:none}
   .topbar-logo{width:36px;height:36px}
-  .brand-pill{padding:4px 10px}
-  .brand-pill span{font-size:1rem}
+  .brand-pill{padding:5px 9px;height:auto;flex-direction:column;align-items:center;gap:0;line-height:1.15}
+  .bp-mauli{font-size:0.82rem!important}
+  .bp-ent{font-size:0.72rem!important}
+  .bp-sep{display:none}
   .user-chip .role-tag{display:none}
   .sync-label{display:none}
   .topbar-right{gap:6px}
@@ -203,7 +205,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="login-logo">
       <img src="./logo.png" id="login-logo-img" onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='flex'" alt="Logo">
       <div id="login-logo-fallback" style="display:none;width:76px;height:76px;border-radius:6px;background:linear-gradient(135deg,#1a6fd4,#1355a8);align-items:center;justify-content:center;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,0.18)"><span style="font-family:'Arial Narrow',Arial,sans-serif;font-weight:700;color:#fff;font-size:1.3rem;letter-spacing:1px">ME</span></div>
-      <h2 style="font-family:'Arial Narrow',Arial,sans-serif;font-size:1.9rem;margin-top:12px;color:var(--accent)"><span style="font-weight:700;color:#000">MAULI</span> <span style="font-weight:400;color:#9c1c1c">ENTERPRISES</span></h2>
+      <h2 style="font-family:'Arial Narrow',Arial,sans-serif;font-size:1.9rem;margin-top:12px;color:var(--accent);line-height:1.1;display:flex;flex-direction:column;align-items:center;gap:0"><span style="font-weight:700;color:#000">MAULI</span><span style="font-weight:400;color:#9c1c1c">ENTERPRISES</span></h2>
     </div>
     <div class="form-group">
       <label>Username</label>
@@ -226,7 +228,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="topbar-left">
       <img src="./logo.png" class="topbar-logo" onerror="this.style.display='none'" alt="Logo">
       <div>
-        <div class="topbar-title"><span class="brand-pill"><span style="font-weight:700;color:#000;font-family:'Arial Narrow',Arial,sans-serif">MAULI</span>&nbsp;<span style="font-weight:400;color:#9c1c1c;font-family:'Arial Narrow',Arial,sans-serif">ENTERPRISES</span></span></div>
+        <div class="topbar-title"><span class="brand-pill"><span class="bp-mauli" style="font-weight:700;color:#000;font-family:'Arial Narrow',Arial,sans-serif">MAULI</span><span class="bp-sep">&nbsp;</span><span class="bp-ent" style="font-weight:400;color:#9c1c1c;font-family:'Arial Narrow',Arial,sans-serif">ENTERPRISES</span></span></div>
       </div>
     </div>
     <div class="topbar-right">
