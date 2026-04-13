@@ -251,6 +251,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <button class="nav-btn mgr-only" onclick="showTab('creditnotes',this)" style="display:none">📝 Credit Notes</button>
     <button class="nav-btn mgr-only" onclick="showTab('ledger',this)" style="display:none">📒 Customer Ledger</button>
     <button class="nav-btn dev-only" onclick="showTab('log',this)" style="display:none">📋 Activity Log</button>
+    <button class="nav-btn expenses-tab-btn" onclick="showTab('expenses',this)" style="display:none">💸 Expenses</button>
     <button class="nav-btn dev-only" onclick="showTab('users',this)" style="display:none">👤 Users</button>
     <button class="nav-btn dev-only" onclick="showTab('backup',this)" style="display:none">💾 Backup</button>
   </div>
@@ -388,7 +389,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           <option value="NEFT/IMPS">NEFT/IMPS</option>
           <option value="Cheque">Cheque</option>
           <option value="Cancelled">Cancelled</option>
-          <option value="Cash Discount">Cash Discount</option>
+
         </select>
         <input type="date" id="pay-date-from" class="filter-btn" onchange="renderPayments()" style="min-width:140px;padding:7px 10px" title="From date">
         <span style="color:var(--muted);font-size:0.82rem">to</span>
@@ -431,6 +432,51 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         </div>
       </div>
       <div id="log-container"></div>
+    </div>
+
+
+    <!-- ===== EXPENSES ===== -->
+    <div class="tab-panel" id="tab-expenses">
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">💸 Expenses</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="exportExpenses()">📤 Export</button>
+          <button class="btn btn-primary btn-sm" onclick="openExpenseModal()">➕ Add Expense</button>
+        </div>
+      </div>
+      <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
+        <input class="search-input" placeholder="Search expenses..." id="exp-search" oninput="renderExpenses()" style="min-width:160px">
+        <select class="filter-btn" id="exp-cat-filter" onchange="renderExpenses()" style="min-width:140px">
+          <option value="">All Categories</option>
+          <option value="Petrol">Petrol</option>
+          <option value="Hotel">Hotel</option>
+          <option value="Electricity">Electricity</option>
+          <option value="Professional Fees">Professional Fees</option>
+          <option value="Repair & Maintenance">Repair &amp; Maintenance</option>
+          <option value="Other">Other</option>
+        </select>
+        <select class="filter-btn" id="exp-mode-filter" onchange="renderExpenses()" style="min-width:110px">
+          <option value="">All Modes</option>
+          <option value="UPI">UPI</option>
+          <option value="Cash">Cash</option>
+          <option value="Self">Self</option>
+        </select>
+        <input type="date" id="exp-date-from" class="filter-btn" onchange="renderExpenses()" style="min-width:140px;padding:7px 10px">
+        <span style="color:var(--muted);font-size:0.82rem">to</span>
+        <input type="date" id="exp-date-to" class="filter-btn" onchange="renderExpenses()" style="min-width:140px;padding:7px 10px">
+        <button class="filter-btn" onclick="clearExpDateFilter()" style="padding:7px 10px">✕ All Dates</button>
+      </div>
+      <div class="stat-grid" style="margin:12px 0">
+        <div class="stat-card blue"><div class="stat-label">Total Expenses</div><div class="stat-value" id="exp-stat-count">0</div><div class="stat-sub">All time</div></div>
+        <div class="stat-card red"><div class="stat-label">Total Amount</div><div class="stat-value" id="exp-stat-total">₹0</div><div class="stat-sub">All expenses</div></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Mode</th><th>Done By</th><th>Actions</th></tr></thead>
+        <tbody id="exp-table"></tbody>
+      </table></div>
+      <div style="margin-top:16px">
+        <button class="btn btn-danger btn-sm" onclick="deleteAllExpenses()">🗑 Delete All Expenses</button>
+      </div>
     </div>
 
     <!-- ===== USER MANAGEMENT ===== -->
@@ -482,6 +528,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
             <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="overdue"> ⚠ Overdue</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="creditnotes"> 📝 Credit Notes</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="ledger"> 📒 Ledger</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="tab-access-cb" value="expenses"> 💸 Expenses</label>
           </div>
           <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">ℹ Select which tabs this user can see. At least one tab required.</div>
         </div>
@@ -528,6 +575,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('invoices')">🧾 Invoices JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('payments')">💳 Payments JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('creditNotes')">📝 Credit Notes JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('expenses')">💸 Expenses JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('log')">📋 Activity Log JSON</button>
           </div>
         </div>
@@ -566,11 +614,13 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
             <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-invoices').click()">🧾 Import Invoices JSON</button>
             <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-payments').click()">💳 Import Payments JSON</button>
             <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-creditNotes').click()">📝 Import Credit Notes JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('json-import-expenses').click()">💸 Import Expenses JSON</button>
           </div>
           <input type="file" id="json-import-customers"   accept=".json" style="display:none" onchange="restoreSingleJSON(this,'customers')">
           <input type="file" id="json-import-invoices"    accept=".json" style="display:none" onchange="restoreSingleJSON(this,'invoices')">
           <input type="file" id="json-import-payments"    accept=".json" style="display:none" onchange="restoreSingleJSON(this,'payments')">
           <input type="file" id="json-import-creditNotes" accept=".json" style="display:none" onchange="restoreSingleJSON(this,'creditNotes')">
+          <input type="file" id="json-import-expenses"    accept=".json" style="display:none" onchange="restoreSingleJSON(this,'expenses')">
           <div class="backup-info">
             <strong>ℹ Tip:</strong> Use files exported from <em>Selective Backup</em> above (e.g. <code>customers_…json</code>). Only the selected collection will be overwritten; all other data stays intact.
           </div>
@@ -691,6 +741,77 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 </div><!-- /app -->
 
 <!-- ===== MODALS ===== -->
+<!-- Expense Modal -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal" style="max-width:480px">
+    <h3 id="exp-modal-title">Add Expense</h3>
+    <div class="form-row-2">
+      <div class="form-group"><label>Date *</label><input type="date" id="exp-date"></div>
+      <div class="form-group"><label>Category *</label>
+        <select id="exp-category" onchange="toggleExpOther()">
+          <option value="Petrol">Petrol</option>
+          <option value="Hotel">Hotel</option>
+          <option value="Electricity">Electricity</option>
+          <option value="Professional Fees">Professional Fees</option>
+          <option value="Repair & Maintenance">Repair &amp; Maintenance</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" id="exp-other-box" style="display:none"><label>Other Category *</label><input type="text" id="exp-other-text" placeholder="Specify category..."></div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Amount (₹) *</label><input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-group"><label>Mode *</label>
+        <select id="exp-mode">
+          <option value="UPI">UPI</option>
+          <option value="Cash">Cash</option>
+          <option value="Self">Self</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Expense Done By *</label><input type="text" id="exp-by" placeholder="Enter name..."></div>
+    <div class="form-group"><label>Description <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="exp-desc" placeholder="Details about this expense..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-expense')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExpense()">Save Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Credit Note Modal -->
+<div class="modal-overlay" id="modal-edit-creditnote">
+  <div class="modal">
+    <h3>Edit Credit Note</h3>
+    <div class="form-group"><label>Customer</label>
+      <select id="ecn-customer" onchange="populateEditCNInvoices()" disabled style="opacity:0.75;pointer-events:none"></select>
+    </div>
+    <div class="form-group"><label>Invoice</label>
+      <select id="ecn-invoice" onchange="updateEditCNBalance()"></select>
+    </div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px" id="ecn-balance">Invoice balance: ₹0</div>
+    <div class="form-row-2">
+      <div class="form-group"><label>Credit Note # *</label><input type="text" id="ecn-number" placeholder="CN-001"></div>
+      <div class="form-group"><label>Date *</label><input type="date" id="ecn-date"></div>
+    </div>
+    <div class="form-group"><label>Credit Amount (₹) *</label><input type="number" id="ecn-amount" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="form-group"><label>Reason *</label>
+      <select id="ecn-reason">
+        <option value="Return">Goods Return</option>
+        <option value="Discount">Discount</option>
+        <option value="Correction">Price Correction</option>
+        <option value="Damaged">Damaged Goods</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="ecn-notes" placeholder="Details..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-creditnote')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditCN()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- Customer Modal -->
 <div class="modal-overlay" id="modal-customer">
@@ -772,7 +893,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           <option value="UPI">UPI</option>
           <option value="NEFT/IMPS">NEFT/IMPS</option>
           <option value="Cheque">Cheque</option>
-          <option value="Cash Discount">Cash Discount</option>
+
           <option value="Cancelled">Cancelled</option>
         </select>
       </div>
@@ -798,10 +919,60 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
   </div>
 </div>
 
+
+<!-- Edit Payment Modal — full Record Payment layout -->
+<div class="modal-overlay" id="modal-edit-payment">
+  <div class="modal" style="max-width:620px">
+    <h3>Edit Payment</h3>
+    <div id="edit-payment-info" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-bottom:14px"></div>
+    <!-- Row 1: Customer + Total Received -->
+    <div class="form-row-2">
+      <div class="form-group"><label>Customer</label>
+        <select id="ep-customer" disabled style="opacity:0.75;pointer-events:none"><option value="">-- Select Customer --</option></select>
+      </div>
+      <div class="form-group"><label>Total Amount Received (₹) *</label>
+        <input type="number" id="ep-total-received" placeholder="0.00" min="0" step="0.01" oninput="updateEditPayRemaining()">
+      </div>
+    </div>
+    <!-- Row 2: Date + Method + Ref -->
+    <div class="form-row-3">
+      <div class="form-group"><label>Payment Date *</label><input type="date" id="ep-date"></div>
+      <div class="form-group"><label>Mode of Payment *</label>
+        <select id="ep-method">
+          <option value="Cash">Cash</option>
+          <option value="UPI">UPI</option>
+          <option value="NEFT/IMPS">NEFT/IMPS</option>
+          <option value="Cheque">Cheque</option>
+
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Reference / UTR</label><input type="text" id="ep-ref" placeholder="Optional"></div>
+    </div>
+    <!-- Invoice Allocation Section -->
+    <div style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 8px;display:flex;align-items:center;gap:8px">
+      Allocate to Invoices <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
+    </div>
+    <div id="ep-invoice-rows"></div>
+    <button class="btn btn-outline btn-sm" style="width:100%;margin-top:4px;border-style:dashed" onclick="addEditPayInvoiceRow()">+ Add Another Invoice</button>
+    <!-- Remaining Summary -->
+    <div id="ep-remaining-bar" style="display:flex;justify-content:space-between;align-items:center;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:0.82rem">
+      <span style="color:var(--muted)">Received: <strong id="ep-bar-received">₹0</strong> &nbsp;|&nbsp; Allocated: <strong id="ep-bar-allocated">₹0</strong> &nbsp;|&nbsp; Cash Disc: <strong id="ep-bar-disc">₹0</strong></span>
+      <span>Remaining: <strong id="ep-bar-remaining" style="color:var(--success)">₹0</strong></span>
+    </div>
+    <div id="ep-remaining-warn" style="display:none;color:var(--danger);font-size:0.8rem;margin-top:6px">⚠ Total allocated + cash disc must equal total received before saving.</div>
+    <div class="form-group" style="margin-top:10px"><label>Notes (optional)</label><input type="text" id="ep-notes" placeholder="Any additional notes..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-payment')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditPayment()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- Revise Payment Modal -->
 <div class="modal-overlay" id="modal-revise-payment">
   <div class="modal" style="max-width:460px">
-    <h3>Revise Payment</h3>
+    <h3>Reverse Payment</h3>
     <div id="revise-payment-info" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-bottom:14px"></div>
     <div class="form-group"><label>Reason *</label>
       <select id="rp-reason" onchange="onReviseReasonChange()">
@@ -827,7 +998,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-revise-payment')">Cancel</button>
-      <button class="btn btn-danger" onclick="saveRevisePayment()">Revise Payment</button>
+      <button class="btn btn-danger" onclick="saveRevisePayment()">Reverse Payment</button>
     </div>
   </div>
 </div>
@@ -949,6 +1120,7 @@ const DB = {
   invoices: [],
   payments: [],
   creditNotes: [],
+  expenses: [],
   log: [],
   users: [],
   backupHistory: []
@@ -965,7 +1137,7 @@ let editingUserId = null;
 let _db = null;
 
 // Collections stored in Firestore
-const FS_COLLECTIONS = ['customers','invoices','payments','creditNotes','log','users'];
+const FS_COLLECTIONS = ['customers','invoices','payments','creditNotes','expenses','log','users'];
 // These stay local only
 const LOCAL_KEYS = {
   backupHistory: 'mauli_backup_history'
@@ -1053,6 +1225,9 @@ function normalizeIds() {
     if (cn.id != null)         cn.id         = Math.round(parseFloat(cn.id));
     if (cn.customerId != null) cn.customerId = Math.round(parseFloat(cn.customerId));
     if (cn.invoiceId  != null) cn.invoiceId  = Math.round(parseFloat(cn.invoiceId));
+  });
+  (DB.expenses || []).forEach(e => {
+    if (e.id != null) e.id = Math.round(parseFloat(e.id));
   });
 }
 
@@ -1540,7 +1715,8 @@ const CONFIGURABLE_TABS = [
   {key:'payments',    label:'\U0001f4b3 Payments'},
   {key:'overdue',     label:'\u26a0 Overdue'},
   {key:'creditnotes', label:'\U0001f4dd Credit Notes'},
-  {key:'ledger',      label:'\U0001f4d2 Ledger'}
+  {key:'ledger',      label:'\U0001f4d2 Ledger'},
+  {key:'expenses',    label:'\U0001f4b8 Expenses'}
 ];
 
 function applyRoleAccess(role, user) {
@@ -1549,7 +1725,7 @@ function applyRoleAccess(role, user) {
 
   if (role === 'emp' || role === 'admin') {
     const defaultTabs = role === 'admin'
-      ? ['dashboard','customers','invoices','payments','overdue','creditnotes','ledger']
+      ? ['dashboard','customers','invoices','payments','overdue','creditnotes','ledger','expenses']
       : ['invoices'];
     const tabAccess = (resolvedUser?.tabAccess && resolvedUser.tabAccess.length > 0)
       ? resolvedUser.tabAccess : defaultTabs;
@@ -1557,12 +1733,17 @@ function applyRoleAccess(role, user) {
     nav.querySelectorAll('.nav-btn').forEach(b => {
       if (b.classList.contains('dev-only')) { b.style.display = 'none'; return; }
       const onclick = b.getAttribute('onclick') || '';
-      const match = onclick.match(/'([a-z]+)'/);
+      const match = onclick.match(/'([a-zA-Z]+)'/);
       const tabKey = match ? match[1] : null;
       if (!tabKey) return;
       // mgr-only tabs only shown if in tabAccess AND role is admin
       if (b.classList.contains('mgr-only')) {
         b.style.display = (role === 'admin' && tabAccess.includes(tabKey)) ? '' : 'none';
+        return;
+      }
+      // expenses tab — show if in tabAccess
+      if (b.classList.contains('expenses-tab-btn')) {
+        b.style.display = tabAccess.includes('expenses') ? '' : 'none';
         return;
       }
       b.style.display = tabAccess.includes(tabKey) ? '' : 'none';
@@ -1576,7 +1757,8 @@ function applyRoleAccess(role, user) {
     const btn = nav.querySelector("[onclick*=\"'" + firstTab + "'\"]");
     if (btn) btn.classList.add('active');
   } else {
-    // dev: full access, start on Dashboard
+    // dev: full access, start on Dashboard — also show expenses tab
+    nav.querySelectorAll('.expenses-tab-btn').forEach(b => b.style.display = '');
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     nav.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     const dashPanel = document.getElementById('tab-dashboard');
@@ -1610,6 +1792,7 @@ function showTab(name, btn) {
   if (name === 'log')         renderLog();
   if (name === 'users')       renderUsersTable();
   if (name === 'backup')      renderBackupHistory();
+  if (name === 'expenses')    renderExpenses();
 }
 
 // ============================================================
@@ -1650,7 +1833,8 @@ async function addLog(type, msg) {
 function renderLog() {
   const c = document.getElementById('log-container');
   if (!DB.log.length) { c.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No activity yet.</p></div>'; return; }
-  c.innerHTML = DB.log.map(e => `
+  const countBadge = `<div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;font-weight:500">📋 ${DB.log.length} log entr${DB.log.length === 1 ? 'y' : 'ies'}</div>`;
+  c.innerHTML = countBadge + DB.log.map(e => `
     <div class="log-entry ${e.type}">
       <span>${e.msg}</span>
       <span class="log-time" style="float:right">${e.user} · ${new Date(e.time).toLocaleString('en-IN')}</span>
@@ -1745,13 +1929,14 @@ async function saveCustomer() {
 
   if (editingCustomerId) {
     const idx = DB.customers.findIndex(c => c.id === editingCustomerId);
+    const oldName = DB.customers[idx]?.name;
     DB.customers[idx] = { ...DB.customers[idx], ...data };
-    addLog('edit', `Edited customer: ${name}`);
+    addLog('edit', `Edited customer: ${name}${oldName && oldName !== name ? ` (was: ${oldName})` : ''} | Total customers: ${DB.customers.length}`);
     toast('Customer updated!', 'success');
   } else {
     data.id = Date.now();
     DB.customers.push(data);
-    addLog('create', `Added customer: ${name}`);
+    addLog('create', `Added customer: ${name} | Total customers: ${DB.customers.length}`);
     toast('Customer added!', 'success');
   }
 
@@ -1923,15 +2108,20 @@ async function saveInvoice() {
 
   if (editingInvoiceId) {
     const idx = DB.invoices.findIndex(i => i.id === editingInvoiceId);
-    const wasPaid = getInvoiceStatus(DB.invoices[idx]) === 'paid';
+    const oldInv = DB.invoices[idx];
+    const oldAmt = parseFloat(oldInv.amount);
+    const wasPaid = getInvoiceStatus(oldInv) === 'paid';
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(customerId)))) || DB.customers.find(c => String(c.id) === String(customerId));
     DB.invoices[idx] = { ...DB.invoices[idx], ...data };
-    if (wasPaid) addLog('correction', `Correction on paid invoice ${invNo}`);
-    else addLog('edit', `Edited invoice ${invNo}`);
+    let logMsg = `${wasPaid ? 'Correction' : 'Edited'} invoice ${invNo} (${c?.name || 'Customer #' + customerId})`;
+    if (Math.abs(oldAmt - amount) > 0.01) logMsg += ` | Amount: ₹${fmt(oldAmt)} → ₹${fmt(amount)}`;
+    addLog(wasPaid ? 'correction' : 'edit', logMsg);
     toast('Invoice updated!', 'success');
   } else {
     data.id = Date.now();
     DB.invoices.push(data);
-    addLog('create', `Created invoice ${invNo} for customer ID ${customerId}`);
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(customerId)))) || DB.customers.find(c => String(c.id) === String(customerId));
+    addLog('create', `Created invoice ${invNo} ₹${fmt(amount)} for ${c?.name || 'Customer #' + customerId} | Total invoices: ${DB.invoices.length}`);
     toast('Invoice saved!', 'success');
   }
 
@@ -2017,9 +2207,9 @@ function renderInvoices() {
   }
 
   let list = DB.invoices.filter(inv => {
-    const c = DB.customers.find(c => c.id === inv.customerId);
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
     const textMatch = [inv.invNo, c?.name, inv.description].join(' ').toLowerCase().includes(search);
-    const custMatch = !custFilter2 || String(inv.customerId) === custFilter2;
+    const custMatch = !custFilter2 || String(Math.round(parseFloat(inv.customerId))) === custFilter2 || String(inv.customerId) === custFilter2;
     const statusMatch = !statusF || getInvoiceStatus(inv) === statusF;
     let dateMatch = true;
     if (dateFrom) dateMatch = dateMatch && inv.date >= dateFrom;
@@ -2040,7 +2230,7 @@ function renderInvoices() {
   const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
   const isDev = currentUser?.role === 'dev';
   tbody.innerHTML = list.map(inv => {
-    const c = DB.customers.find(c => c.id === inv.customerId);
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
     const paid = getPaidAmount(inv.id);
     const bal = parseFloat(inv.amount) - paid;
     const status = getInvoiceStatus(inv);
@@ -2334,7 +2524,7 @@ async function savePayment() {
       DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc, totalReceived });
     }
   }
-  addLog('create', `Payment ₹${fmt(totalReceived)} [${method}] for invoices ${invNos.join(', ')} (${c?.name})`);
+  addLog('create', `Payment ₹${fmt(totalReceived)} [${method}] for invoices ${invNos.join(', ')} (${c?.name}) | Total payment entries: ${DB.payments.length}`);
 
   // Auto-assign receipt number immediately on save (FY-aware)
   const receiptNo = getNextReceiptNo(date);
@@ -2488,6 +2678,7 @@ function renderPayments() {
       method: first.method,
       ref: first.ref,
       notes: first.notes,
+      receiptNo: first.receiptNo || '',
       amount: first.totalReceived || totalAmt,
       cashDisc: totalDisc,
       invNos
@@ -2502,9 +2693,9 @@ function renderPayments() {
 
   // Apply filters
   list = list.filter(p => {
-    const c = DB.customers.find(c => c.id === p.customerId);
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(p.customerId)))) || DB.customers.find(c => String(c.id) === String(p.customerId));
     const textMatch   = [c?.name, p.invNos?.join(' '), p.method, p.ref, p.notes].join(' ').toLowerCase().includes(search);
-    const custMatch   = !custF   || String(p.customerId) === custF;
+    const custMatch   = !custF   || String(Math.round(parseFloat(p.customerId))) === custF || String(p.customerId) === custF;
     const methodMatch = !methodF || p.method === methodF;
     let dateMatch = true;
     if (dateFrom) dateMatch = dateMatch && p.date >= dateFrom;
@@ -2522,7 +2713,7 @@ function renderPayments() {
   const methodStyle = { 'Cancelled': 'color:var(--danger)', 'Cash Discount': 'color:var(--warning)' };
 
   tbody.innerHTML = list.map(p => {
-    const c    = DB.customers.find(c => c.id === p.customerId);
+    const c    = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(p.customerId))))  || DB.customers.find(c => String(c.id) === String(p.customerId));
     const mStyle = methodStyle[p.method] || 'color:var(--success)';
     const invDisplay = p.invNos && p.invNos.length > 1
       ? `<span title="${p.invNos.join(', ')}">${p.invNos[0]} <span style="color:var(--accent);font-size:0.72rem">+${p.invNos.length - 1} more</span></span>`
@@ -2530,6 +2721,7 @@ function renderPayments() {
     const discBadge = p.cashDisc > 0
       ? `<br><span style="font-size:0.7rem;color:var(--warning)">Disc: ₹${fmt(p.cashDisc)}</span>` : '';
     const reviseId = p._isGroup ? p._firstId : p.id;
+    const groupIdStr = p._isGroup ? `'${p._groupId}'` : 'null';
     return `<tr>
       <td>${fmtDate(p.date)}</td>
       <td>${c?.name || '—'}</td>
@@ -2541,8 +2733,9 @@ function renderPayments() {
       <td style="color:var(--muted);font-size:0.82rem">${p.notes || '—'}</td>
       <td>
         <div class="action-btns">
-          <button class="btn btn-outline btn-xs" onclick="openRevisePaymentModal(${reviseId})" title="Revise Payment">✏️ Revise</button>
-          <button class="btn btn-outline btn-xs" onclick="printPaymentReceipt(${reviseId})" title="Print Receipt">🧾 PDF</button>
+          <button class="btn btn-outline btn-xs" onclick="openEditPaymentModalByGroup(${reviseId}, ${groupIdStr})" title="Edit Payment">✏️ Edit</button>
+          <button class="btn btn-outline btn-xs" onclick="openRevisePaymentModal(${reviseId})" title="Reverse Payment">↩️ Reverse</button>
+          <button class="btn btn-outline btn-xs" onclick="printPaymentReceiptByGroup(${reviseId}, ${groupIdStr})" title="Print Receipt">🧾 PDF</button>
         </div>
       </td>
     </tr>`;
@@ -2663,7 +2856,7 @@ async function saveCreditNote() {
   const cn = { id: Date.now(), customerId, invoiceId, cnNumber, date, amount, reason, notes };
   DB.creditNotes.push(cn);
   save('creditNotes');
-  addLog('create', `Credit Note ${cnNumber} ₹${fmt(amount)} [${reason}] against invoice ${inv?.invNo} (${c?.name})`);
+  addLog('create', `Credit Note ${cnNumber} ₹${fmt(amount)} [${reason}] against invoice ${inv?.invNo} (${c?.name}) | Total credit notes: ${DB.creditNotes.length}`);
   toast('Credit Note saved!', 'success');
   closeModal('modal-creditnote');
   renderCreditNotes();
@@ -2747,6 +2940,7 @@ function renderCreditNotes() {
       <td style="color:var(--muted);font-size:0.82rem">${cn.notes || '—'}</td>
       <td>
         <div class="action-btns">
+          <button class="btn btn-outline btn-xs" onclick="openEditCNModal(${cn.id})">✏️ Edit</button>
           <button class="btn btn-danger btn-xs" onclick="deleteCreditNote(${cn.id})">🗑</button>
         </div>
       </td>
@@ -2785,7 +2979,7 @@ function renderOverdue() {
   }
 
   tbody.innerHTML = list.map(inv => {
-    const c = DB.customers.find(c => c.id === inv.customerId);
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
     const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
     const daysOver = Math.floor((today - new Date(inv.dueDate)) / 86400000);
     return `<tr>
@@ -2829,7 +3023,7 @@ function renderDashboard() {
   const recent = [...DB.invoices].sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5);
   document.getElementById('dash-recent').innerHTML = recent.length
     ? recent.map(inv => {
-        const c = DB.customers.find(c => c.id === inv.customerId);
+        const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
         const status = getInvoiceStatus(inv);
         const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
         return `<tr><td>${c?.name||'—'}</td><td>₹${fmt(inv.amount)}</td><td><span class="badge ${statusMap[status]}">${status}</span></td></tr>`;
@@ -2844,7 +3038,7 @@ function renderDashboard() {
   }).slice(0,5);
   document.getElementById('dash-overdue').innerHTML = overdueList.length
     ? overdueList.map(inv => {
-        const c = DB.customers.find(c => c.id === inv.customerId);
+        const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
         const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
         const days = Math.floor((today - new Date(inv.dueDate)) / 86400000);
         return `<tr><td>${c?.name||'—'}</td><td style="color:var(--danger)">${days} days</td><td style="color:var(--danger)">₹${fmt(bal)}</td></tr>`;
@@ -3199,6 +3393,7 @@ function downloadSingleBackup(type) {
     invoices: { data: DB.invoices, name: 'invoices' },
     payments: { data: DB.payments, name: 'payments' },
     creditNotes: { data: DB.creditNotes || [], name: 'credit_notes' },
+    expenses: { data: DB.expenses || [], name: 'expenses' },
     log: { data: DB.log, name: 'activity_log' }
   };
   const item = map[type];
@@ -3263,7 +3458,7 @@ async function restoreSingleJSON(input, collectionKey) {
   if (!file) return;
   if (!file.name.endsWith('.json')) { toast('Please select a valid .json file.', 'error'); input.value = ''; return; }
 
-  const labels = { customers: 'Customers', invoices: 'Invoices', payments: 'Payments', creditNotes: 'Credit Notes' };
+  const labels = { customers: 'Customers', invoices: 'Invoices', payments: 'Payments', creditNotes: 'Credit Notes', expenses: 'Expenses' };
   const label  = labels[collectionKey] || collectionKey;
 
   if (!confirm(`⚠ This will OVERWRITE all current ${label} data with the contents of:\n\n"${file.name}"\n\nAll other data (${Object.values(labels).filter(l=>l!==label).join(', ')}) will remain unchanged.\n\nAre you sure?`)) {
@@ -3581,6 +3776,7 @@ function renderAll() {
   renderLedger();
   // renderBackupHistory only called when backup tab is active
   if (document.getElementById('tab-backup')?.classList.contains('active')) renderBackupHistory();
+  if (document.getElementById('tab-expenses')?.classList.contains('active')) renderExpenses();
 }
 
 // ============================================================
@@ -3855,11 +4051,17 @@ function getFYTag(dateStr) {
 function getNextReceiptNo(dateStr) {
   const fyTag  = getFYTag(dateStr); // e.g. "2425"
   const prefix = 'RC-' + fyTag + '-';
-  // Find the highest sequence number already used within this FY
+  // Find the highest sequence number already ASSIGNED within this FY
+  // Scan ALL payments' receiptNo fields — group duplicates are fine (same no. on multiple rows)
+  const seen = new Set();
   let max = 0;
   DB.payments.forEach(p => {
-    if (p.receiptNo && String(p.receiptNo).startsWith(prefix)) {
-      const n = parseInt(String(p.receiptNo).replace(prefix, '')) || 0;
+    if (!p.receiptNo) return;
+    const rn = String(p.receiptNo);
+    if (seen.has(rn)) return;
+    seen.add(rn);
+    if (rn.startsWith(prefix)) {
+      const n = parseInt(rn.slice(prefix.length)) || 0;
       if (n > max) max = n;
     }
   });
@@ -3869,7 +4071,7 @@ function getNextReceiptNo(dateStr) {
 function printPaymentReceipt(paymentId) {
   const p = DB.payments.find(p => p.id === paymentId);
   if (!p) return;
-  const c = DB.customers.find(c => c.id === p.customerId);
+  const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(p.customerId)))) || DB.customers.find(c => String(c.id) === String(p.customerId));
 
   // Collect all payments in the same group (or just this one if no group)
   const grpPayments = p.groupId
@@ -4052,6 +4254,605 @@ async function clearTestData() {
   }
 }
 
+
+// Wrappers that resolve the current first-entry ID from groupId (handles rebuilt IDs after edit)
+function openEditPaymentModalByGroup(paymentId, groupId) {
+  if (groupId) {
+    const first = DB.payments.find(px => px.groupId === groupId && px.method !== 'Cash Discount');
+    if (first) return openEditPaymentModal(first.id);
+  }
+  openEditPaymentModal(paymentId);
+}
+
+function printPaymentReceiptByGroup(paymentId, groupId) {
+  if (groupId) {
+    const first = DB.payments.find(px => px.groupId === groupId);
+    if (first) return printPaymentReceipt(first.id);
+  }
+  printPaymentReceipt(paymentId);
+}
+
+// ============================================================
+// EDIT PAYMENT — full grouped-payment editor
+// ============================================================
+let _editPaymentGroupId = null; // group being edited
+let _editPayCustomerId  = null; // stored since dropdown is disabled
+
+function onEditPayCustomerChange() {
+  document.getElementById('ep-invoice-rows').innerHTML = '';
+  updateEditPayRemaining();
+}
+
+function addEditPayInvoiceRow(preselectInvId) {
+  const custIdRaw = document.getElementById('ep-customer').value;
+  const custId = parseInt(custIdRaw);
+  if (!custId) { toast('Select a customer first.', 'error'); return; }
+  const container = document.getElementById('ep-invoice-rows');
+  const rowId = 'eprow_' + Date.now();
+
+  const allInvoices = getAllInvoicesForCustomer(custId);
+  if (!allInvoices.length) {
+    const noInvMsg = document.createElement('div');
+    noInvMsg.style.cssText = 'background:#f39c1215;border:1px solid var(--warning);border-radius:8px;padding:10px 14px;color:var(--warning);font-size:0.83rem;margin-bottom:8px';
+    noInvMsg.textContent = '⚠ No invoices found for this customer.';
+    container.appendChild(noInvMsg);
+    return;
+  }
+
+  const unpaid   = allInvoices.filter(i => getInvoiceStatus(i) !== 'paid');
+  const paidInvs = allInvoices.filter(i => getInvoiceStatus(i) === 'paid');
+
+  const makeOpt = (i, isPaid) => {
+    const bal = parseFloat(i.amount) - getPaidAmount(i.id);
+    const isSelected = preselectInvId && String(i.id) === String(preselectInvId) ? 'selected' : '';
+    const label = isPaid
+      ? `${i.invNo} — ₹${fmt(parseFloat(i.amount))} [PAID]`
+      : `${i.invNo} — ₹${fmt(parseFloat(i.amount))} (bal ₹${fmt(bal)})`;
+    return `<option value="${i.id}" data-amount="${parseFloat(i.amount)}" data-bal="${bal.toFixed(2)}" ${isSelected} ${isPaid ? 'style="color:#94a3b8"' : ''}>${label}</option>`;
+  };
+
+  const opts = [
+    unpaid.length   ? `<optgroup label="Unpaid / Partial">${unpaid.map(i => makeOpt(i, false)).join('')}</optgroup>`  : '',
+    paidInvs.length ? `<optgroup label="Already Paid">${paidInvs.map(i => makeOpt(i, true)).join('')}</optgroup>`    : ''
+  ].join('');
+
+  const div = document.createElement('div');
+  div.id = rowId;
+  div.style.cssText = 'background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px';
+  div.innerHTML = `
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Invoice</label>
+        <select onchange="onEditPayInvRowChange('${rowId}')" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;font-family:inherit;color:var(--text)">
+          <option value="">-- Select --</option>${opts}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Cash Disc (₹)</label>
+        <input type="number" placeholder="0" min="0" step="0.01" value="0" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;font-family:inherit;color:var(--text)" oninput="updateEditPayRemaining()">
+      </div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Adjust Amt (₹)</label>
+        <input type="number" placeholder="0" min="0" step="0.01" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;font-family:inherit;color:var(--text)" oninput="updateEditPayRemaining()">
+      </div>
+      <div class="form-group" style="margin:0"><label style="font-size:0.72rem">Balance</label>
+        <input type="text" readonly placeholder="₹0" style="width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:0.82rem;color:var(--success);font-weight:600;font-family:inherit">
+      </div>
+      <button onclick="document.getElementById('${rowId}').remove();updateEditPayRemaining()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:0 4px;margin-bottom:2px" title="Remove">✕</button>
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:5px" id="${rowId}_meta">Select an invoice to see details</div>
+  `;
+  container.appendChild(div);
+  if (preselectInvId) {
+    const sel = div.querySelector('select');
+    if (sel) { sel.value = preselectInvId; onEditPayInvRowChange(rowId); }
+  }
+  updateEditPayRemaining();
+}
+
+function onEditPayInvRowChange(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const sel = row.querySelector('select');
+  const invId = parseInt(sel?.value);
+  const meta = document.getElementById(rowId + '_meta');
+  if (!invId) { if (meta) meta.textContent = 'Select an invoice to see details'; updateEditPayRemaining(); return; }
+  const inv = DB.invoices.find(i => i.id === invId);
+  if (!inv) return;
+  const bal = parseFloat(inv.amount) - getPaidAmount(invId);
+  const status = getInvoiceStatus(inv);
+  const statusColors = { paid:'var(--success)', pending:'var(--warning)', partial:'var(--accent)', overdue:'var(--danger)' };
+  if (meta) meta.innerHTML = `Invoice ₹${fmt(parseFloat(inv.amount))} &nbsp;|&nbsp; <span style="color:${statusColors[status]};font-weight:600">${status}</span> &nbsp;|&nbsp; Due: ${fmtDate(inv.dueDate)} &nbsp;|&nbsp; Balance: <strong style="color:var(--danger)">₹${fmt(bal)}</strong>`;
+  updateEditPayRemaining();
+}
+
+function updateEditPayRemaining() {
+  const totalReceived = parseFloat(document.getElementById('ep-total-received').value) || 0;
+  let totalAllocated = 0;
+  let totalDisc = 0;
+
+  document.querySelectorAll('#ep-invoice-rows > div').forEach(row => {
+    const inputs = row.querySelectorAll('input[type=number]');
+    const disc = parseFloat(inputs[0]?.value) || 0;
+    const adj  = parseFloat(inputs[1]?.value) || 0;
+    const balInput = row.querySelectorAll('input[type=text]')[0];
+    totalDisc += disc;
+    totalAllocated += adj;
+
+    const sel = row.querySelector('select');
+    const invId = parseInt(sel?.value);
+    if (invId && balInput) {
+      const inv = DB.invoices.find(i => i.id === invId);
+      if (inv) {
+        const invBal = parseFloat(inv.amount) - getPaidAmount(invId);
+        const remainBal = invBal - adj - disc;
+        balInput.value = '₹' + fmt(remainBal);
+        balInput.style.color = remainBal <= 0.01 ? 'var(--success)' : 'var(--danger)';
+      }
+    }
+  });
+
+  const remaining = totalReceived - totalAllocated;
+  document.getElementById('ep-bar-received').textContent  = '₹' + fmt(totalReceived);
+  document.getElementById('ep-bar-allocated').textContent = '₹' + fmt(totalAllocated);
+  document.getElementById('ep-bar-disc').textContent      = '₹' + fmt(totalDisc);
+  const remEl = document.getElementById('ep-bar-remaining');
+  remEl.textContent = '₹' + fmt(remaining);
+  remEl.style.color = Math.abs(remaining) < 0.01 ? 'var(--success)' : 'var(--danger)';
+}
+
+function openEditPaymentModal(paymentId) {
+  // paymentId is the first entry of the group (or a single payment)
+  const p = DB.payments.find(px => px.id === paymentId);
+  if (!p) return toast('Payment not found.', 'error');
+
+  // Collect all non-Cash-Discount entries in the group (or just this one)
+  const groupEntries = p.groupId
+    ? DB.payments.filter(px => px.groupId === p.groupId && px.method !== 'Cash Discount')
+    : [p];
+
+  _editPaymentGroupId = p.groupId || null;
+  // For single (no group), store the id so we can target it
+  if (!_editPaymentGroupId) window._editPaymentSingleId = paymentId;
+
+  const receiptNo = p.receiptNo || '—';
+  const custId    = Math.round(parseFloat(p.customerId));
+  _editPayCustomerId = custId; // store since dropdown is disabled
+  const totalReceived = p.totalReceived || groupEntries.reduce((s,x) => s + parseFloat(x.amount), 0);
+
+  document.getElementById('edit-payment-info').innerHTML =
+    `Receipt: <strong>${receiptNo}</strong> &nbsp;·&nbsp; Group: <strong>${p.groupId || 'Single'}</strong>`;
+
+  // Populate customer dropdown
+  const sel = document.getElementById('ep-customer');
+  const sorted = [...DB.customers].sort((a,b) => a.name.localeCompare(b.name,'en-IN'));
+  sel.innerHTML = '<option value="">-- Select Customer --</option>' +
+    sorted.map(cx => `<option value="${cx.id}" ${cx.id === custId ? 'selected' : ''}>${cx.name}</option>`).join('');
+
+  document.getElementById('ep-total-received').value = totalReceived;
+  document.getElementById('ep-date').value           = p.date || '';
+  document.getElementById('ep-method').value         = (groupEntries[0]?.method) || 'Cheque';
+  document.getElementById('ep-ref').value            = p.ref || '';
+  document.getElementById('ep-notes').value          = p.notes || '';
+
+  // Build invoice rows from existing group entries
+  document.getElementById('ep-invoice-rows').innerHTML = '';
+  groupEntries.forEach(entry => {
+    addEditPayInvoiceRow(entry.invoiceId);
+    // Pre-fill disc and adj values in the last added row
+    const rows = document.querySelectorAll('#ep-invoice-rows > div');
+    const lastRow = rows[rows.length - 1];
+    if (lastRow) {
+      const inputs = lastRow.querySelectorAll('input[type=number]');
+      // Find matching cash discount entry for this invoice in the group
+      const discEntry = p.groupId
+        ? DB.payments.find(px => px.groupId === p.groupId && px.invoiceId === entry.invoiceId && px.method === 'Cash Discount')
+        : null;
+      if (inputs[0]) inputs[0].value = discEntry ? discEntry.amount : (entry.cashDisc || 0);
+      if (inputs[1]) inputs[1].value = entry.amount || 0;
+      // Trigger balance update
+      const selEl = lastRow.querySelector('select');
+      if (selEl) {
+        const rowId = lastRow.id;
+        onEditPayInvRowChange(rowId);
+      }
+    }
+  });
+
+  updateEditPayRemaining();
+  openModal('modal-edit-payment');
+}
+
+async function saveEditPayment() {
+  const customerId    = _editPayCustomerId; // dropdown is disabled; use stored value
+  const date          = document.getElementById('ep-date').value;
+  const method        = document.getElementById('ep-method').value;
+  const ref           = document.getElementById('ep-ref').value.trim();
+  const notes         = document.getElementById('ep-notes').value.trim();
+  const totalReceived = parseFloat(document.getElementById('ep-total-received').value) || 0;
+
+  if (!customerId)        return toast('Select a customer.', 'error');
+  if (!date)              return toast('Date required.', 'error');
+  if (totalReceived <= 0) return toast('Enter total amount received.', 'error');
+
+  const rows = document.querySelectorAll('#ep-invoice-rows > div');
+  if (!rows.length) return toast('Add at least one invoice row.', 'error');
+
+  const allocations = [];
+  let totalAllocated = 0;
+  let totalDisc = 0;
+
+  for (const row of rows) {
+    const sel    = row.querySelector('select');
+    const inputs = row.querySelectorAll('input[type=number]');
+    const invId  = parseInt(sel?.value);
+    const disc   = parseFloat(inputs[0]?.value) || 0;
+    const adj    = parseFloat(inputs[1]?.value) || 0;
+    if (!invId)                  { toast('Select an invoice for each row.', 'error'); return; }
+    if (adj <= 0 && disc <= 0)   { toast('Enter adjust amount or cash discount for each row.', 'error'); return; }
+    allocations.push({ invId, disc, adj });
+    totalAllocated += adj;
+    totalDisc += disc;
+  }
+
+  if (Math.abs(totalReceived - totalAllocated) > 0.01) {
+    document.getElementById('ep-remaining-warn').style.display = 'block';
+    return toast('Total allocated must equal total received.', 'error');
+  }
+  document.getElementById('ep-remaining-warn').style.display = 'none';
+
+  // --- Snapshot old values for log ---
+  const oldTotal = _editPaymentGroupId
+    ? DB.payments.filter(px => px.groupId === _editPaymentGroupId && px.method !== 'Cash Discount').reduce((s,px) => s + parseFloat(px.amount), 0)
+    : (DB.payments.find(px => px.id === window._editPaymentSingleId)?.amount || 0);
+  const oldCustomerId = _editPaymentGroupId
+    ? DB.payments.find(px => px.groupId === _editPaymentGroupId)?.customerId
+    : DB.payments.find(px => px.id === window._editPaymentSingleId)?.customerId;
+  const oldCust = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(oldCustomerId))));
+  const newCust = DB.customers.find(c => c.id === customerId);
+
+  // --- Remove old group entries ---
+  const receiptNo = _editPaymentGroupId
+    ? DB.payments.find(px => px.groupId === _editPaymentGroupId)?.receiptNo
+    : DB.payments.find(px => px.id === window._editPaymentSingleId)?.receiptNo;
+
+  if (_editPaymentGroupId) {
+    DB.payments = DB.payments.filter(px => px.groupId !== _editPaymentGroupId);
+    // Delete from Firestore
+    if (_db) {
+      const { writeBatch, doc, collection: col } = window._firebaseModules;
+      // we do a full save below so no need for individual deletes here
+    }
+  } else {
+    DB.payments = DB.payments.filter(px => px.id !== window._editPaymentSingleId);
+  }
+
+  // --- Rebuild entries ---
+  const newGroupId = _editPaymentGroupId || ('grp_' + Date.now());
+  const c = DB.customers.find(cx => cx.id === customerId);
+  const invNos = [];
+
+  for (const alloc of allocations) {
+    const inv = DB.invoices.find(i => i.id === alloc.invId);
+    invNos.push(inv?.invNo || '—');
+    if (alloc.adj > 0) {
+      DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
+    }
+    if (alloc.disc > 0 && alloc.adj === 0) {
+      DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
+    }
+    if (alloc.disc > 0 && alloc.adj > 0) {
+      DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
+    }
+  }
+
+  await save('payments');
+
+  // --- Log with before/after ---
+  const custChanged = String(Math.round(parseFloat(oldCustomerId))) !== String(customerId);
+  const amtChanged  = Math.abs(oldTotal - totalReceived) > 0.01;
+  let logMsg = `Edited payment ${receiptNo || newGroupId}`;
+  if (custChanged) logMsg += ` | Customer: ${oldCust?.name || '?'} → ${newCust?.name || '?'}`;
+  if (amtChanged)  logMsg += ` | Amount: ₹${fmt(oldTotal)} → ₹${fmt(totalReceived)}`;
+  logMsg += ` | Invoices: ${invNos.join(', ')}`;
+  addLog('edit', logMsg);
+
+  toast('Payment updated!', 'success');
+  closeModal('modal-edit-payment');
+  renderPayments();
+  renderInvoices();
+  renderDashboard();
+}
+
+// ============================================================
+// EDIT CREDIT NOTE
+// ============================================================
+let _editCNId = null;
+let _editCNCustomerId = null;
+
+function openEditCNModal(id) {
+  _editCNId = id;
+  const cn = (DB.creditNotes || []).find(c => c.id === id);
+  if (!cn) return toast('Credit Note not found.', 'error');
+
+  _editCNCustomerId = cn.customerId; // store for saveEditCN since dropdown is disabled
+  if (!cn) return toast('Credit Note not found.', 'error');
+
+  // Populate customer dropdown (editable)
+  const cSel = document.getElementById('ecn-customer');
+  const sorted = [...DB.customers].sort((a,b) => a.name.localeCompare(b.name,'en-IN'));
+  cSel.innerHTML = '<option value="">-- Select Customer --</option>' +
+    sorted.map(c => `<option value="${c.id}" ${String(c.id) === String(cn.customerId) ? 'selected' : ''}>${c.name}</option>`).join('');
+
+  // Populate invoice dropdown
+  populateEditCNInvoices(cn.invoiceId);
+
+  document.getElementById('ecn-number').value = cn.cnNumber || '';
+  document.getElementById('ecn-date').value   = cn.date || '';
+  document.getElementById('ecn-amount').value = cn.amount || '';
+  document.getElementById('ecn-reason').value = cn.reason || 'Return';
+  document.getElementById('ecn-notes').value  = cn.notes || '';
+  openModal('modal-edit-creditnote');
+}
+
+function populateEditCNInvoices(selectedInvId) {
+  const custIdRaw = document.getElementById('ecn-customer').value;
+  const sel = document.getElementById('ecn-invoice');
+  if (!custIdRaw) {
+    sel.innerHTML = '<option value="">-- Select Invoice --</option>';
+    document.getElementById('ecn-balance').textContent = 'Invoice balance: ₹0';
+    return;
+  }
+  const invs = DB.invoices
+    .filter(i => String(i.customerId) === String(custIdRaw))
+    .sort((a, b) => {
+      const balA = parseFloat(a.amount) - getPaidAmount(a.id);
+      const balB = parseFloat(b.amount) - getPaidAmount(b.id);
+      if (balA > 0 && balB <= 0) return -1;
+      if (balA <= 0 && balB > 0) return 1;
+      return new Date(b.date) - new Date(a.date);
+    });
+  if (!invs.length) {
+    sel.innerHTML = '<option value="">-- No invoices found --</option>';
+    document.getElementById('ecn-balance').textContent = 'No invoices for this customer.';
+    return;
+  }
+  sel.innerHTML = '<option value="">-- Select Invoice --</option>' +
+    invs.map(i => {
+      const bal = parseFloat(i.amount) - getPaidAmount(i.id);
+      const label = bal > 0.005
+        ? `${i.invNo} — ₹${fmt(i.amount)} (bal: ₹${fmt(bal)})`
+        : `${i.invNo} — ₹${fmt(i.amount)} [Paid]`;
+      return `<option value="${i.id}" ${String(i.id) === String(selectedInvId) ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+  updateEditCNBalance();
+}
+
+function updateEditCNBalance() {
+  const invId = parseInt(document.getElementById('ecn-invoice').value);
+  if (!invId) { document.getElementById('ecn-balance').textContent = 'Invoice balance: ₹0'; return; }
+  const inv = DB.invoices.find(i => i.id === invId);
+  if (!inv) return;
+  const bal = parseFloat(inv.amount) - getPaidAmount(invId);
+  document.getElementById('ecn-balance').textContent = `Invoice balance: ₹${fmt(bal)} (credit note will reduce this)`;
+}
+
+async function saveEditCN() {
+  if (!_editCNId) return;
+  const idx = (DB.creditNotes || []).findIndex(c => c.id === _editCNId);
+  if (idx === -1) return toast('Credit Note not found.', 'error');
+
+  const customerId = _editCNCustomerId; // dropdown is disabled; use stored value
+  const invoiceId  = parseInt(document.getElementById('ecn-invoice').value);
+  const cnNumber   = document.getElementById('ecn-number').value.trim();
+  const date       = document.getElementById('ecn-date').value;
+  const amount     = parseFloat(document.getElementById('ecn-amount').value);
+  const reason     = document.getElementById('ecn-reason').value;
+  const notes      = document.getElementById('ecn-notes').value.trim();
+
+  if (!customerId) return toast('Select a customer.', 'error');
+  if (!invoiceId)  return toast('Select an invoice.', 'error');
+  if (!cnNumber)   return toast('Credit Note number required.', 'error');
+  if (!date)       return toast('Date required.', 'error');
+  if (isNaN(amount) || amount <= 0) return toast('Valid credit amount required.', 'error');
+
+  const oldCN   = DB.creditNotes[idx];
+  const oldCust = DB.customers.find(c => String(c.id) === String(oldCN.customerId));
+  const newCust = DB.customers.find(c => c.id === customerId);
+  const inv     = DB.invoices.find(i => i.id === invoiceId);
+
+  DB.creditNotes[idx] = { ...oldCN, customerId, invoiceId, cnNumber, date, amount, reason, notes };
+  await save('creditNotes');
+
+  // Build descriptive log
+  const custChanged = String(oldCN.customerId) !== String(customerId);
+  const invChanged  = String(oldCN.invoiceId)  !== String(invoiceId);
+  const amtChanged  = Math.abs(parseFloat(oldCN.amount) - amount) > 0.01;
+  let logMsg = `Edited Credit Note ${cnNumber}`;
+  if (custChanged) logMsg += ` | Customer: ${oldCust?.name || '?'} → ${newCust?.name || '?'}`;
+  if (invChanged)  logMsg += ` | Invoice changed → ${inv?.invNo || invoiceId}`;
+  if (amtChanged)  logMsg += ` | Amount: ₹${fmt(parseFloat(oldCN.amount))} → ₹${fmt(amount)}`;
+  addLog('edit', logMsg);
+
+  toast('Credit Note updated!', 'success');
+  closeModal('modal-edit-creditnote');
+  renderCreditNotes();
+  renderInvoices();
+  renderDashboard();
+}
+
+// ============================================================
+// EXPENSES
+// ============================================================
+let _editExpenseId = null;
+
+function toggleExpOther() {
+  const val = document.getElementById('exp-category').value;
+  document.getElementById('exp-other-box').style.display = val === 'Other' ? 'block' : 'none';
+}
+
+function openExpenseModal(id = null) {
+  _editExpenseId = id;
+  document.getElementById('exp-modal-title').textContent = id ? 'Edit Expense' : 'Add Expense';
+  if (id) {
+    const e = (DB.expenses || []).find(x => x.id === id);
+    if (!e) return toast('Expense not found.', 'error');
+    const isOther = !['Petrol','Hotel','Electricity','Professional Fees','Repair & Maintenance'].includes(e.category);
+    document.getElementById('exp-category').value = isOther ? 'Other' : e.category;
+    document.getElementById('exp-other-box').style.display  = isOther ? 'block' : 'none';
+    document.getElementById('exp-other-text').value = isOther ? e.category : '';
+    document.getElementById('exp-date').value   = e.date || '';
+    document.getElementById('exp-amount').value = e.amount || '';
+    document.getElementById('exp-mode').value   = e.mode || 'UPI';
+    document.getElementById('exp-by').value     = e.by || '';
+    document.getElementById('exp-desc').value   = e.description || '';
+  } else {
+    document.getElementById('exp-category').value = 'Petrol';
+    document.getElementById('exp-other-box').style.display = 'none';
+    document.getElementById('exp-other-text').value = '';
+    document.getElementById('exp-date').value   = today();
+    document.getElementById('exp-amount').value = '';
+    document.getElementById('exp-mode').value   = 'UPI';
+    document.getElementById('exp-by').value     = '';
+    document.getElementById('exp-desc').value   = '';
+  }
+  openModal('modal-expense');
+}
+
+async function saveExpense() {
+  let category = document.getElementById('exp-category').value;
+  if (category === 'Other') {
+    category = document.getElementById('exp-other-text').value.trim();
+    if (!category) return toast('Please specify the Other category.', 'error');
+  }
+  const date   = document.getElementById('exp-date').value;
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const mode   = document.getElementById('exp-mode').value;
+  const by     = document.getElementById('exp-by').value.trim();
+  const description = document.getElementById('exp-desc').value.trim();
+
+  if (!date)                          return toast('Date required.', 'error');
+  if (isNaN(amount) || amount <= 0)   return toast('Valid amount required.', 'error');
+  if (!by)                            return toast('Expense done by is required.', 'error');
+
+  if (!DB.expenses) DB.expenses = [];
+
+  if (_editExpenseId) {
+    const idx = DB.expenses.findIndex(x => x.id === _editExpenseId);
+    if (idx !== -1) {
+      const oldAmt = parseFloat(DB.expenses[idx].amount);
+      DB.expenses[idx] = { ...DB.expenses[idx], category, date, amount, mode, by, description };
+      let logMsg = `Edited expense: ${category} by ${by}`;
+      if (Math.abs(oldAmt - amount) > 0.01) logMsg += ` | Amount: ₹${fmt(oldAmt)} → ₹${fmt(amount)}`;
+      addLog('edit', logMsg);
+      toast('Expense updated!', 'success');
+    }
+  } else {
+    const entry = { id: Date.now(), category, date, amount, mode, by, description };
+    DB.expenses.push(entry);
+    addLog('create', `Added expense: ${category} ₹${fmt(amount)} by ${by} | Total expenses: ${DB.expenses.length}`);
+    toast('Expense saved!', 'success');
+  }
+
+  await save('expenses');
+  closeModal('modal-expense');
+  renderExpenses();
+}
+
+async function deleteExpense(id) {
+  const e = (DB.expenses || []).find(x => x.id === id);
+  if (!confirm(`Delete expense: ${e?.category} ₹${fmt(e?.amount)}?`)) return;
+  await deleteDoc('expenses', id);
+  DB.expenses = DB.expenses.filter(x => x.id !== id);
+  addLog('delete', `Deleted expense: ${e?.category} ₹${fmt(e?.amount)}`);
+  toast('Expense deleted.', 'error');
+  renderExpenses();
+}
+
+async function deleteAllExpenses() {
+  if (currentUser?.role !== 'dev') return toast('Only Dev can delete all expenses.', 'error');
+  if (!confirm('⚠ Delete ALL expenses permanently?')) return;
+  if (!confirm('Second confirmation — this cannot be undone. Proceed?')) return;
+  DB.expenses = [];
+  try { localStorage.removeItem('mauli_expenses'); } catch(e) {}
+  if (_db) {
+    try {
+      const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
+      const snap = await getDocs(col(_db, 'expenses'));
+      for (let i = 0; i < snap.docs.length; i += 400) {
+        const batch = writeBatch(_db);
+        snap.docs.slice(i, i+400).forEach(d => batch.delete(doc(col(_db,'expenses'), d.id)));
+        await batch.commit();
+      }
+    } catch(e) { console.warn('Firestore expenses delete error:', e); }
+  }
+  addLog('delete', 'Deleted all expenses');
+  toast('All expenses deleted.', 'success');
+  renderExpenses();
+}
+
+function clearExpDateFilter() {
+  const f = document.getElementById('exp-date-from');
+  const t = document.getElementById('exp-date-to');
+  if (f) f.value = '';
+  if (t) t.value = '';
+  renderExpenses();
+}
+
+function exportExpenses() {
+  const list = DB.expenses || [];
+  if (!list.length) return toast('No expenses to export.', 'error');
+  const data = list.map(e => ({
+    Date: e.date, Category: e.category, Description: e.description || '',
+    Amount: parseFloat(e.amount), Mode: e.mode, DoneBy: e.by
+  }));
+  exportXLSX(data, 'Expenses_MauliEnt');
+}
+
+function renderExpenses() {
+  const search   = document.getElementById('exp-search')?.value.toLowerCase() || '';
+  const catF     = document.getElementById('exp-cat-filter')?.value || '';
+  const modeF    = document.getElementById('exp-mode-filter')?.value || '';
+  const dateFrom = document.getElementById('exp-date-from')?.value || '';
+  const dateTo   = document.getElementById('exp-date-to')?.value || '';
+  const tbody    = document.getElementById('exp-table');
+  if (!tbody) return;
+
+  const all = DB.expenses || [];
+
+  // Update stats
+  document.getElementById('exp-stat-count').textContent = all.length;
+  document.getElementById('exp-stat-total').textContent = '₹' + fmt(all.reduce((s,e) => s + parseFloat(e.amount||0), 0));
+
+  let list = all.filter(e => {
+    const textMatch = [e.category, e.description, e.by, e.mode].join(' ').toLowerCase().includes(search);
+    const catMatch  = !catF   || e.category === catF;
+    const modeMatch = !modeF  || e.mode === modeF;
+    let dateMatch = true;
+    if (dateFrom) dateMatch = dateMatch && e.date >= dateFrom;
+    if (dateTo)   dateMatch = dateMatch && e.date <= dateTo;
+    return textMatch && catMatch && modeMatch && dateMatch;
+  }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">💸</div><p>No expenses found.</p></div></td></tr>`;
+    return;
+  }
+
+  const modeColor = { 'UPI': 'var(--accent)', 'Cash': 'var(--success)', 'Self': 'var(--warning)' };
+  tbody.innerHTML = list.map(e => `<tr>
+    <td>${fmtDate(e.date)}</td>
+    <td><strong>${e.category}</strong></td>
+    <td style="color:var(--muted);font-size:0.82rem">${e.description || '—'}</td>
+    <td style="color:var(--danger);font-weight:600">₹${fmt(parseFloat(e.amount))}</td>
+    <td><span style="font-weight:600;color:${modeColor[e.mode]||'var(--text)'}">${e.mode}</span></td>
+    <td>${e.by}</td>
+    <td>
+      <div class="action-btns">
+        <button class="btn btn-outline btn-xs" onclick="openExpenseModal(${e.id})">✏️ Edit</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteExpense(${e.id})">🗑</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
@@ -4086,6 +4887,7 @@ if ('serviceWorker' in navigator) {
         document.getElementById('topbar-role').textContent = roleLabel(cachedUser.role);
         const isDev = cachedUser.role === 'dev';
         document.querySelectorAll('.dev-only').forEach(el => el.style.display = isDev ? '' : 'none');
+        if (isDev) document.querySelectorAll('.expenses-tab-btn').forEach(el => el.style.display = '');
         const isMgr = cachedUser.role === 'dev' || cachedUser.role === 'admin';
         document.querySelectorAll('.mgr-only').forEach(el => el.style.display = isMgr ? '' : 'none');
         applyRoleAccess(cachedUser.role, cachedUser);
