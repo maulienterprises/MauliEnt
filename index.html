@@ -2777,10 +2777,50 @@ function renderPayments() {
           <button class="btn btn-outline btn-xs" onclick="openEditPaymentModalByGroup(${reviseId}, ${groupIdStr})" title="Edit Payment">✏️ Edit</button>
           <button class="btn btn-outline btn-xs" onclick="openRevisePaymentModal(${reviseId})" title="Reverse Payment">↩️ Reverse</button>
           <button class="btn btn-outline btn-xs" onclick="printPaymentReceiptByGroup(${reviseId}, ${groupIdStr})" title="Print Receipt">🧾 PDF</button>
+          <button class="btn btn-danger btn-xs" onclick="deletePaymentEntry(${reviseId}, ${groupIdStr})" title="Delete Payment">🗑 Delete</button>
         </div>
       </td>
     </tr>`;
   }).join('');
+}
+
+// ============================================================
+// DELETE PAYMENT ENTRY
+// ============================================================
+async function deletePaymentEntry(paymentId, groupId) {
+  const p = DB.payments.find(p => p.id === paymentId);
+  if (!p) return;
+  const c   = DB.customers.find(c => c.id === p.customerId);
+  const inv = DB.invoices.find(i => i.id === p.invoiceId);
+
+  const isGroup = !!groupId;
+  const groupEntries = isGroup ? DB.payments.filter(px => px.groupId === groupId) : [p];
+  const totalAmt = groupEntries.filter(px => px.method !== 'Cash Discount').reduce((s, px) => s + parseFloat(px.amount), 0);
+
+  const confirmMsg = isGroup
+    ? `⚠️ Delete this entire payment entry?\n\nCustomer: ${c?.name || '—'}\nInvoices: ${[...new Set(groupEntries.map(px => DB.invoices.find(i => i.id === px.invoiceId)?.invNo).filter(Boolean))].join(', ')}\nAmount: ₹${fmt(totalAmt)}\nReceipt: ${p.receiptNo || '—'}\n\nThis will permanently remove all ${groupEntries.length} linked payment record(s) and restore the invoice balance(s).`
+    : `⚠️ Delete this payment entry?\n\nCustomer: ${c?.name || '—'}\nInvoice: ${inv?.invNo || '—'}\nAmount: ₹${fmt(parseFloat(p.amount))}\nReceipt: ${p.receiptNo || '—'}\n\nThis action is permanent.`;
+
+  if (!confirm(confirmMsg)) return;
+
+  const payIds = isGroup
+    ? DB.payments.filter(px => px.groupId === groupId).map(px => px.id)
+    : [p.id];
+
+  DB.payments = DB.payments.filter(px => !payIds.includes(px.id));
+  for (const pid of payIds) await deleteDoc('payments', pid);
+
+  const invNos = isGroup
+    ? [...new Set(groupEntries.map(px => DB.invoices.find(i => i.id === px.invoiceId)?.invNo).filter(Boolean))].join(', ')
+    : (inv?.invNo || '—');
+
+  addLog('delete', `Payment deleted — ${c?.name || '—'} | Invoice(s): ${invNos} | ₹${fmt(totalAmt)} | Receipt: ${p.receiptNo || '—'}`);
+  toast('Payment deleted. Invoice balance(s) restored.', 'error');
+
+  renderPayments();
+  renderInvoices();
+  renderOverdue();
+  renderDashboard();
 }
 
 // ============================================================
