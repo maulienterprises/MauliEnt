@@ -169,8 +169,8 @@ tr:hover td{background:rgba(26,111,212,0.04)}
 .log-entry.delete{border-left-color:var(--danger)}
 .log-time{color:var(--muted);font-size:0.75rem}
 hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.btn:disabled{opacity:0.55;cursor:not-allowed;pointer-events:none}
 </style>
-</head>
 <body>
 
 <!-- ===== TOAST ===== -->
@@ -534,7 +534,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
           <button class="btn btn-outline btn-sm" onclick="closeUserForm()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="saveUserFromApp()">💾 Save User</button>
+          <button class="btn btn-primary btn-sm" id="btn-save-user" onclick="saveUserFromApp()">💾 Save User</button>
         </div>
       </div>
 
@@ -773,7 +773,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="form-group"><label>Description <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="exp-desc" placeholder="Details about this expense..."></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-expense')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveExpense()">Save Expense</button>
+      <button class="btn btn-primary" id="btn-save-expense" onclick="saveExpense()">Save Expense</button>
     </div>
   </div>
 </div>
@@ -806,7 +806,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="form-group"><label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="ecn-notes" placeholder="Details..."></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-edit-creditnote')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEditCN()">Save Changes</button>
+      <button class="btn btn-primary" id="btn-save-edit-cn" onclick="saveEditCN()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -842,7 +842,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-customer')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+      <button class="btn btn-primary" id="btn-save-customer" onclick="saveCustomer()">Save Customer</button>
     </div>
   </div>
 </div>
@@ -866,7 +866,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="form-group"><label>Description</label><input type="text" id="im-desc" placeholder="Invoice description"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-invoice');document.getElementById('dup-global').style.display='none'">Cancel</button>
-      <button class="btn btn-primary" onclick="saveInvoice()">Save Invoice</button>
+      <button class="btn btn-primary" id="btn-save-invoice" onclick="saveInvoice()">Save Invoice</button>
     </div>
   </div>
 </div>
@@ -914,7 +914,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="form-group" style="margin-top:10px"><label>Notes (optional)</label><input type="text" id="pm-notes" placeholder="Any additional notes..."></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-payment')">Cancel</button>
-      <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+      <button class="btn btn-primary" id="btn-save-payment" onclick="savePayment()">Save Payment</button>
     </div>
   </div>
 </div>
@@ -964,7 +964,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="form-group" style="margin-top:10px"><label>Notes (optional)</label><input type="text" id="ep-notes" placeholder="Any additional notes..."></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-edit-payment')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEditPayment()">Save Changes</button>
+      <button class="btn btn-primary" id="btn-save-edit-payment" onclick="saveEditPayment()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -998,7 +998,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-revise-payment')">Cancel</button>
-      <button class="btn btn-danger" onclick="saveRevisePayment()">Reverse Payment</button>
+      <button class="btn btn-danger" id="btn-save-revise-payment" onclick="saveRevisePayment()">Reverse Payment</button>
     </div>
   </div>
 </div>
@@ -1031,7 +1031,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="form-group"><label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="text" id="cn-notes" placeholder="Details about this credit note..."></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-creditnote')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveCreditNote()">Save Credit Note</button>
+      <button class="btn btn-primary" id="btn-save-creditnote" onclick="saveCreditNote()">Save Credit Note</button>
     </div>
   </div>
 </div>
@@ -1148,7 +1148,29 @@ function setFirestoreDB(firestoreInstance) {
   _db = firestoreInstance;
 }
 
-// ---- Firestore save ----
+// ============================================================
+// BUTTON GUARD — prevents double-save on slow networks
+// Usage: call btnGuard('btn-id') at the START of any async save fn.
+// It disables the button + shows a spinner in the label.
+// Re-enabled automatically when the modal closes (via closeModal),
+// or manually via btnGuardReset('btn-id') on validation failure.
+// ============================================================
+function btnGuard(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = true;
+  btn._origText = btn.innerHTML;
+  btn.innerHTML = '<svg style="width:16px;height:16px;vertical-align:middle;animation:spin 0.8s linear infinite;margin-right:6px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="28 56" stroke-linecap="round"/></svg>' + btn._origText;
+}
+function btnGuardReset(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = false;
+  if (btn._origText !== undefined) { btn.innerHTML = btn._origText; delete btn._origText; }
+}
+// ============================================================
+// MODAL HELPERS
+// ============================================================// ---- Firestore save ----
 async function save(key) {
   // Local-only keys
   if (key === 'backupHistory') {
@@ -1809,7 +1831,13 @@ function toast(msg, type='info') {
 // MODAL HELPERS
 // ============================================================
 function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // Auto-reset any guarded (disabled) save buttons inside this modal
+  document.querySelectorAll('#' + id + ' button[id^="btn-save"]').forEach(btn => {
+    btnGuardReset(btn.id);
+  });
+}
 
 // ============================================================
 // ACTIVITY LOG
@@ -1914,6 +1942,8 @@ async function saveCustomer() {
   const phone = document.getElementById('cm-phone').value.trim();
   if (!name) return toast('Name is required.', 'error');
   if (!phone) return toast('Phone is required.', 'error');
+
+  btnGuard('btn-save-customer');
 
   const data = {
     name, phone,
@@ -2103,6 +2133,8 @@ async function saveInvoice() {
 
   const isDup = DB.invoices.some(i => i.invNo === invNo && i.id !== editingInvoiceId);
   if (isDup) { toast('Duplicate invoice number!', 'error'); return; }
+
+  btnGuard('btn-save-invoice');
 
   const data = { customerId, invNo, date, dueDate, amount, description };
 
@@ -2507,6 +2539,8 @@ async function savePayment() {
   }
   document.getElementById('pm-remaining-warn').style.display = 'none';
 
+  btnGuard('btn-save-payment');
+
   const c = DB.customers.find(c => c.id === customerId);
   const groupId = 'grp_' + Date.now(); // shared ID for all entries in this payment session
   const invNos = [];
@@ -2514,9 +2548,11 @@ async function savePayment() {
   for (const alloc of allocations) {
     const inv = DB.invoices.find(i => i.id === alloc.invId);
     invNos.push(inv?.invNo || '—');
+    // Push actual payment entry FIRST (before Cash Discount) so method display is correct
     if (alloc.adj > 0) {
       DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived });
     }
+    // Cash Discount entries pushed AFTER main payment entry
     if (alloc.disc > 0 && alloc.adj === 0) {
       DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived });
     }
@@ -2575,6 +2611,8 @@ async function saveRevisePayment() {
   const chargeAmt   = parseFloat(document.getElementById('rp-charge-amount').value) || 0;
 
   if (applyCharge && chargeAmt <= 0) return toast('Enter a valid charge amount.', 'error');
+
+  btnGuard('btn-save-revise-payment');
 
   const inv = DB.invoices.find(i => i.id === p.invoiceId);
   const c   = DB.customers.find(c => c.id === p.customerId);
@@ -2665,19 +2703,22 @@ function renderPayments() {
 
   // Groups — represent as one record using first entry's metadata
   Object.values(grouped).forEach(grp => {
-    const first = grp[0];
+    // Bug fix: use the first NON-Cash-Discount entry for method/metadata display
+    // (Cash Discount entries may be stored first in the array, which caused wrong method shown)
+    const primaryEntry = grp.find(p => p.method !== 'Cash Discount') || grp[0];
+    const first = grp[0]; // keep for receiptNo / groupId / customer (same across group)
     const totalAmt = grp.filter(p => p.method !== 'Cash Discount').reduce((s,p) => s + parseFloat(p.amount), 0);
     const totalDisc = grp.filter(p => p.method === 'Cash Discount').reduce((s,p) => s + parseFloat(p.amount), 0);
     const invNos = [...new Set(grp.map(p => DB.invoices.find(i => i.id === p.invoiceId)?.invNo).filter(Boolean))];
     list.push({
       _isGroup: true,
       _groupId: first.groupId,
-      _firstId: first.id,
+      _firstId: primaryEntry.id,
       customerId: first.customerId,
       date: first.date,
-      method: first.method,
-      ref: first.ref,
-      notes: first.notes,
+      method: primaryEntry.method,   // ← use primary (non-discount) entry's method
+      ref: primaryEntry.ref,
+      notes: primaryEntry.notes,
       receiptNo: first.receiptNo || '',
       amount: first.totalReceived || totalAmt,
       cashDisc: totalDisc,
@@ -2851,6 +2892,8 @@ async function saveCreditNote() {
   if (amount > bal + 0.01) {
     if (!confirm(`Credit amount ₹${fmt(amount)} exceeds current balance ₹${fmt(bal)}. Continue?`)) return;
   }
+
+  btnGuard('btn-save-creditnote');
 
   const c = DB.customers.find(c => c.id === customerId);
   const cn = { id: Date.now(), customerId, invoiceId, cnNumber, date, amount, reason, notes };
@@ -3190,6 +3233,7 @@ function openUserForm(id=null) {
 function closeUserForm() {
   document.getElementById('user-form-section').style.display = 'none';
   editingUserId = null;
+  btnGuardReset('btn-save-user');
 }
 
 async function saveUserFromApp() {
@@ -3218,6 +3262,16 @@ async function saveUserFromApp() {
     if (password.length < 6) return toast('Password min 6 chars.', 'error');
     if (password !== confirm) return toast('Passwords do not match.', 'error');
     if (DB.users.find(u => u.username === username)) return toast('Username already exists.', 'error');
+  } else {
+    if (password) {
+      if (password.length < 6) return toast('Password min 6 chars.', 'error');
+      if (password !== confirm) return toast('Passwords do not match.', 'error');
+    }
+  }
+
+  btnGuard('btn-save-user');
+
+  if (!editingUserId) {
     const { hash, salt } = await pbkdf2Hash(password, null);
     const newUser = { id: Date.now(), firstName, lastName, username, role, passwordHash: `pbkdf2:${salt}:${hash}`, active };
     if (tabAccess) newUser.tabAccess = tabAccess;
@@ -3231,8 +3285,6 @@ async function saveUserFromApp() {
     if (tabAccess) DB.users[idx].tabAccess = tabAccess;
     else delete DB.users[idx].tabAccess;
     if (password) {
-      if (password.length < 6) return toast('Password min 6 chars.', 'error');
-      if (password !== confirm) return toast('Passwords do not match.', 'error');
       const { hash, salt } = await pbkdf2Hash(password, null);
       DB.users[idx].passwordHash = `pbkdf2:${salt}:${hash}`;
     }
@@ -4498,6 +4550,8 @@ async function saveEditPayment() {
   }
   document.getElementById('ep-remaining-warn').style.display = 'none';
 
+  btnGuard('btn-save-edit-payment');
+
   // --- Snapshot old values for log ---
   const oldTotal = _editPaymentGroupId
     ? DB.payments.filter(px => px.groupId === _editPaymentGroupId && px.method !== 'Cash Discount').reduce((s,px) => s + parseFloat(px.amount), 0)
@@ -4514,14 +4568,47 @@ async function saveEditPayment() {
     : DB.payments.find(px => px.id === window._editPaymentSingleId)?.receiptNo;
 
   if (_editPaymentGroupId) {
+    // Collect old entry IDs BEFORE filtering them out (needed for Firestore delete)
+    const oldEntryIds = DB.payments
+      .filter(px => px.groupId === _editPaymentGroupId)
+      .map(px => String(px.id));
+
     DB.payments = DB.payments.filter(px => px.groupId !== _editPaymentGroupId);
-    // Delete from Firestore
-    if (_db) {
-      const { writeBatch, doc, collection: col } = window._firebaseModules;
-      // we do a full save below so no need for individual deletes here
+
+    // *** BUG FIX: Explicitly delete old Firestore documents ***
+    // Previously only new docs were written (upsert), leaving old ones in Firestore.
+    // On reload, Firestore returned both old + new entries → double-counted payments.
+    if (_db && oldEntryIds.length) {
+      try {
+        const { writeBatch, doc, collection: col } = window._firebaseModules;
+        const CHUNK = 400;
+        for (let i = 0; i < oldEntryIds.length; i += CHUNK) {
+          const batch = writeBatch(_db);
+          oldEntryIds.slice(i, i + CHUNK).forEach(docId => {
+            batch.delete(doc(col(_db, 'payments'), docId));
+          });
+          await batch.commit();
+        }
+      } catch(e) {
+        console.error('Failed to delete old payment entries from Firestore:', e);
+      }
     }
   } else {
+    const singleId = String(window._editPaymentSingleId);
     DB.payments = DB.payments.filter(px => px.id !== window._editPaymentSingleId);
+    // Delete the single old document from Firestore
+    if (_db && singleId) {
+      try {
+        const { doc, deleteDoc: fsDeleteDoc, collection: col } = window._firebaseModules;
+        // Use the exposed deleteDoc from Firebase modules
+        const { writeBatch, doc: fsDoc, collection: fsCol } = window._firebaseModules;
+        const batch = writeBatch(_db);
+        batch.delete(fsDoc(fsCol(_db, 'payments'), singleId));
+        await batch.commit();
+      } catch(e) {
+        console.error('Failed to delete old single payment from Firestore:', e);
+      }
+    }
   }
 
   // --- Rebuild entries ---
@@ -4532,9 +4619,11 @@ async function saveEditPayment() {
   for (const alloc of allocations) {
     const inv = DB.invoices.find(i => i.id === alloc.invId);
     invNos.push(inv?.invNo || '—');
+    // Push actual payment entry FIRST (before Cash Discount) so method display is correct
     if (alloc.adj > 0) {
       DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
     }
+    // Cash Discount entries pushed AFTER main payment entry
     if (alloc.disc > 0 && alloc.adj === 0) {
       DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
     }
@@ -4653,6 +4742,8 @@ async function saveEditCN() {
   if (!date)       return toast('Date required.', 'error');
   if (isNaN(amount) || amount <= 0) return toast('Valid credit amount required.', 'error');
 
+  btnGuard('btn-save-edit-cn');
+
   const oldCN   = DB.creditNotes[idx];
   const oldCust = DB.customers.find(c => String(c.id) === String(oldCN.customerId));
   const newCust = DB.customers.find(c => c.id === customerId);
@@ -4731,6 +4822,8 @@ async function saveExpense() {
   if (!date)                          return toast('Date required.', 'error');
   if (isNaN(amount) || amount <= 0)   return toast('Valid amount required.', 'error');
   if (!by)                            return toast('Expense done by is required.', 'error');
+
+  btnGuard('btn-save-expense');
 
   if (!DB.expenses) DB.expenses = [];
 
