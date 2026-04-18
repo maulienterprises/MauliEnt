@@ -170,104 +170,11 @@ tr:hover td{background:rgba(26,111,212,0.04)}
 .log-time{color:var(--muted);font-size:0.75rem}
 hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 .btn:disabled{opacity:0.55;cursor:not-allowed;pointer-events:none}
-
-/* ===== CUSTOM CONFIRM DIALOG ===== */
-#confirm-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  background: rgba(15, 23, 42, 0.55);
-  animation: confirmFadeIn 0.18s ease;
-}
-#confirm-overlay.open { display: flex; }
-@keyframes confirmFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.confirm-box {
-  background: var(--card);
-  border-radius: 18px;
-  padding: 32px 28px 24px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12);
-  text-align: center;
-  animation: confirmSlideUp 0.22s cubic-bezier(.34,1.3,.64,1);
-  position: relative;
-  border: 1px solid var(--border);
-}
-@keyframes confirmSlideUp {
-  from { transform: translateY(24px) scale(0.96); opacity: 0; }
-  to   { transform: translateY(0)    scale(1);    opacity: 1; }
-}
-.confirm-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  margin: 0 auto 16px;
-}
-.confirm-icon.danger  { background: #fee2e2; }
-.confirm-icon.warning { background: #fef3c7; }
-.confirm-icon.info    { background: #dbeafe; }
-.confirm-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: var(--text);
-}
-.confirm-msg {
-  font-size: 0.875rem;
-  color: var(--muted);
-  line-height: 1.6;
-  margin-bottom: 24px;
-  white-space: pre-line;
-}
-.confirm-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-.confirm-actions .btn {
-  min-width: 110px;
-  justify-content: center;
-  font-size: 0.875rem;
-  padding: 10px 20px;
-  border-radius: 10px;
-}
-.confirm-cancel-btn {
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-.confirm-cancel-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--input-bg); }
 </style>
 <body>
 
 <!-- ===== TOAST ===== -->
 <div class="toast" id="toast"></div>
-
-<!-- ===== CUSTOM CONFIRM DIALOG ===== -->
-<div id="confirm-overlay">
-  <div class="confirm-box">
-    <div class="confirm-icon" id="confirm-icon">⚠️</div>
-    <div class="confirm-title" id="confirm-title">Are you sure?</div>
-    <div class="confirm-msg" id="confirm-msg"></div>
-    <div class="confirm-actions">
-      <button class="btn confirm-cancel-btn" id="confirm-cancel-btn">Cancel</button>
-      <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
-    </div>
-  </div>
-</div>
 
 <!-- ===== DUPLICATE WARNING ===== -->
 <div style="position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:500;width:90%;max-width:500px;display:none" id="dup-global">
@@ -343,8 +250,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <button class="nav-btn" onclick="showTab('overdue',this)">⚠ Overdue</button>
     <button class="nav-btn mgr-only" onclick="showTab('creditnotes',this)" style="display:none">📝 Credit Notes</button>
     <button class="nav-btn mgr-only" onclick="showTab('ledger',this)" style="display:none">📒 Customer Ledger</button>
-    <button class="nav-btn expenses-tab-btn" onclick="showTab('expenses',this)" style="display:none">💸 Expenses</button>
     <button class="nav-btn dev-only" onclick="showTab('log',this)" style="display:none">📋 Activity Log</button>
+    <button class="nav-btn expenses-tab-btn" onclick="showTab('expenses',this)" style="display:none">💸 Expenses</button>
     <button class="nav-btn dev-only" onclick="showTab('users',this)" style="display:none">👤 Users</button>
     <button class="nav-btn dev-only" onclick="showTab('backup',this)" style="display:none">💾 Backup</button>
   </div>
@@ -368,23 +275,13 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <div class="stat-card green">
           <div class="stat-label">Received</div>
           <div class="stat-value" id="stat-received">₹0</div>
-          <div class="stat-sub">All time</div>
+          <div class="stat-sub">Payments collected</div>
         </div>
         <div class="stat-card red">
           <div class="stat-label">Outstanding</div>
           <div class="stat-value" id="stat-outstanding">₹0</div>
-          <div class="stat-sub">All time</div>
+          <div class="stat-sub">Pending dues</div>
         </div>
-      </div>
-      <!-- Year-wise Summary Table -->
-      <div class="section-card" id="dash-yearwise-section" style="margin-bottom:20px">
-        <div class="section-header" style="margin-bottom:12px">
-          <div class="section-title">📅 Year-wise Summary</div>
-        </div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Financial Year</th><th>Total Invoiced</th><th>Received</th><th>FY Outstanding</th><th>Cumulative Outstanding</th></tr></thead>
-          <tbody id="dash-yearwise"></tbody>
-        </table></div>
       </div>
       <div class="section-card">
         <div class="section-header">
@@ -413,7 +310,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">Customers</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('customers')">📥 Import</button>
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('customers')">📥 Import Excel</button>
           <button class="btn btn-outline btn-sm" onclick="exportCustomers()">📤 Export</button>
           <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">➕ Add Customer</button>
         </div>
@@ -437,20 +334,16 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">Invoices</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('invoices')">📥 Import</button>
-          <button class="btn btn-outline btn-sm" onclick="exportInvoices()">📤 Export</button>
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('invoices')">📥 Import Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="exportInvoices()">📤 Export Unpaid</button>
           <button class="btn btn-primary btn-sm" onclick="openInvoiceModal()">➕ New Invoice</button>
         </div>
       </div>
       <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
-        <select class="filter-btn" id="inv-fy-filter" onchange="renderInvoices()" style="min-width:140px;font-weight:600;color:var(--accent);border-color:var(--accent)">
-          <option value="all">All Years</option>
-        </select>
         <input class="search-input" placeholder="Search invoices..." id="inv-search" oninput="renderInvoices()" style="min-width:160px">
-        <select class="filter-btn" id="inv-cust-filter" onchange="renderInvoices();toggleCustClear('inv-cust-filter','inv-cust-clear')" style="min-width:140px">
+        <select class="filter-btn" id="inv-cust-filter" onchange="renderInvoices()" style="min-width:140px">
           <option value="">All Customers</option>
         </select>
-        <button class="filter-btn" id="inv-cust-clear" onclick="document.getElementById('inv-cust-filter').value='';renderInvoices();toggleCustClear('inv-cust-filter','inv-cust-clear')" title="Clear customer filter" style="padding:7px 8px;display:none">✕</button>
         <select class="filter-btn" id="inv-status-filter" onchange="renderInvoices()" style="min-width:110px">
           <option value="">All Status</option>
           <option value="pending">Pending</option>
@@ -485,14 +378,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         </div>
       </div>
       <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
-        <select class="filter-btn" id="pay-fy-filter" onchange="renderPayments()" style="min-width:140px;font-weight:600;color:var(--accent);border-color:var(--accent)">
-          <option value="all">All Years</option>
-        </select>
         <input class="search-input" placeholder="Search payments..." id="pay-search" oninput="renderPayments()" style="min-width:160px">
-        <select class="filter-btn" id="pay-cust-filter" onchange="renderPayments();toggleCustClear('pay-cust-filter','pay-cust-clear')" style="min-width:140px">
+        <select class="filter-btn" id="pay-cust-filter" onchange="renderPayments()" style="min-width:140px">
           <option value="">All Customers</option>
         </select>
-        <button class="filter-btn" id="pay-cust-clear" onclick="document.getElementById('pay-cust-filter').value='';renderPayments();toggleCustClear('pay-cust-filter','pay-cust-clear')" title="Clear customer filter" style="padding:7px 8px;display:none">✕</button>
         <select class="filter-btn" id="pay-method-filter" onchange="renderPayments()" style="min-width:120px">
           <option value="">All Methods</option>
           <option value="Cash">Cash</option>
@@ -522,14 +411,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <div class="tab-panel" id="tab-overdue">
       <div class="overdue-alert" id="overdue-alert" style="display:none">
         <p>⚠ Invoices past due date — send reminders immediately.</p>
-        <button class="btn btn-danger btn-sm" onclick="exportOverdueExcel()">📤 Export Overdue</button>
+        <button class="btn btn-danger btn-sm" onclick="exportOverdueExcel()">Export Overdue Excel</button>
       </div>
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">Overdue Invoices</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="exportUnpaidInvoices()">📤 Export Unpaid</button>
-          <button class="btn btn-outline btn-sm" onclick="exportOverdueExcel()">📤 Export Overdue</button>
-        </div>
       </div>
       <div class="table-wrap"><table>
         <thead><tr><th>Invoice #</th><th>Customer</th><th>Due Date</th><th>Days Overdue</th><th>Balance</th><th>Actions</th></tr></thead>
@@ -560,9 +445,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         </div>
       </div>
       <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
-        <select class="filter-btn" id="exp-fy-filter" onchange="renderExpenses()" style="min-width:140px;font-weight:600;color:var(--accent);border-color:var(--accent)">
-          <option value="all">All Years</option>
-        </select>
         <input class="search-input" placeholder="Search expenses..." id="exp-search" oninput="renderExpenses()" style="min-width:160px">
         <select class="filter-btn" id="exp-cat-filter" onchange="renderExpenses()" style="min-width:140px">
           <option value="">All Categories</option>
@@ -592,7 +474,9 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Mode</th><th>Done By</th><th>Actions</th></tr></thead>
         <tbody id="exp-table"></tbody>
       </table></div>
-
+      <div style="margin-top:16px">
+        <button class="btn btn-danger btn-sm" onclick="deleteAllExpenses()">🗑 Delete All Expenses</button>
+      </div>
     </div>
 
     <!-- ===== USER MANAGEMENT ===== -->
@@ -660,7 +544,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       </table></div>
 
       <div class="backup-info" style="margin-top:16px">
-        <strong>ℹ Note:</strong> All user changes are saved automatically to Supabase and sync across all devices instantly.
+        <strong>ℹ Note:</strong> All user changes are saved automatically to Firebase and sync across all devices instantly.
       </div>
     </div>
 
@@ -692,19 +576,18 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('payments')">💳 Payments JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('creditNotes')">📝 Credit Notes JSON</button>
             <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('expenses')">💸 Expenses JSON</button>
-
+            <button class="btn btn-outline btn-sm" onclick="downloadSingleBackup('log')">📋 Activity Log JSON</button>
           </div>
         </div>
 
         <div class="backup-card" style="border:1px solid #e74c3c40">
           <h3 style="color:var(--danger)">🧹 Clear Data</h3>
-          <p>Permanently delete specific collections from Supabase. <strong style="color:var(--danger)">User accounts will NOT be deleted.</strong></p>
+          <p>Permanently delete specific collections from Firebase. <strong style="color:var(--danger)">User accounts will NOT be deleted.</strong></p>
           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
             <button class="btn btn-danger btn-sm" onclick="clearCollection('customers')">👥 Delete All Customers</button>
             <button class="btn btn-danger btn-sm" onclick="clearCollection('invoices')">🧾 Delete All Invoices</button>
             <button class="btn btn-danger btn-sm" onclick="clearCollection('payments')">💳 Delete All Payments</button>
             <button class="btn btn-danger btn-sm" onclick="clearCollection('creditNotes')">📝 Delete All Credit Notes</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteAllExpenses()">🗑 Delete All Expenses</button>
             <button class="btn btn-danger btn-sm" style="background:#7f1d1d;border:1px solid #991b1b" onclick="clearTestData()">🗑 Delete Everything (All Above)</button>
           </div>
           <div class="backup-info" style="background:#e74c3c10;border:1px solid #e74c3c30">
@@ -760,9 +643,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         </div>
       </div>
       <div class="filter-bar" style="flex-wrap:wrap;gap:8px;align-items:center">
-        <select class="filter-btn" id="cn-fy-filter" onchange="renderCreditNotes()" style="min-width:140px;font-weight:600;color:var(--accent);border-color:var(--accent)">
-          <option value="all">All Years</option>
-        </select>
         <input class="search-input" placeholder="Search credit notes..." id="cn-search" oninput="renderCreditNotes()" style="min-width:160px">
         <select class="filter-btn" id="cn-cust-filter" onchange="renderCreditNotes()" style="min-width:140px">
           <option value="">All Customers</option>
@@ -800,17 +680,16 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">📒 Customer Invoice &amp; Payment Ledger</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="exportLedger()">📤 Export</button>
+          <button class="btn btn-outline btn-sm" onclick="exportLedger()">📤 Export Ledger</button>
           <button class="btn btn-primary btn-sm" onclick="printLedgerStatement()">🧾 PDF Statement</button>
         </div>
       </div>
       <div class="filter-bar" style="gap:12px;flex-wrap:wrap;align-items:center;background:var(--card);padding:14px 16px;border-radius:12px;border:1px solid var(--border);margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
           <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">Customer</label>
-          <select class="search-input" id="ledger-cust" onchange="renderLedger();toggleCustClear('ledger-cust','ledger-cust-clear')" style="flex:1">
+          <select class="search-input" id="ledger-cust" onchange="renderLedger()" style="flex:1">
             <option value="">— All Customers —</option>
           </select>
-          <button id="ledger-cust-clear" onclick="document.getElementById('ledger-cust').value='';renderLedger();toggleCustClear('ledger-cust','ledger-cust-clear')" title="Clear customer filter" style="background:var(--input-bg);border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:7px 10px;cursor:pointer;font-size:0.8rem;font-family:inherit;display:none">✕</button>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;font-weight:500">Payment Status</label>
@@ -1236,16 +1115,6 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 // ============================================================
 // DATA STORE
 // ============================================================
-// ============================================================
-// UNIQUE ID GENERATOR — prevents duplicate IDs on fast saves
-// Uses a monotonic counter suffix to guarantee uniqueness
-// even when multiple entries are created in the same millisecond.
-// ============================================================
-let _idSeq = 0;
-function uniqueId() {
-  return Date.now() * 1000 + ((++_idSeq) % 1000);
-}
-
 const DB = {
   customers: [],
   invoices: [],
@@ -1267,16 +1136,16 @@ let editingUserId = null;
 // Firestore instance — set by Firebase module after init
 let _db = null;
 
-// Collections stored in Supabase (also used as table names)
+// Collections stored in Firestore
 const FS_COLLECTIONS = ['customers','invoices','payments','creditNotes','expenses','log','users'];
 // These stay local only
 const LOCAL_KEYS = {
   backupHistory: 'mauli_backup_history'
 };
 
-// Called by Supabase script once client is ready
-function setSupabaseDB(client) {
-  _db = client;
+// Called by Firebase module once Firestore is ready
+function setFirestoreDB(firestoreInstance) {
+  _db = firestoreInstance;
 }
 
 // ============================================================
@@ -1301,7 +1170,7 @@ function btnGuardReset(btnId) {
 }
 // ============================================================
 // MODAL HELPERS
-// ============================================================// ---- Supabase save ----
+// ============================================================// ---- Firestore save ----
 async function save(key) {
   // Local-only keys
   if (key === 'backupHistory') {
@@ -1313,7 +1182,7 @@ async function save(key) {
   try { localStorage.setItem('mauli_' + key, JSON.stringify(DB[key])); } catch(e) {}
 
   if (!_db) {
-    toast('⚠ Supabase not connected. Data saved locally.', 'error');
+    toast('⚠ Firebase not connected. Data saved locally — will sync when connection restores.', 'error');
     updateSyncStatus('error');
     return;
   }
@@ -1321,41 +1190,39 @@ async function save(key) {
   const items = DB[key];
   if (!Array.isArray(items)) return;
 
-  // Supabase table name — creditNotes uses quoted name
-  const table = key;
   updateSyncStatus('syncing');
 
   // Try up to 3 times with delay
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      // Deduplicate by id — Supabase throws "ON CONFLICT affect row a second time"
-      // if the same id appears more than once in a single upsert batch
-      const seen = new Set();
-      const deduped = items.filter(row => {
-        const k = String(row.id);
-        if (seen.has(k)) return false;
-        seen.add(k);
-        return true;
-      });
-      // Upsert in chunks of 400
+      const { writeBatch, doc, collection: col } = window._firebaseModules;
+      const colRef = col(_db, key);
       const CHUNK = 400;
-      for (let i = 0; i < deduped.length; i += CHUNK) {
-        const chunk = deduped.slice(i, i + CHUNK);
-        const { error } = await _db.from(table).upsert(chunk, { onConflict: 'id' });
-        if (error) throw new Error(error.message);
+      for (let i = 0; i < items.length; i += CHUNK) {
+        const batch = writeBatch(_db);
+        items.slice(i, i + CHUNK).forEach(item => {
+          batch.set(doc(colRef, String(item.id)), item);
+        });
+        await batch.commit();
       }
       updateSyncStatus('synced');
       if (key === 'users') {
         try { localStorage.setItem('mauli_users_cache', JSON.stringify(DB.users)); } catch(e) {}
       }
-      return; // success
+      return; // success — exit
     } catch(e) {
-      console.error(`Supabase save error (attempt ${attempt}):`, e);
+      console.error(`Firestore save error (attempt ${attempt}):`, e);
       if (attempt < 3) {
-        await new Promise(r => setTimeout(r, 1000 * attempt));
+        await new Promise(r => setTimeout(r, 1000 * attempt)); // wait 1s, 2s before retry
       } else {
         updateSyncStatus('error');
-        toast(`❌ Save failed: ${e.message}. Data kept locally.`, 'error');
+        // Check if it's an ad blocker / network block
+        const isBlocked = e.message?.includes('blocked') || e.code === 'unavailable' || e.message?.includes('ERR_BLOCKED');
+        if (isBlocked) {
+          toast('❌ Firebase blocked by ad blocker or network. Disable ad blocker for this site.', 'error');
+        } else {
+          toast(`❌ Save failed: ${e.message}. Data kept locally.`, 'error');
+        }
       }
     }
   }
@@ -1366,89 +1233,65 @@ async function save(key) {
 // Firestore float64 storage can cause drift on large timestamp-based IDs
 // (e.g. customerId 1775918938303 may come back as 1775918938303.1707).
 function normalizeIds() {
-  // Customers & Invoices use plain Date.now() IDs — safe to round away float drift.
   DB.customers.forEach(c => { if (c.id != null) c.id = Math.round(parseFloat(c.id)); });
   DB.invoices.forEach(i => {
     if (i.id != null)         i.id         = Math.round(parseFloat(i.id));
     if (i.customerId != null) i.customerId = Math.round(parseFloat(i.customerId));
   });
-
-  // Payments use uniqueId() = Date.now()*1000 + seq, which produces values like
-  // 1776059976810183.  Supabase float8 drifts these to 1776059976810.0183 —
-  // rounding them to integers collapses multiple distinct entries to the same value
-  // and causes data loss on upsert.  Store them as-is (floating point string) and
-  // only normalise the FK columns that ARE plain Date.now() timestamps.
   DB.payments.forEach(p => {
+    if (p.id != null)         p.id         = Math.round(parseFloat(p.id));
     if (p.customerId != null) p.customerId = Math.round(parseFloat(p.customerId));
     if (p.invoiceId  != null) p.invoiceId  = Math.round(parseFloat(p.invoiceId));
-    // p.id intentionally NOT rounded — see comment above
   });
-
-  // CreditNotes have the same risk as payments (id may be uniqueId() or Date.now()).
-  // Normalise FK references only; leave primary id alone.
   (DB.creditNotes || []).forEach(cn => {
+    if (cn.id != null)         cn.id         = Math.round(parseFloat(cn.id));
     if (cn.customerId != null) cn.customerId = Math.round(parseFloat(cn.customerId));
     if (cn.invoiceId  != null) cn.invoiceId  = Math.round(parseFloat(cn.invoiceId));
-    // cn.id intentionally NOT rounded
   });
-
-  // Expenses: same caution — id left as-is.
-  // (No FK columns to normalise in expenses.)
+  (DB.expenses || []).forEach(e => {
+    if (e.id != null) e.id = Math.round(parseFloat(e.id));
+  });
 }
 
 async function load() {
   // Load local-only keys
   try { DB.backupHistory = JSON.parse(localStorage.getItem(LOCAL_KEYS.backupHistory)) || []; } catch { DB.backupHistory = []; }
 
-  if (!_db) { console.warn('Supabase not ready'); return; }
+  if (!_db) { console.warn('Firestore not ready'); return; }
 
   try {
+    const { getDocs, collection: col } = window._firebaseModules;
     updateSyncStatus('syncing');
 
     for (const key of FS_COLLECTIONS) {
-      // Paginate to bypass Supabase's default 1000-row limit
-      const PAGE = 1000;
-      let allRows = [];
-      let from = 0;
-      while (true) {
-        const { data, error } = await _db.from(key).select('*').range(from, from + PAGE - 1);
-        if (error) throw new Error(`Load ${key}: ${error.message}`);
-        if (data && data.length > 0) allRows = allRows.concat(data);
-        if (!data || data.length < PAGE) break; // last page
-        from += PAGE;
-      }
-      // Deduplicate by id (safeguard against upsert conflicts)
-      const seen = new Set();
-      DB[key] = allRows.filter(row => {
-        const k = String(row.id);
-        if (seen.has(k)) return false;
-        seen.add(k);
-        return true;
-      });
+      const snap = await getDocs(col(_db, key));
+      DB[key] = snap.docs.map(d => d.data());
     }
     // Sort log newest first
     DB.log.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-    // Normalize IDs (Supabase PostgreSQL returns bigint as string in some cases)
+    // Normalize IDs: Firestore stores numbers as float64 which can introduce
+    // decimal drift on large integers (e.g. 1775918938303 → 1775918938303.1707).
+    // Round all id / customerId / invoiceId fields to integer on load.
     normalizeIds();
 
-    // One-time migration: if Supabase is empty but localStorage has data, upload it
+    // One-time migration: if Firestore is empty but localStorage has data, upload it
     if (DB.customers.length === 0) {
       await migrateFromLocalStorage();
     }
 
     updateSyncStatus('synced');
   } catch(e) {
-    console.error('Supabase load error:', e);
+    console.error('Firestore load error:', e);
     updateSyncStatus('error');
-    // Fallback to localStorage if Supabase fails
+    // Fallback to localStorage if Firestore fails
     ['customers','invoices','payments','creditNotes','log'].forEach(k => {
       try { DB[k] = JSON.parse(localStorage.getItem('mauli_' + k)) || []; } catch { DB[k] = []; }
     });
   }
 }
 
-// ---- One-time migration from localStorage → Supabase ----
+// ---- One-time migration from localStorage → Firestore ----
 async function migrateFromLocalStorage() {
   const legacyKeys = {
     customers:   'mauli_customers',
@@ -1468,30 +1311,34 @@ async function migrateFromLocalStorage() {
 
   if (!hasData) return;
 
-  toast('Migrating existing data to Supabase...', 'info');
+  toast('Migrating existing data to Firebase...', 'info');
   try {
+    const { writeBatch, doc, collection: col } = window._firebaseModules;
     for (const key of FS_COLLECTIONS) {
       if (!DB[key].length) continue;
       const CHUNK = 400;
       for (let i = 0; i < DB[key].length; i += CHUNK) {
-        const { error } = await _db.from(key).upsert(DB[key].slice(i, i + CHUNK), { onConflict: 'id' });
-        if (error) throw new Error(error.message);
+        const batch = writeBatch(_db);
+        DB[key].slice(i, i + CHUNK).forEach(item => {
+          batch.set(doc(col(_db, key), String(item.id)), item);
+        });
+        await batch.commit();
       }
     }
-    console.log('✅ Data migrated to Supabase successfully.');
+    toast('✅ Data migrated to Firebase successfully!', 'success');
   } catch(e) {
     toast('Migration error: ' + e.message, 'error');
   }
 }
 
-// ---- Delete a single document from Supabase ----
+// ---- Delete a single document from Firestore ----
 async function deleteDoc(key, id) {
   if (!_db) return;
   try {
-    const { error } = await _db.from(key).delete().eq('id', id);
-    if (error) throw new Error(error.message);
+    const { doc, deleteDoc: fsDelete, collection: col } = window._firebaseModules;
+    await fsDelete(doc(col(_db, key), String(id)));
   } catch(e) {
-    console.error('Supabase delete error:', e);
+    console.error('Firestore delete error:', e);
   }
 }
 
@@ -1501,52 +1348,31 @@ const _unsubscribers = [];
 function startRealtimeListeners() {
   if (!_db) return;
   stopRealtimeListeners();
+  const { onSnapshot, collection: col } = window._firebaseModules;
 
-  const liveKeys = ['customers', 'invoices', 'payments', 'creditNotes'];
-
+  const liveKeys = ['customers','invoices','payments','creditNotes'];
   liveKeys.forEach(key => {
-    const channel = _db
-      .channel('table-changes-' + key)
-      .on('postgres_changes', { event: '*', schema: 'public', table: key }, async () => {
-        // Re-fetch the full table on any change — paginated to bypass 1000-row limit
-        const PAGE = 1000;
-        let allRows = [];
-        let from = 0;
-        while (true) {
-          const { data, error } = await _db.from(key).select('*').range(from, from + PAGE - 1);
-          if (error || !currentUser) break;
-          if (data && data.length > 0) allRows = allRows.concat(data);
-          if (!data || data.length < PAGE) break;
-          from += PAGE;
-        }
-        if (currentUser && allRows.length > 0) {
-          DB[key] = allRows;
-          normalizeIds();
-          renderAll();
-          updateSyncStatus('synced');
-        }
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') updateSyncStatus('synced');
-        // CHANNEL_ERROR, TIMED_OUT, CLOSED are all transient — Supabase auto-retries, show amber not red
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') updateSyncStatus('syncing');
-      });
-    _unsubscribers.push(() => _db.removeChannel(channel));
+    const unsub = onSnapshot(col(_db, key), (snap) => {
+      const newData = snap.docs.map(d => d.data());
+      DB[key] = newData;
+      if (currentUser) {
+        renderAll();
+        updateSyncStatus('synced');
+      }
+    }, (err) => {
+      console.error('Realtime listener error:', err);
+      updateSyncStatus('error');
+    });
+    _unsubscribers.push(unsub);
   });
 
-  // Live log listener for Dev role
+  // Live log listener — only for Dev so all users' logs appear instantly
   if (currentUser?.role === 'dev') {
-    const channel = _db
-      .channel('table-changes-log')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'log' }, async () => {
-        const { data } = await _db.from('log').select('*');
-        if (data) {
-          DB.log = data.sort((a, b) => new Date(b.time) - new Date(a.time));
-          if (document.getElementById('tab-log')?.classList.contains('active')) renderLog();
-        }
-      })
-      .subscribe();
-    _unsubscribers.push(() => _db.removeChannel(channel));
+    const unsub = onSnapshot(col(_db, 'log'), (snap) => {
+      DB.log = snap.docs.map(d => d.data()).sort((a,b) => new Date(b.time) - new Date(a.time));
+      if (document.getElementById('tab-log')?.classList.contains('active')) renderLog();
+    }, (err) => { console.error('Log listener error:', err); });
+    _unsubscribers.push(unsub);
   }
 }
 
@@ -1561,17 +1387,16 @@ function updateSyncStatus(state) {
   if (state === 'synced') {
     dot.style.background = 'var(--success)';
     dot.style.animation = 'none';
-    dot.title = 'Supabase synced';
+    dot.title = 'Firebase synced';
   } else if (state === 'syncing') {
     dot.style.background = 'var(--warning)';
     dot.style.animation = 'none';
     dot.title = 'Syncing...';
-  } else if (state === 'error') {
+  } else {
     dot.style.background = 'var(--danger)';
     dot.style.animation = 'pulse-red 1s infinite';
-    dot.title = 'Sync error — check internet connection';
+    dot.title = 'Sync error — check ad blocker or internet connection';
   }
-  // Unknown/transient states are silently ignored — dot stays at last known state
 }
 
 // Live clock in topbar
@@ -1581,7 +1406,7 @@ function startClock() {
   function tick() {
     const now = new Date();
     const d = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-    const t = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+    const t = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
     label.textContent = d + '  ' + t;
   }
   tick();
@@ -1590,8 +1415,9 @@ function startClock() {
 startClock();
 
 function reloadStaleData() {
+  // With real-time listeners this banner shouldn't appear, but keep as fallback
   document.getElementById('stale-tab-banner').style.display = 'none';
-  toast('Data is live via Supabase.', 'info');
+  toast('Data is live via Firebase.', 'info');
 }
 
 // ============================================================
@@ -1711,16 +1537,19 @@ function showLockoutMessage(username) {
 
 // ---- Login flow ----
 async function loadUsersDB() {
-  // 1. Try Supabase first
+  // 1. Try Firestore first (works after anon sign-in)
   if (_db) {
     try {
-      const { data, error } = await _db.from('users').select('*');
-      if (!error && data && data.length > 0) {
+      const { getDocs, collection: col } = window._firebaseModules;
+      const snap = await getDocs(col(_db, 'users'));
+      const data = snap.docs.map(d => d.data());
+      if (data.length > 0) {
         DB.users = data;
+        // Cache in localStorage as emergency backup
         try { localStorage.setItem('mauli_users_cache', JSON.stringify(data)); } catch(e) {}
         return;
       }
-    } catch(e) { console.warn('Supabase users load failed:', e); }
+    } catch(e) { console.warn('Firestore users load failed:', e); }
   }
 
   if (DB.users && DB.users.length > 0) return;
@@ -1734,14 +1563,14 @@ async function loadUsersDB() {
         if (Array.isArray(data) && data.length > 0) {
           DB.users = data;
           try { localStorage.setItem('mauli_users_cache', JSON.stringify(data)); } catch(e) {}
-          if (_db) save('users'); // auto-migrate to Supabase
+          if (_db) save('users'); // auto-migrate to Firestore
           return;
         }
       }
     } catch(e) { /* try next */ }
   }
 
-  // 3. Last resort — localStorage cache
+  // 3. Last resort — localStorage cache (works even if users.json deleted and Firestore down)
   try {
     const cached = JSON.parse(localStorage.getItem('mauli_users_cache') || '[]');
     if (cached.length > 0) { DB.users = cached; return; }
@@ -1753,32 +1582,19 @@ async function doLogin() {
   const password = document.getElementById('login-pass').value;
   if (!username || !password) return showLoginError();
 
-  // btnGuard for login — disable for max 5s to prevent double-submit
-  const loginBtn = document.getElementById('login-btn');
-  loginBtn.disabled = true;
-  loginBtn._origText = loginBtn.innerHTML;
-  loginBtn.innerHTML = '<svg style="width:16px;height:16px;vertical-align:middle;animation:spin 0.8s linear infinite;margin-right:6px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="28 56" stroke-linecap="round"/></svg>' + loginBtn._origText;
-  const loginGuardTimer = setTimeout(() => {
-    loginBtn.disabled = false;
-    if (loginBtn._origText !== undefined) { loginBtn.innerHTML = loginBtn._origText; delete loginBtn._origText; }
-  }, 5000);
-
-  // Helper to reset login button early (on failure paths)
-  function resetLoginBtn() {
-    clearTimeout(loginGuardTimer);
-    loginBtn.disabled = false;
-    if (loginBtn._origText !== undefined) { loginBtn.innerHTML = loginBtn._origText; delete loginBtn._origText; }
-  }
-
   // Check lockout
   const lo = getLockout(username);
   if (lo.until > Date.now()) {
-    resetLoginBtn();
     showLockoutMessage(username);
     return;
   }
 
-  // No anonymous auth needed — Supabase uses anon key directly
+  // ⚡ Sign in to Firebase anonymously FIRST — needed before any Firestore read/write
+  if (window._firebaseAuth) {
+    try { await window._firebaseAuth.signInAnonymously(window._firebaseAuth.auth); }
+    catch(e) { console.warn('Firebase anon sign-in failed:', e); }
+  }
+
   await loadUsersDB();
 
   const user = DB.users.find(u => u.username.toLowerCase() === username && u.active !== false);
@@ -1787,7 +1603,6 @@ async function doLogin() {
 
   if (!valid) {
     const newAttempts = (lo.attempts || 0) + 1;
-    resetLoginBtn();
     if (newAttempts >= MAX_ATTEMPTS) {
       setLockout(username, { attempts: newAttempts, until: Date.now() + LOCKOUT_MS });
       showLockoutMessage(username);
@@ -1843,8 +1658,10 @@ function signOut(reason) {
   try { sessionStorage.removeItem('mauli_current_user'); } catch(e) {}
   stopIdleTimer();
   stopRealtimeListeners();
-  // Close ALL open modals so stale windows don't remain after logout
-  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  // Sign out of Firebase so Firestore rules block any further access
+  if (window._firebaseAuth) {
+    Promise.resolve().then(() => window._firebaseAuth.signOut(window._firebaseAuth.auth)).catch(() => {});
+  }
   document.getElementById('idle-warning-overlay').style.display = 'none';
   document.getElementById('stale-tab-banner').style.display = 'none';
   document.getElementById('app').style.display = 'none';
@@ -1854,10 +1671,10 @@ function signOut(reason) {
 }
 
 // ============================================================
-// AUTO-LOGOUT — 30 min idle, 30s warning
+// AUTO-LOGOUT — 5 min idle, 30s warning
 // ============================================================
-const IDLE_TIMEOUT_MS  = 30 * 60 * 1000; // 30 minutes
-const IDLE_WARNING_MS  = 30 * 1000;       // warn 30s before
+const IDLE_TIMEOUT_MS  = 5 * 60 * 1000; // 5 minutes
+const IDLE_WARNING_MS  = 30 * 1000;      // warn 30s before
 
 let idleTimer        = null;
 let idleWarnTimer    = null;
@@ -2029,12 +1846,12 @@ async function addLog(type, msg) {
   const entry = { id: Date.now() + Math.random(), type, msg, user: currentUser?.username || 'system', time: new Date().toISOString() };
   DB.log.unshift(entry);
   if (DB.log.length > 500) DB.log = DB.log.slice(0, 500);
+  // Save only this single log entry to Firestore — much faster than rewriting all 500
   try { localStorage.setItem('mauli_log', JSON.stringify(DB.log)); } catch(e) {}
-  // Save only this single log entry to Supabase — much faster than rewriting all 500
   if (_db) {
     try {
-      const { error } = await _db.from('log').upsert([entry], { onConflict: 'id' });
-      if (error) console.error('Log save error:', error.message);
+      const { doc, setDoc, collection: col } = window._firebaseModules;
+      await setDoc(doc(col(_db, 'log'), String(entry.id)), entry);
     } catch(e) {
       console.error('Log save error:', e);
     }
@@ -2054,18 +1871,26 @@ function renderLog() {
 }
 
 async function clearLog() {
-  if (!await confirmDialog({ title: 'Clear Activity Log', msg: 'This will permanently remove all activity log entries. This action cannot be undone.', type: 'danger', okLabel: 'Clear Log' })) return;
+  if (!confirm('Clear all activity log entries?')) return;
   if (currentUser?.role !== 'dev') return toast('Only Dev can clear the log.', 'error');
+  const oldLog = [...DB.log];
   DB.log = [];
   try { localStorage.setItem('mauli_log', '[]'); } catch(e) {}
+  // Delete all log documents from Firestore
   if (_db) {
     try {
-      // Delete all log rows — use a filter that matches all (id > 0 always true)
-      const { error } = await _db.from('log').delete().gt('id', 0);
-      if (error) throw new Error(error.message);
+      const { writeBatch, doc, collection: col } = window._firebaseModules;
+      const CHUNK = 400;
+      for (let i = 0; i < oldLog.length; i += CHUNK) {
+        const batch = writeBatch(_db);
+        oldLog.slice(i, i + CHUNK).forEach(entry => {
+          batch.delete(doc(col(_db, 'log'), String(entry.id)));
+        });
+        await batch.commit();
+      }
       toast('Activity log cleared.', 'success');
     } catch(e) {
-      toast('Log cleared locally. Supabase error: ' + e.message, 'error');
+      toast('Log cleared locally. Firebase error: ' + e.message, 'error');
     }
   }
   renderLog();
@@ -2136,29 +1961,24 @@ async function saveCustomer() {
     const idx = DB.customers.findIndex(c => c.id === editingCustomerId);
     const oldName = DB.customers[idx]?.name;
     DB.customers[idx] = { ...DB.customers[idx], ...data };
-    await addLog('edit', `Edited customer: ${name}${oldName && oldName !== name ? ` (was: ${oldName})` : ''} | Total customers: ${DB.customers.length}`);
+    addLog('edit', `Edited customer: ${name}${oldName && oldName !== name ? ` (was: ${oldName})` : ''} | Total customers: ${DB.customers.length}`);
     toast('Customer updated!', 'success');
   } else {
     data.id = Date.now();
     DB.customers.push(data);
-    await addLog('create', `Added customer: ${name} | Total customers: ${DB.customers.length}`);
+    addLog('create', `Added customer: ${name} | Total customers: ${DB.customers.length}`);
     toast('Customer added!', 'success');
   }
 
-  try {
-    await save('customers');
-    closeModal('modal-customer');
-    renderCustomers();
-    updateCustomerDropdowns();
-  } catch(e) {
-    btnGuardReset('btn-save-customer');
-    toast('❌ Failed to save customer: ' + e.message, 'error');
-  }
+  save('customers');
+  closeModal('modal-customer');
+  renderCustomers();
+  updateCustomerDropdowns();
 }
 
 async function deleteCustomer(id) {
   const c = DB.customers.find(c => c.id === id);
-  if (!await confirmDialog({ title: 'Delete Customer', msg: `Delete "${c?.name}"?\n\nThis will also permanently remove all their invoices and payments.`, type: 'danger', okLabel: 'Delete Customer' })) return;
+  if (!confirm(`Delete customer "${c?.name}"? This also removes their invoices and payments.`)) return;
   // Delete from Firestore
   const invIds = DB.invoices.filter(i => i.customerId === id).map(i => i.id);
   const payIds = DB.payments.filter(p => p.customerId === id).map(p => p.id);
@@ -2172,7 +1992,7 @@ async function deleteCustomer(id) {
   DB.payments    = DB.payments.filter(p => p.customerId !== id);
   DB.creditNotes = (DB.creditNotes||[]).filter(cn => cn.customerId !== id);
   DB.customers   = DB.customers.filter(c => c.id !== id);
-  await addLog('delete', `Deleted customer: ${c?.name}`);
+  addLog('delete', `Deleted customer: ${c?.name}`);
   toast('Customer deleted.', 'error');
   renderAll();
 }
@@ -2188,7 +2008,7 @@ function getCustomerStatus(id) {
   const today = new Date(); today.setHours(0,0,0,0);
   const hasOverdue = invs.some(i => {
     const bal = parseFloat(i.amount) - getPaidAmount(i.id);
-    return bal > 0 && parseLocalDate(i.dueDate) < today;
+    return bal > 0 && new Date(i.dueDate) < today;
   });
   if (hasOverdue) return 'overdue';
   const hasPartial = invs.some(i => {
@@ -2233,8 +2053,8 @@ function renderCustomers() {
       <td><span class="badge ${statusMap[status]}">${status}</span></td>
       <td>
         <div class="action-btns">
-          <button class="btn btn-outline btn-xs" onclick="openCustomerModal(${c.id})">✏️ Edit</button>
-          <button class="btn btn-xs" style="background:#e74c3c20;color:var(--danger);border:1px solid #e74c3c40" onclick="openReminderModal(${c.id})">🔔 Remind</button>
+          <button class="btn btn-outline btn-xs" onclick="openCustomerModal(${c.id})">✏️</button>
+          <button class="btn btn-xs" style="background:#e74c3c20;color:var(--danger);border:1px solid #e74c3c40" onclick="openReminderModal(${c.id})">🔔</button>
           <button class="btn btn-danger btn-xs" onclick="deleteCustomer(${c.id})">🗑</button>
         </div>
       </td>
@@ -2327,31 +2147,26 @@ async function saveInvoice() {
     DB.invoices[idx] = { ...DB.invoices[idx], ...data };
     let logMsg = `${wasPaid ? 'Correction' : 'Edited'} invoice ${invNo} (${c?.name || 'Customer #' + customerId})`;
     if (Math.abs(oldAmt - amount) > 0.01) logMsg += ` | Amount: ₹${fmt(oldAmt)} → ₹${fmt(amount)}`;
-    await addLog(wasPaid ? 'correction' : 'edit', logMsg);
+    addLog(wasPaid ? 'correction' : 'edit', logMsg);
     toast('Invoice updated!', 'success');
   } else {
     data.id = Date.now();
     DB.invoices.push(data);
     const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(customerId)))) || DB.customers.find(c => String(c.id) === String(customerId));
-    await addLog('create', `Created invoice ${invNo} ₹${fmt(amount)} for ${c?.name || 'Customer #' + customerId} | Total invoices: ${DB.invoices.length}`);
+    addLog('create', `Created invoice ${invNo} ₹${fmt(amount)} for ${c?.name || 'Customer #' + customerId} | Total invoices: ${DB.invoices.length}`);
     toast('Invoice saved!', 'success');
   }
 
-  try {
-    await save('invoices');
-    closeModal('modal-invoice');
-    document.getElementById('dup-global').style.display = 'none';
-    renderInvoices();
-    renderDashboard();
-  } catch(e) {
-    btnGuardReset('btn-save-invoice');
-    toast('❌ Failed to save invoice: ' + e.message, 'error');
-  }
+  save('invoices');
+  closeModal('modal-invoice');
+  document.getElementById('dup-global').style.display = 'none';
+  renderInvoices();
+  renderDashboard();
 }
 
 async function deleteInvoice(id) {
   const inv = DB.invoices.find(i => i.id === id);
-  if (!await confirmDialog({ title: 'Delete Invoice', msg: `Delete invoice ${inv?.invNo}?\n\nAll associated payments and credit notes will also be removed.`, type: 'danger', okLabel: 'Delete Invoice' })) return;
+  if (!confirm(`Delete invoice ${inv?.invNo}?`)) return;
   const payIds = DB.payments.filter(p => p.invoiceId === id).map(p => p.id);
   const cnIds  = (DB.creditNotes||[]).filter(cn => cn.invoiceId === id).map(cn => cn.id);
   for (const pid of payIds) await deleteDoc('payments', pid);
@@ -2360,7 +2175,7 @@ async function deleteInvoice(id) {
   DB.invoices    = DB.invoices.filter(i => i.id !== id);
   DB.payments    = DB.payments.filter(p => p.invoiceId !== id);
   DB.creditNotes = (DB.creditNotes||[]).filter(cn => cn.invoiceId !== id);
-  await addLog('delete', `Deleted invoice ${inv?.invNo}`);
+  addLog('delete', `Deleted invoice ${inv?.invNo}`);
   toast('Invoice deleted.', 'error');
   renderInvoices();
   renderDashboard();
@@ -2368,59 +2183,24 @@ async function deleteInvoice(id) {
 
 function getPaidAmount(invoiceId) {
   const invIdStr = String(invoiceId);
-  // Exclude Cancelled (reversed) and Cash Discount entries separately.
-  // Cash Discount entries are stored as separate payment rows but also counted
-  // explicitly below — so main filter excludes them to prevent double-counting.
   const payments = DB.payments
-    .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount')
+    .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled')
     .reduce((s, p) => s + parseFloat(p.amount), 0);
-  const discounts = DB.payments
-    .filter(p => String(p.invoiceId) === invIdStr && p.method === 'Cash Discount')
-    .reduce((s, p) => s + parseFloat(p.amount), 0);
-  // Fallback: some older entries store cash discount only in the cashDisc field
-  // without a separate 'Cash Discount' method row. Include those to avoid missing them.
-  const discountFallback = discounts === 0
-    ? DB.payments
-        .filter(p => String(p.invoiceId) === invIdStr
-                  && p.method !== 'Cancelled'
-                  && p.method !== 'Cash Discount'
-                  && parseFloat(p.cashDisc) > 0)
-        .reduce((s, p) => s + parseFloat(p.cashDisc), 0)
-    : 0;
   const credits = (DB.creditNotes || [])
     .filter(cn => String(cn.invoiceId) === invIdStr)
     .reduce((s, cn) => s + parseFloat(cn.amount), 0);
-  return payments + discounts + discountFallback + credits;
+  return payments + credits;
 }
 
 function getInvoiceStatus(inv) {
   const paid = getPaidAmount(inv.id);
   const amount = parseFloat(inv.amount);
   const today = new Date(); today.setHours(0,0,0,0);
-  // Parse dueDate as local date (not UTC) to avoid IST timezone shift
-  // new Date("yyyy-MM-dd") parses as UTC midnight which in IST (+5:30)
-  // falls on the previous calendar day, causing premature overdue status.
-  let due;
-  if (inv.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.dueDate)) {
-    const [y, m, d] = inv.dueDate.split('-').map(Number);
-    due = new Date(y, m - 1, d);
-  } else {
-    due = new Date(inv.dueDate);
-  }
+  const due = new Date(inv.dueDate);
   if (paid >= amount) return 'paid';
   if (due < today) return 'overdue';
   if (paid > 0) return 'partial';
   return 'pending';
-}
-
-// Parse a yyyy-MM-dd string as LOCAL date (avoids UTC midnight → IST day-shift bug)
-function parseLocalDate(dateStr) {
-  if (!dateStr) return new Date(NaN);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d);
-  }
-  return new Date(dateStr);
 }
 
 function initInvMonthFilter() { /* no-op — using from/to date range now */ }
@@ -2442,9 +2222,6 @@ function clearInvAmtFilter() {
 }
 
 function renderInvoices() {
-  // Populate FY dropdown from invoice dates
-  populateFYFilter('inv-fy-filter', DB.invoices.map(i => i.date));
-  const selectedFY   = document.getElementById('inv-fy-filter')?.value || 'all';
   const search      = document.getElementById('inv-search').value.toLowerCase();
   const custFilter2 = document.getElementById('inv-cust-filter').value;
   const statusF     = document.getElementById('inv-status-filter').value;
@@ -2457,17 +2234,11 @@ function renderInvoices() {
 
   if (dateFrom || dateTo) {
     label.textContent = `Showing invoices: ${dateFrom ? 'from ' + fmtDate(dateFrom) : ''} ${dateTo ? 'to ' + fmtDate(dateTo) : ''}`;
-  } else if (selectedFY !== 'all') {
-    label.textContent = 'F.Y. 20' + selectedFY.slice(0,2) + '-' + selectedFY.slice(2);
   } else {
     label.textContent = 'Showing all invoices';
   }
 
   let list = DB.invoices.filter(inv => {
-    // FY filter
-    if (selectedFY !== 'all') {
-      try { if (getFYTag(inv.date) !== selectedFY) return false; } catch(e) { return false; }
-    }
     const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
     const textMatch = [inv.invNo, c?.name, inv.description].join(' ').toLowerCase().includes(search);
     const custMatch = !custFilter2 || String(Math.round(parseFloat(inv.customerId))) === custFilter2 || String(inv.customerId) === custFilter2;
@@ -2507,20 +2278,14 @@ function renderInvoices() {
       <td><span class="badge ${statusMap[status]}">${status}</span></td>
       <td>
         <div class="action-btns">
-          ${isDev || status !== 'paid' ? `<button class="btn btn-outline btn-xs" onclick="openInvoiceModal(${inv.id})">✏️ Edit</button>` : ''}
-          <button class="btn btn-primary btn-xs" onclick="openPaymentModalForInvoice(${inv.id})">💳 Payment</button>
-          <button class="btn btn-xs" style="background:#4f8ef720;color:var(--accent);border:1px solid #4f8ef740" onclick="openCNModalForInvoice(${inv.id})" title="Add Credit Note">📝 Credit Note</button>
+          ${isDev || status !== 'paid' ? `<button class="btn btn-outline btn-xs" onclick="openInvoiceModal(${inv.id})">✏️</button>` : ''}
+          <button class="btn btn-primary btn-xs" onclick="openPaymentModalForInvoice(${inv.id})">💳</button>
+          <button class="btn btn-xs" style="background:#4f8ef720;color:var(--accent);border:1px solid #4f8ef740" onclick="openCNModalForInvoice(${inv.id})" title="Add Credit Note">CN</button>
           <button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})">🗑</button>
         </div>
       </td>
     </tr>`;
   }).join('');
-}
-
-function toggleCustClear(selectId, btnId) {
-  const sel = document.getElementById(selectId);
-  const btn = document.getElementById(btnId);
-  if (sel && btn) btn.style.display = sel.value ? 'inline-flex' : 'none';
 }
 
 function updateCustomerDropdowns() {
@@ -2785,17 +2550,17 @@ async function savePayment() {
     invNos.push(inv?.invNo || '—');
     // Push actual payment entry FIRST (before Cash Discount) so method display is correct
     if (alloc.adj > 0) {
-      DB.payments.push({ id: uniqueId(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived });
     }
     // Cash Discount entries pushed AFTER main payment entry
     if (alloc.disc > 0 && alloc.adj === 0) {
-      DB.payments.push({ id: uniqueId(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived });
     }
     if (alloc.disc > 0 && alloc.adj > 0) {
-      DB.payments.push({ id: uniqueId(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc, totalReceived });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc, totalReceived });
     }
   }
-  await addLog('create', `Payment ₹${fmt(totalReceived)} [${method}] for invoices ${invNos.join(', ')} (${c?.name}) | Total payment entries: ${DB.payments.length}`);
+  addLog('create', `Payment ₹${fmt(totalReceived)} [${method}] for invoices ${invNos.join(', ')} (${c?.name}) | Total payment entries: ${DB.payments.length}`);
 
   // Auto-assign receipt number immediately on save (FY-aware)
   const receiptNo = getNextReceiptNo(date);
@@ -2803,17 +2568,12 @@ async function savePayment() {
     if (x.groupId === groupId) DB.payments[i].receiptNo = receiptNo;
   });
 
-  try {
-    await save('payments');
-    toast('Payment recorded!', 'success');
-    closeModal('modal-payment');
-    renderPayments();
-    renderInvoices();
-    renderDashboard();
-  } catch(e) {
-    btnGuardReset('btn-save-payment');
-    toast('❌ Failed to save payment: ' + e.message, 'error');
-  }
+  await save('payments');
+  toast('Payment recorded!', 'success');
+  closeModal('modal-payment');
+  renderPayments();
+  renderInvoices();
+  renderDashboard();
 }
 
 // ---- Revise Payment (Check Bounce / Other) ----
@@ -2877,24 +2637,19 @@ async function saveRevisePayment() {
     const idx = DB.invoices.findIndex(i => i.id === inv.id);
     if (idx !== -1) {
       DB.invoices[idx].amount = (parseFloat(DB.invoices[idx].amount) + chargeAmt).toFixed(2);
-      await addLog('correction', `Invoice ${inv.invNo} amount increased by ₹${fmt(chargeAmt)} due to ${reason} penalty`);
+      addLog('correction', `Invoice ${inv.invNo} amount increased by ₹${fmt(chargeAmt)} due to ${reason} penalty`);
       await save('invoices');
     }
   }
 
-  try {
-    await save('payments');
-    await addLog('correction', `Payment revised for ${inv?.invNo} (${c?.name}) — ${reason}${notes ? ': ' + notes : ''}${applyCharge ? ' | Charge ₹' + fmt(chargeAmt) : ''}`);
-    toast('Payment revised! Invoice balance restored.', 'info');
-    closeModal('modal-revise-payment');
-    renderPayments();
-    renderInvoices();
-    renderOverdue();
-    renderDashboard();
-  } catch(e) {
-    btnGuardReset('btn-save-revise-payment');
-    toast('❌ Failed to revise payment: ' + e.message, 'error');
-  }
+  await save('payments');
+  addLog('correction', `Payment revised for ${inv?.invNo} (${c?.name}) — ${reason}${notes ? ': ' + notes : ''}${applyCharge ? ' | Charge ₹' + fmt(chargeAmt) : ''}`);
+  toast('Payment revised! Invoice balance restored.', 'info');
+  closeModal('modal-revise-payment');
+  renderPayments();
+  renderInvoices();
+  renderOverdue();
+  renderDashboard();
 }
 
 function onPayMethodChange() {} // kept as stub for compatibility
@@ -2920,9 +2675,6 @@ function clearPayDateFilter() {
 }
 
 function renderPayments() {
-  // Populate FY dropdown from payment dates
-  populateFYFilter('pay-fy-filter', DB.payments.map(p => p.date));
-  const selectedFY = document.getElementById('pay-fy-filter')?.value || 'all';
   const search   = document.getElementById('pay-search').value.toLowerCase();
   const custF    = document.getElementById('pay-cust-filter')?.value || '';
   const methodF  = document.getElementById('pay-method-filter')?.value || '';
@@ -2982,10 +2734,6 @@ function renderPayments() {
 
   // Apply filters
   list = list.filter(p => {
-    // FY filter
-    if (selectedFY !== 'all') {
-      try { if (getFYTag(p.date) !== selectedFY) return false; } catch(e) { return false; }
-    }
     const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(p.customerId)))) || DB.customers.find(c => String(c.id) === String(p.customerId));
     const textMatch   = [c?.name, p.invNos?.join(' '), p.method, p.ref, p.notes].join(' ').toLowerCase().includes(search);
     const custMatch   = !custF   || String(Math.round(parseFloat(p.customerId))) === custF || String(p.customerId) === custF;
@@ -3029,11 +2777,50 @@ function renderPayments() {
           <button class="btn btn-outline btn-xs" onclick="openEditPaymentModalByGroup(${reviseId}, ${groupIdStr})" title="Edit Payment">✏️ Edit</button>
           <button class="btn btn-outline btn-xs" onclick="openRevisePaymentModal(${reviseId})" title="Reverse Payment">↩️ Reverse</button>
           <button class="btn btn-outline btn-xs" onclick="printPaymentReceiptByGroup(${reviseId}, ${groupIdStr})" title="Print Receipt">🧾 PDF</button>
-          <button class="btn btn-danger btn-xs" onclick="deletePaymentGroup(${reviseId}, ${groupIdStr})" title="Delete Payment">🗑</button>
+          <button class="btn btn-danger btn-xs" onclick="deletePaymentEntry(${reviseId}, ${groupIdStr})" title="Delete Payment">🗑 Delete</button>
         </div>
       </td>
     </tr>`;
   }).join('');
+}
+
+// ============================================================
+// DELETE PAYMENT ENTRY
+// ============================================================
+async function deletePaymentEntry(paymentId, groupId) {
+  const p = DB.payments.find(p => p.id === paymentId);
+  if (!p) return;
+  const c   = DB.customers.find(c => c.id === p.customerId);
+  const inv = DB.invoices.find(i => i.id === p.invoiceId);
+
+  const isGroup = !!groupId;
+  const groupEntries = isGroup ? DB.payments.filter(px => px.groupId === groupId) : [p];
+  const totalAmt = groupEntries.filter(px => px.method !== 'Cash Discount').reduce((s, px) => s + parseFloat(px.amount), 0);
+
+  const confirmMsg = isGroup
+    ? `⚠️ Delete this entire payment entry?\n\nCustomer: ${c?.name || '—'}\nInvoices: ${[...new Set(groupEntries.map(px => DB.invoices.find(i => i.id === px.invoiceId)?.invNo).filter(Boolean))].join(', ')}\nAmount: ₹${fmt(totalAmt)}\nReceipt: ${p.receiptNo || '—'}\n\nThis will permanently remove all ${groupEntries.length} linked payment record(s) and restore the invoice balance(s).`
+    : `⚠️ Delete this payment entry?\n\nCustomer: ${c?.name || '—'}\nInvoice: ${inv?.invNo || '—'}\nAmount: ₹${fmt(parseFloat(p.amount))}\nReceipt: ${p.receiptNo || '—'}\n\nThis action is permanent.`;
+
+  if (!confirm(confirmMsg)) return;
+
+  const payIds = isGroup
+    ? DB.payments.filter(px => px.groupId === groupId).map(px => px.id)
+    : [p.id];
+
+  DB.payments = DB.payments.filter(px => !payIds.includes(px.id));
+  for (const pid of payIds) await deleteDoc('payments', pid);
+
+  const invNos = isGroup
+    ? [...new Set(groupEntries.map(px => DB.invoices.find(i => i.id === px.invoiceId)?.invNo).filter(Boolean))].join(', ')
+    : (inv?.invNo || '—');
+
+  addLog('delete', `Payment deleted — ${c?.name || '—'} | Invoice(s): ${invNos} | ₹${fmt(totalAmt)} | Receipt: ${p.receiptNo || '—'}`);
+  toast('Payment deleted. Invoice balance(s) restored.', 'error');
+
+  renderPayments();
+  renderInvoices();
+  renderOverdue();
+  renderDashboard();
 }
 
 // ============================================================
@@ -3143,7 +2930,7 @@ async function saveCreditNote() {
   const inv = DB.invoices.find(i => i.id === invoiceId);
   const bal = parseFloat(inv.amount) - getPaidAmount(invoiceId);
   if (amount > bal + 0.01) {
-    if (!await confirmDialog({ title: 'Credit Exceeds Balance', msg: `Credit amount ₹${fmt(amount)} exceeds the current invoice balance of ₹${fmt(bal)}.\n\nDo you want to continue?`, type: 'warning', okLabel: 'Continue Anyway' })) return;
+    if (!confirm(`Credit amount ₹${fmt(amount)} exceeds current balance ₹${fmt(bal)}. Continue?`)) return;
   }
 
   btnGuard('btn-save-creditnote');
@@ -3151,26 +2938,21 @@ async function saveCreditNote() {
   const c = DB.customers.find(c => c.id === customerId);
   const cn = { id: Date.now(), customerId, invoiceId, cnNumber, date, amount, reason, notes };
   DB.creditNotes.push(cn);
-  try {
-    await save('creditNotes');
-    await addLog('create', `Credit Note ${cnNumber} ₹${fmt(amount)} [${reason}] against invoice ${inv?.invNo} (${c?.name}) | Total credit notes: ${DB.creditNotes.length}`);
-    toast('Credit Note saved!', 'success');
-    closeModal('modal-creditnote');
-    renderCreditNotes();
-    renderInvoices();
-    renderDashboard();
-  } catch(e) {
-    btnGuardReset('btn-save-creditnote');
-    toast('❌ Failed to save credit note: ' + e.message, 'error');
-  }
+  save('creditNotes');
+  addLog('create', `Credit Note ${cnNumber} ₹${fmt(amount)} [${reason}] against invoice ${inv?.invNo} (${c?.name}) | Total credit notes: ${DB.creditNotes.length}`);
+  toast('Credit Note saved!', 'success');
+  closeModal('modal-creditnote');
+  renderCreditNotes();
+  renderInvoices();
+  renderDashboard();
 }
 
 async function deleteCreditNote(id) {
   const cn = DB.creditNotes.find(c => c.id === id);
-  if (!await confirmDialog({ title: 'Delete Credit Note', msg: `Permanently delete Credit Note ${cn?.cnNumber}?\n\nThis action cannot be undone.`, type: 'danger', okLabel: 'Delete' })) return;
+  if (!confirm(`Delete Credit Note ${cn?.cnNumber}?`)) return;
   await deleteDoc('creditNotes', id);
   DB.creditNotes = DB.creditNotes.filter(c => c.id !== id);
-  await addLog('delete', `Deleted Credit Note ${cn?.cnNumber}`);
+  addLog('delete', `Deleted Credit Note ${cn?.cnNumber}`);
   toast('Credit Note deleted.', 'error');
   renderCreditNotes();
   renderInvoices();
@@ -3194,9 +2976,6 @@ function clearCNDateFilter() {
 }
 
 function renderCreditNotes() {
-  // Populate FY dropdown from credit note dates
-  populateFYFilter('cn-fy-filter', (DB.creditNotes||[]).map(cn => cn.date));
-  const selectedFY = document.getElementById('cn-fy-filter')?.value || 'all';
   const search  = document.getElementById('cn-search')?.value.toLowerCase() || '';
   const custF   = document.getElementById('cn-cust-filter')?.value || '';
   const reasonF = document.getElementById('cn-reason-filter')?.value || '';
@@ -3208,10 +2987,6 @@ function renderCreditNotes() {
   if (!tbody) return;
 
   let list = (DB.creditNotes || []).filter(cn => {
-    // FY filter
-    if (selectedFY !== 'all') {
-      try { if (getFYTag(cn.date) !== selectedFY) return false; } catch(e) { return false; }
-    }
     const c   = DB.customers.find(c => String(c.id) === String(cn.customerId));
     const inv = DB.invoices.find(i => String(i.id) === String(cn.invoiceId));
     const textMatch   = [cn.cnNumber, c?.name, inv?.invNo, cn.reason, cn.notes].join(' ').toLowerCase().includes(search);
@@ -3248,7 +3023,6 @@ function renderCreditNotes() {
       <td style="color:var(--muted);font-size:0.82rem">${cn.notes || '—'}</td>
       <td>
         <div class="action-btns">
-          <button class="btn btn-outline btn-xs" onclick="printCreditNotePDF(${cn.id})">🖨️ PDF</button>
           <button class="btn btn-outline btn-xs" onclick="openEditCNModal(${cn.id})">✏️ Edit</button>
           <button class="btn btn-danger btn-xs" onclick="deleteCreditNote(${cn.id})">🗑</button>
         </div>
@@ -3268,54 +3042,6 @@ function exportCreditNotes() {
   exportXLSX(data, 'CreditNotes_MauliEnt');
 }
 
-function printCreditNotePDF(id) {
-  const cn  = (DB.creditNotes || []).find(c => c.id === id);
-  if (!cn) return toast('Credit note not found.', 'error');
-  const cust = DB.customers.find(c => c.id === cn.customerId);
-  const inv  = DB.invoices.find(i => i.id === cn.invoiceId);
-
-  const custName = cust?.name  || '—';
-  const invNo    = inv?.invNo  || '—';
-  const invAmt   = inv ? '₹' + fmt(parseFloat(inv.amount)) : '—';
-  const cnAmt    = '₹' + fmt(parseFloat(cn.amount));
-  const cnDate   = fmtDate(cn.date);
-  const reason   = cn.reason  || '—';
-  const notes    = cn.notes   || '';
-
-  const html = `
-    <div class="header">
-      <div>
-        <div class="co-name"><span class="m">MAULI</span> <span class="e">ENTERPRISES</span></div>
-        <div class="co-prop">PROP. SOURABH KAREKAR</div>
-        <div class="co-sub">
-          ${MAULI_LETTERHEAD.address}<br>
-          GSTIN: ${MAULI_LETTERHEAD.gstin} &nbsp;|&nbsp; Ph: ${MAULI_LETTERHEAD.phone} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.email}
-        </div>
-      </div>
-      <img src="./logo.png" class="logo" onerror="this.style.display='none'">
-    </div>
-    <div class="section-title" style="color:#000;font-size:18px;font-weight:700;text-align:center;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:14px">Credit Note</div>
-    <div class="info-grid">
-      <div class="info-box"><label>Credit Note No.</label><strong>${cn.cnNumber}</strong></div>
-      <div class="info-box"><label>Date</label><strong>${cnDate}</strong></div>
-      <div class="info-box"><label>Customer Name</label><strong>${custName}</strong></div>
-      <div class="info-box"><label>Invoice No. (Against)</label><strong>${invNo}</strong></div>
-      <div class="info-box"><label>Invoice Amount</label><strong>${invAmt}</strong></div>
-      <div class="info-box"><label>Reason</label><strong>${reason}</strong></div>
-    </div>
-    <div style="background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin:10px 0">
-      <div style="font-size:14px;font-weight:700;color:#1e293b">Credit Note Amount</div>
-      <div style="font-size:16px;font-weight:700;color:#1e293b">${cnAmt}</div>
-    </div>
-    ${notes ? `<div style="margin-top:8px;font-size:12px;color:#64748b">Notes: ${notes.replace(/\n/g,'<br>')}</div>` : ''}
-    <div class="footer">
-      <div>This is a computer generated credit note. No signature required.<br>Thank you! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
-    </div>`;
-
-  buildPrintWindow(html, cust?.email || null, cust?.phone || null);
-  addLog('edit', `Printed Credit Note ${cn.cnNumber} for ${custName}`);
-}
-
 // ============================================================
 // OVERDUE
 // ============================================================
@@ -3323,8 +3049,8 @@ function renderOverdue() {
   const today = new Date(); today.setHours(0,0,0,0);
   const list = DB.invoices.filter(inv => {
     const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
-    return bal > 0 && parseLocalDate(inv.dueDate) < today;
-  }).sort((a, b) => parseLocalDate(a.dueDate) - parseLocalDate(b.dueDate)); // oldest due date first = most overdue on top
+    return bal > 0 && new Date(inv.dueDate) < today;
+  }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)); // oldest due date first = most overdue on top
 
   const alert = document.getElementById('overdue-alert');
   alert.style.display = list.length ? 'flex' : 'none';
@@ -3338,7 +3064,7 @@ function renderOverdue() {
   tbody.innerHTML = list.map(inv => {
     const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
     const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
-    const daysOver = Math.floor((today - parseLocalDate(inv.dueDate)) / 86400000);
+    const daysOver = Math.floor((today - new Date(inv.dueDate)) / 86400000);
     return `<tr>
       <td><strong>${inv.invNo}</strong></td>
       <td>${c?.name || '—'}</td>
@@ -3347,7 +3073,7 @@ function renderOverdue() {
       <td style="color:var(--danger)">₹${fmt(bal)}</td>
       <td>
         <button class="btn btn-outline btn-xs" onclick="openReminderModal(${inv.customerId})">🔔 Remind</button>
-        <button class="btn btn-primary btn-xs" onclick="openPaymentModalForInvoice(${inv.id})">💳 Payment</button>
+        <button class="btn btn-primary btn-xs" onclick="openPaymentModalForInvoice(${inv.id})">💳 Pay</button>
       </td>
     </tr>`;
   }).join('');
@@ -3357,90 +3083,26 @@ function renderOverdue() {
 // DASHBOARD
 // ============================================================
 function renderDashboard() {
-  // ── All-time stats (no FY filter) ──
-  const totalInvoiced    = DB.invoices.reduce((s,i) => s + parseFloat(i.amount), 0);
-  // Received = actual cash/cheque/UPI payments + Cash Discounts + Credit Notes
-  // This matches getPaidAmount logic so that: Invoiced - Received = Outstanding
-  const totalCashPaid    = DB.payments
+  const totalInvoiced = DB.invoices.reduce((s,i) => s + parseFloat(i.amount), 0);
+  // Only count actual money received (not Cancelled or Cash Discount adjustments)
+  const totalReceived = DB.payments
     .filter(p => p.method !== 'Cancelled' && p.method !== 'Cash Discount')
     .reduce((s,p) => s + parseFloat(p.amount), 0);
-  const totalCashDisc    = DB.payments
-    .filter(p => p.method === 'Cash Discount')
+  const totalAdjusted = DB.payments
+    .filter(p => p.method === 'Cancelled' || p.method === 'Cash Discount')
     .reduce((s,p) => s + parseFloat(p.amount), 0);
-  const totalCreditNotes = (DB.creditNotes || [])
-    .reduce((s,cn) => s + parseFloat(cn.amount), 0);
-  const totalReceived    = totalCashPaid + totalCashDisc + totalCreditNotes;
+  const totalCreditNotes = (DB.creditNotes||[]).reduce((s,cn) => s + parseFloat(cn.amount), 0);
   const totalOutstanding = DB.invoices.reduce((s,i) => {
     const bal = parseFloat(i.amount) - getPaidAmount(i.id);
     return s + Math.max(0, bal);
   }, 0);
 
-  document.getElementById('stat-customers').textContent    = DB.customers.length;
-  document.getElementById('stat-invoiced').textContent     = '₹' + fmt(totalInvoiced);
-  document.getElementById('stat-received').textContent     = '₹' + fmt(totalReceived);
-  document.getElementById('stat-outstanding').textContent  = '₹' + fmt(totalOutstanding);
+  document.getElementById('stat-customers').textContent = DB.customers.length;
+  document.getElementById('stat-invoiced').textContent  = '₹' + fmt(totalInvoiced);
+  document.getElementById('stat-received').textContent  = '₹' + fmt(totalReceived);
+  document.getElementById('stat-outstanding').textContent = '₹' + fmt(totalOutstanding);
 
-  // ── Year-wise summary table ──
-  const fySet = new Set();
-  DB.invoices.forEach(i      => { try { fySet.add(getFYTag(i.date)); } catch(e) {} });
-  DB.payments.forEach(p      => { try { fySet.add(getFYTag(p.date)); } catch(e) {} });
-  (DB.creditNotes || []).forEach(cn => { try { fySet.add(getFYTag(cn.date)); } catch(e) {} });
-  const fyList = Array.from(fySet).sort().reverse(); // newest first
-
-  const yearTbody = document.getElementById('dash-yearwise');
-  if (yearTbody) {
-    if (!fyList.length) {
-      yearTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No invoice data yet.</td></tr>`;
-    } else {
-      const fyListData = fyList.map(fy => {
-        const label = 'F.Y. 20' + fy.slice(0,2) + '-' + fy.slice(2);
-        const fyInvs = DB.invoices.filter(i => { try { return getFYTag(i.date) === fy; } catch(e) { return false; } });
-        const fyPays = DB.payments.filter(p => {
-          try { return getFYTag(p.date) === fy && p.method !== 'Cancelled' && p.method !== 'Cash Discount'; } catch(e) { return false; }
-        });
-        const fyCashDisc = DB.payments.filter(p => {
-          try { return getFYTag(p.date) === fy && p.method === 'Cash Discount'; } catch(e) { return false; }
-        }).reduce((s,p) => s + parseFloat(p.amount), 0);
-        const fyCreditNotes = (DB.creditNotes || []).filter(cn => {
-          try { return getFYTag(cn.date) === fy; } catch(e) { return false; }
-        }).reduce((s,cn) => s + parseFloat(cn.amount), 0);
-        const invAmt  = fyInvs.reduce((s,i) => s + parseFloat(i.amount), 0);
-        const fyCashPaid = fyPays.reduce((s,p) => s + parseFloat(p.amount), 0);
-        const rcvAmt  = fyCashPaid + fyCashDisc + fyCreditNotes;
-        const outAmt  = fyInvs.reduce((s,i) => {
-          const bal = parseFloat(i.amount) - getPaidAmount(i.id);
-          return s + Math.max(0, bal);
-        }, 0);
-        const bracketParts = [];
-        if (fyCashDisc > 0)    bracketParts.push(`Cash Dis ₹${fmt(fyCashDisc)}`);
-        if (fyCreditNotes > 0) bracketParts.push(`Credit Note ₹${fmt(fyCreditNotes)}`);
-        const bracketStr = bracketParts.length
-          ? ` <span style="font-size:0.80em;color:var(--muted)">(incl. ${bracketParts.join(', ')})</span>`
-          : '';
-        return { label, invAmt, rcvAmt, bracketStr, outAmt };
-      });
-
-      // Compute cumulative outstanding (running total from oldest FY to newest)
-      const fyRows = fyListData.slice().reverse(); // oldest first for cumulation
-      let cumulative = 0;
-      const fyRowsWithCumul = fyRows.map(row => {
-        cumulative += row.outAmt;
-        return { ...row, cumulOut: cumulative };
-      }).reverse(); // back to newest first for display
-
-      yearTbody.innerHTML = fyRowsWithCumul.map(({ label, invAmt, rcvAmt, bracketStr, outAmt, cumulOut }) => {
-        return `<tr>
-          <td><strong>${label}</strong></td>
-          <td>₹${fmt(invAmt)}</td>
-          <td style="color:var(--success)">₹${fmt(rcvAmt)}${bracketStr}</td>
-          <td style="color:${outAmt > 0 ? 'var(--danger)' : 'var(--success)'}">₹${fmt(outAmt)}</td>
-          <td style="color:${cumulOut > 0 ? 'var(--danger)' : 'var(--success)'}"><strong>₹${fmt(cumulOut)}</strong></td>
-        </tr>`;
-      }).join('');
-    }
-  }
-
-  // Recent invoices (all time, latest 5)
+  // Recent invoices
   const recent = [...DB.invoices].sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5);
   document.getElementById('dash-recent').innerHTML = recent.length
     ? recent.map(inv => {
@@ -3455,13 +3117,13 @@ function renderDashboard() {
   const today = new Date(); today.setHours(0,0,0,0);
   const overdueList = DB.invoices.filter(inv => {
     const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
-    return bal > 0 && parseLocalDate(inv.dueDate) < today;
+    return bal > 0 && new Date(inv.dueDate) < today;
   }).slice(0,5);
   document.getElementById('dash-overdue').innerHTML = overdueList.length
     ? overdueList.map(inv => {
         const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
         const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
-        const days = Math.floor((today - parseLocalDate(inv.dueDate)) / 86400000);
+        const days = Math.floor((today - new Date(inv.dueDate)) / 86400000);
         return `<tr><td>${c?.name||'—'}</td><td style="color:var(--danger)">${days} days</td><td style="color:var(--danger)">₹${fmt(bal)}</td></tr>`;
       }).join('')
     : `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">No overdue invoices. 🎉</td></tr>`;
@@ -3698,7 +3360,7 @@ async function deleteUserFromApp(id) {
   const u = DB.users.find(u => u.id === id);
   if (!u) return;
   if (u.id === currentUser?.id) return toast("You can't delete yourself.", 'error');
-  if (!await confirmDialog({ title: 'Delete User', msg: `Delete user "${u.username}"?\n\nThis will permanently remove their account. This action cannot be undone.`, type: 'danger', okLabel: 'Delete User' })) return;
+  if (!confirm(`Delete user "${u.username}"?`)) return;
   DB.users = DB.users.filter(u => u.id !== id);
   save('users');
   deleteDoc('users', id);
@@ -3771,14 +3433,14 @@ async function downloadFullBackup() {
   const today = new Date(); today.setHours(0,0,0,0);
   const overdueSummary = DB.invoices.filter(inv => {
     const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
-    return bal > 0 && parseLocalDate(inv.dueDate) < today;
+    return bal > 0 && new Date(inv.dueDate) < today;
   }).map(inv => {
     const c = DB.customers.find(c => c.id === inv.customerId);
     return {
       invNo: inv.invNo,
       customer: c?.name,
       dueDate: inv.dueDate,
-      daysOverdue: Math.floor((today - parseLocalDate(inv.dueDate)) / 86400000),
+      daysOverdue: Math.floor((today - new Date(inv.dueDate)) / 86400000),
       balance: parseFloat(inv.amount) - getPaidAmount(inv.id)
     };
   });
@@ -3842,7 +3504,7 @@ async function restoreBackup(input) {
   if (!file) return;
   if (!file.name.endsWith('.zip')) return toast('Please select a valid .zip backup file.', 'error');
 
-  if (!await confirmDialog({ title: 'Restore from Backup', msg: '⚠ This will OVERWRITE all current data with the selected backup file.\n\nAll existing customers, invoices, payments and credit notes will be replaced.\n\nAre you sure?', type: 'warning', okLabel: 'Yes, Restore' })) {
+  if (!confirm('⚠ This will OVERWRITE all current data with the backup. Are you sure?')) {
     input.value = '';
     return;
   }
@@ -3863,28 +3525,10 @@ async function restoreBackup(input) {
     const payments = await readJSON('payments.json');
     const log = await readJSON('activity_log.json');
 
-    // Stop realtime listeners during restore to prevent mid-save re-fetch from overwriting data
-    stopRealtimeListeners();
-
-    // ── FIX: DELETE existing rows before saving backup data.
-    // save() uses upsert which only adds/updates — rows absent from the backup JSON
-    // would survive in Supabase and corrupt the dataset after the next page refresh.
-    if (_db) {
-      for (const tbl of ['customers', 'invoices', 'payments']) {
-        const { error } = await _db.from(tbl).delete().neq('id', 0);
-        if (error) console.warn(`Clear ${tbl} error:`, error.message);
-      }
-    }
-
     if (customers) { DB.customers = customers; await save('customers'); }
     if (invoices)  { DB.invoices  = invoices;  await save('invoices'); }
-    if (payments)  {
-      // Deduplicate by id before restoring — backup file may contain duplicates
-      const seen = new Set();
-      DB.payments = payments.filter(p => { const k = String(p.id); if (seen.has(k)) return false; seen.add(k); return true; });
-      await save('payments');
-    }
-    if (log)       { DB.log = log; }
+    if (payments)  { DB.payments  = payments;  await save('payments'); }
+    if (log)       { DB.log       = log; }
 
     await addLog('edit', `Data restored from backup: ${file.name}`);
     await save('log');
@@ -3892,14 +3536,10 @@ async function restoreBackup(input) {
     DB.backupHistory.unshift({ name: file.name, date: new Date().toISOString(), type: 'restore' });
     save('backupHistory');
 
-    // Restart listeners AFTER all saves complete
-    startRealtimeListeners();
-
     renderAll();
     if (document.getElementById('tab-backup')?.classList.contains('active')) renderBackupHistory();
     toast('✅ Backup restored successfully!', 'success');
   } catch(e) {
-    startRealtimeListeners(); // always restart even on failure
     toast('❌ Failed to restore backup: ' + e.message, 'error');
   }
   input.value = '';
@@ -3913,7 +3553,7 @@ async function restoreSingleJSON(input, collectionKey) {
   const labels = { customers: 'Customers', invoices: 'Invoices', payments: 'Payments', creditNotes: 'Credit Notes', expenses: 'Expenses' };
   const label  = labels[collectionKey] || collectionKey;
 
-  if (!await confirmDialog({ title: `Import ${label} Data`, msg: `This will OVERWRITE all current ${label} data with:\n"${file.name}"\n\nAll other data (${Object.values(labels).filter(l=>l!==label).join(', ')}) will remain unchanged.\n\nAre you sure?`, type: 'warning', okLabel: 'Yes, Import' })) {
+  if (!confirm(`⚠ This will OVERWRITE all current ${label} data with the contents of:\n\n"${file.name}"\n\nAll other data (${Object.values(labels).filter(l=>l!==label).join(', ')}) will remain unchanged.\n\nAre you sure?`)) {
     input.value = '';
     return;
   }
@@ -3924,31 +3564,8 @@ async function restoreSingleJSON(input, collectionKey) {
 
     if (!Array.isArray(data)) throw new Error('JSON file must contain an array of records.');
 
-    // Stop realtime listeners during import — prevents mid-upsert re-fetch from overwriting data
-    stopRealtimeListeners();
-
     DB[collectionKey] = data;
-
-    if (_db) {
-      updateSyncStatus('syncing');
-
-      // ── FIX: DELETE all existing rows first so stale records don't survive the restore.
-      // upsert alone only adds/updates; rows present in Supabase but absent from the
-      // backup JSON would remain, corrupting the dataset after the next page refresh.
-      const { error: delError } = await _db.from(collectionKey).delete().neq('id', 0);
-      if (delError) throw new Error('Clear existing data failed: ' + delError.message);
-
-      // Chunked UPSERT — handles both small and large collections uniformly
-      const CHUNK = 400;
-      for (let i = 0; i < data.length; i += CHUNK) {
-        const chunk = data.slice(i, i + CHUNK);
-        const { error } = await _db.from(collectionKey).upsert(chunk, { onConflict: 'id' });
-        if (error) throw new Error(error.message);
-      }
-
-      try { localStorage.setItem('mauli_' + collectionKey, JSON.stringify(data)); } catch(e) {}
-      updateSyncStatus('synced');
-    }
+    await save(collectionKey);
 
     addLog('edit', `Single JSON imported for ${label}: ${file.name} (${data.length} records)`);
     await save('log');
@@ -3957,17 +3574,10 @@ async function restoreSingleJSON(input, collectionKey) {
     if (DB.backupHistory.length > 20) DB.backupHistory = DB.backupHistory.slice(0, 20);
     save('backupHistory');
 
-    // ── FIX: Restart realtime listeners AFTER all saves are complete.
-    // Previously listeners were restarted before save('log') and save('backupHistory'),
-    // whose Supabase writes triggered the realtime callback, which re-fetched Supabase
-    // and overwrote DB[collectionKey] with the pre-restore data still in Supabase.
-    startRealtimeListeners();
-
     renderAll();
     if (document.getElementById('tab-backup')?.classList.contains('active')) renderBackupHistory();
     toast(`✅ ${label} imported successfully! (${data.length} records)`, 'success');
   } catch(e) {
-    startRealtimeListeners(); // always restart listeners even on failure
     toast('❌ Failed to import JSON: ' + e.message, 'error');
   }
   input.value = '';
@@ -4027,26 +3637,30 @@ function resetImportModal() {
   setImportProgress(0);
 }
 
-// Chunked Supabase save for large imports — uploads in batches of 400
+// Chunked Firebase save for large imports — uploads in batches of 400
 async function saveChunked(key, newItems) {
   if (!_db) {
     try { localStorage.setItem('mauli_' + key, JSON.stringify(DB[key])); } catch(e) {}
-    toast('⚠ Supabase not connected. Data saved locally.', 'error');
+    toast('⚠ Firebase not connected. Data saved locally.', 'error');
     return;
   }
+  const { writeBatch, doc, collection: col } = window._firebaseModules;
+  const colRef = col(_db, key);
   const CHUNK = 400;
   const total = newItems.length;
   updateSyncStatus('syncing');
   for (let i = 0; i < total; i += CHUNK) {
     const chunk = newItems.slice(i, i + CHUNK);
-    const { error } = await _db.from(key).upsert(chunk, { onConflict: 'id' });
-    if (error) { console.error('Supabase chunked save error:', error.message); }
+    const batch = writeBatch(_db);
+    chunk.forEach(item => batch.set(doc(colRef, String(item.id)), item));
+    await batch.commit();
     const pct = Math.min(100, Math.round(((i + chunk.length) / total) * 100));
     setImportProgress(
       40 + pct * 0.6,
-      `Uploading to Supabase… (${i + chunk.length} / ${total})`,
+      `Uploading to Firebase… (${i + chunk.length} / ${total})`,
       `Batch ${Math.ceil((i + CHUNK) / CHUNK)} of ${Math.ceil(total / CHUNK)}`
     );
+    // Small yield so UI can repaint between batches
     await new Promise(r => setTimeout(r, 30));
   }
   updateSyncStatus('synced');
@@ -4111,7 +3725,7 @@ async function handleImport(input) {
           count++;
         }
         try { localStorage.setItem('mauli_customers', JSON.stringify(DB.customers)); } catch(e) {}
-        setImportProgress(40, `Uploading ${count} customers…`, 'Saving to Supabase in batches');
+        setImportProgress(40, `Uploading ${count} customers…`, 'Saving to Firebase in batches');
         await saveChunked('customers', newItems);
         addLog('create', `Imported ${count} customers from Excel`);
         setImportProgress(100, '✅ Done!', `${count} customers imported`);
@@ -4148,7 +3762,7 @@ async function handleImport(input) {
           if (ka < kb) return -1; if (ka > kb) return 1; return 0;
         });
         try { localStorage.setItem('mauli_invoices', JSON.stringify(DB.invoices)); } catch(e) {}
-        setImportProgress(40, `Uploading ${count} invoices…`, 'Saving to Supabase in batches');
+        setImportProgress(40, `Uploading ${count} invoices…`, 'Saving to Firebase in batches');
         await saveChunked('invoices', newItems);
         addLog('create', `Imported ${count} invoices from Excel`);
       }
@@ -4182,11 +3796,11 @@ function exportCustomers() {
 }
 
 function exportInvoices() {
-  const data = DB.invoices.map(inv => {
+  const data = DB.invoices.filter(i => getInvoiceStatus(i) !== 'paid').map(inv => {
     const c = DB.customers.find(c => c.id === inv.customerId);
     return { InvoiceNo: inv.invNo, Customer: c?.name, Date: inv.date, DueDate: inv.dueDate, Amount: inv.amount, Paid: getPaidAmount(inv.id), Balance: parseFloat(inv.amount) - getPaidAmount(inv.id), Status: getInvoiceStatus(inv) };
   });
-  exportXLSX(data, 'Invoices_MauliEnt');
+  exportXLSX(data, 'Unpaid_Invoices_MauliEnt');
 }
 
 function exportPayments() {
@@ -4198,22 +3812,14 @@ function exportPayments() {
   exportXLSX(data, 'Payments_MauliEnt');
 }
 
-function exportUnpaidInvoices() {
-  const data = DB.invoices.filter(i => getInvoiceStatus(i) !== 'paid').map(inv => {
-    const c = DB.customers.find(c => c.id === inv.customerId);
-    return { InvoiceNo: inv.invNo, Customer: c?.name, Date: inv.date, DueDate: inv.dueDate, Amount: inv.amount, Paid: getPaidAmount(inv.id), Balance: parseFloat(inv.amount) - getPaidAmount(inv.id), Status: getInvoiceStatus(inv) };
-  });
-  exportXLSX(data, 'Unpaid_Invoices_MauliEnt');
-}
-
 function exportOverdueExcel() {
   const today = new Date(); today.setHours(0,0,0,0);
   const data = DB.invoices.filter(inv => {
     const bal = parseFloat(inv.amount) - getPaidAmount(inv.id);
-    return bal > 0 && parseLocalDate(inv.dueDate) < today;
+    return bal > 0 && new Date(inv.dueDate) < today;
   }).map(inv => {
     const c = DB.customers.find(c => c.id === inv.customerId);
-    return { InvoiceNo: inv.invNo, Customer: c?.name, Phone: c?.phone, DueDate: inv.dueDate, DaysOverdue: Math.floor((today - parseLocalDate(inv.dueDate))/86400000), Balance: parseFloat(inv.amount) - getPaidAmount(inv.id) };
+    return { InvoiceNo: inv.invNo, Customer: c?.name, Phone: c?.phone, DueDate: inv.dueDate, DaysOverdue: Math.floor((today - new Date(inv.dueDate))/86400000), Balance: parseFloat(inv.amount) - getPaidAmount(inv.id) };
   });
   exportXLSX(data, 'Overdue_MauliEnt');
 }
@@ -4243,20 +3849,10 @@ function fmtDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDat
 function fmtExcelDate(v) {
   if (!v) return today();
   if (typeof v === 'number') {
-    // Excel serial date number
     const d = new Date((v - 25569) * 86400 * 1000);
     return d.toISOString().split('T')[0];
   }
-  const s = String(v).trim();
-  // Already ISO format yyyy-MM-dd — return as-is
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  // Handle m/d/yyyy or mm/dd/yyyy (e.g. 7/14/2024)
-  const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (mdy) return mdy[3] + '-' + mdy[1].padStart(2,'0') + '-' + mdy[2].padStart(2,'0');
-  // Handle dd-mm-yyyy (e.g. 14-07-2024)
-  const dmy = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-  if (dmy) return dmy[3] + '-' + dmy[2].padStart(2,'0') + '-' + dmy[1].padStart(2,'0');
-  return s;
+  return String(v);
 }
 
 function renderAll() {
@@ -4396,13 +3992,10 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
   <title>MAULI ENTERPRISES</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%}
-    body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;padding:28px;font-size:13px;display:flex;flex-direction:column;min-height:100vh}
-    .print-body{flex:1}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;padding:28px;font-size:13px}
     .header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1a6fd4;padding-bottom:14px;margin-bottom:18px}
-    .co-name{font-size:20px;margin-bottom:2px;font-family:'Arial Narrow',Arial,sans-serif;letter-spacing:0.03em}
+    .co-name{font-size:20px;margin-bottom:4px;font-family:'Arial Narrow',Arial,sans-serif;letter-spacing:0.03em}
     .co-name .m{font-weight:700;color:#000}.co-name .e{font-weight:400;color:#9c1c1c}
-    .co-prop{font-size:11px;color:#64748b;line-height:1.5;margin-bottom:1px}
     .co-sub{font-size:11px;color:#64748b;line-height:1.7}
     .logo{width:56px;height:56px;border-radius:8px;object-fit:contain}
     .section-title{font-size:15px;font-weight:700;color:#1355a8;margin:16px 0 10px;padding-bottom:4px;border-bottom:1px solid #cbd5e1}
@@ -4413,7 +4006,7 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
     .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
     .paid{background:#2ecc7120;color:#16a34a}.pending{background:#f39c1220;color:#d97706}.overdue{background:#e74c3c20;color:#dc2626}.partial{background:#4f8ef720;color:#1a6fd4}
     .total-row{background:#f8faff;font-weight:700}
-    .footer{border-top:1px solid #cbd5e1;padding-top:10px;font-size:11px;color:#64748b;text-align:center;margin-top:auto}
+    .footer{margin-top:20px;border-top:1px solid #cbd5e1;padding-top:12px;font-size:11px;color:#64748b;text-align:center}
     .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:12px}
     .info-box{background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px}
     .info-box label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:3px}
@@ -4424,9 +4017,8 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
     .print-btn{background:#16a34a;color:#fff}.print-btn:hover{background:#15803d}
     .email-btn{background:#1a6fd4;color:#fff}.email-btn:hover{background:#1355a8}
     .wa-btn{background:#25d366;color:#fff}.wa-btn:hover{background:#1ebe5d}
-    @page{size:A4;margin:18mm 15mm}
-    @media print{.action-bar,.wa-note{display:none}body{padding:0;display:block}.footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #cbd5e1;padding:8px 15mm;background:#fff;margin:0}}
-  </style></head><body><div class="print-body">
+    @media print{.action-bar,.wa-note{display:none}body{padding:12px}}
+  </style></head><body>
   <div class="action-bar">
     <button onclick="window.print()" class="act-btn print-btn">🖨 Print / Save PDF</button>
     ${emailBtn}
@@ -4437,7 +4029,6 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
     <strong>Step 2:</strong> WhatsApp will open — attach the saved PDF from your device and send.
   </div>
   ${htmlContent}
-  </div>
   <script>
     var _email = ${customerEmail ? JSON.stringify(customerEmail) : 'null'};
     var _phone = ${customerPhone ? JSON.stringify(String(customerPhone).replace(/\\D/g,'')) : 'null'};
@@ -4479,31 +4070,18 @@ function printLedgerStatement() {
   const totalPaid     = invList.reduce((s,i) => s + getPaidAmount(i.id), 0);
   const totalDue      = totalInvoiced - totalPaid;
 
-  const showCustCol = !custIdRaw; // only show customer column when All Customers selected
   const statusMap = { paid:'paid', pending:'pending', partial:'partial', overdue:'overdue' };
   const rows = invList.map((inv, idx) => {
     const c    = DB.customers.find(c => String(c.id) === String(inv.customerId));
     const paid = getPaidAmount(inv.id);
     const bal  = parseFloat(inv.amount) - paid;
     const st   = getInvoiceStatus(inv);
-    // Find latest payment date for this invoice
-    const invPayments = DB.payments.filter(p => String(p.invoiceId) === String(inv.id) && p.amount > 0);
-    invPayments.sort((a,b) => new Date(b.date) - new Date(a.date));
-    const invCreditNotes = (DB.creditNotes || []).filter(cn => String(cn.invoiceId) === String(inv.id));
-    let paymentDate;
-    if (invPayments.length > 0) {
-      paymentDate = fmtDate(invPayments[0].date);
-    } else if (invCreditNotes.length > 0) {
-      paymentDate = '<span style="color:#ff7034">Credit Note</span>';
-    } else {
-      paymentDate = '—';
-    }
     return `<tr>
       <td>${idx+1}</td>
-      ${showCustCol ? `<td>${c?.name || '—'}</td>` : ''}
+      <td>${c?.name || '—'}</td>
       <td><strong>${inv.invNo}</strong></td>
       <td>${fmtDate(inv.date)}</td>
-      <td>${paymentDate}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
       <td style="text-align:right">₹${fmt(inv.amount)}</td>
       <td style="text-align:right;color:#16a34a">₹${fmt(paid)}</td>
       <td style="text-align:right;color:${bal>0?'#dc2626':'#16a34a'}"><strong>₹${fmt(bal)}</strong></td>
@@ -4515,7 +4093,6 @@ function printLedgerStatement() {
     <div class="header">
       <div>
         <div class="co-name"><span class="m">MAULI</span> <span class="e">ENTERPRISES</span></div>
-        <div class="co-prop">PROP. SOURABH KAREKAR</div>
         <div class="co-sub">
           ${MAULI_LETTERHEAD.address}<br>
           GSTIN: ${MAULI_LETTERHEAD.gstin} &nbsp;|&nbsp; Ph: ${MAULI_LETTERHEAD.phone} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.email}
@@ -4523,18 +4100,18 @@ function printLedgerStatement() {
       </div>
       <img src="./logo.png" class="logo" onerror="this.style.display='none'">
     </div>
-    <div class="section-title" style="color:#000;font-size:18px;font-weight:700;text-align:center;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:14px">Statement of Account — ${custName}${statusFilter !== 'total' ? ' (' + statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1) + ' Invoices)' : ''}</div>
+    <div class="section-title">Statement of Account — ${custName}${statusFilter !== 'total' ? ' (' + statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1) + ' Invoices)' : ''}</div>
     <div class="info-grid">
       <div class="info-box"><label>Period</label><strong>${dateFrom ? fmtDate(dateFrom) : 'All'} ${dateTo ? '→ ' + fmtDate(dateTo) : ''}</strong></div>
       <div class="info-box"><label>Status Filter</label><strong>${statusFilter === 'total' ? 'All Invoices' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1) + ' Only'}</strong></div>
       <div class="info-box"><label>Generated On</label><strong>${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</strong></div>
     </div>
     <table>
-      <thead><tr><th>#</th>${showCustCol ? '<th>Customer</th>' : ''}<th>Invoice #</th><th>Date</th><th>Payment Date</th><th style="text-align:right">Amount</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
+      <thead><tr><th>#</th><th>Customer</th><th>Invoice #</th><th>Date</th><th>Due Date</th><th style="text-align:right">Amount</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
       <tbody>
         ${rows}
         <tr class="total-row">
-          <td colspan="${showCustCol ? 5 : 4}" style="text-align:right">Total</td>
+          <td colspan="5" style="text-align:right">Total</td>
           <td style="text-align:right">₹${fmt(totalInvoiced)}</td>
           <td style="text-align:right;color:#16a34a">₹${fmt(totalPaid)}</td>
           <td style="text-align:right;color:#dc2626">₹${fmt(totalDue)}</td>
@@ -4543,7 +4120,8 @@ function printLedgerStatement() {
       </tbody>
     </table>
     <div class="footer">
-      <div>This is a computer generated statement. No signature required.<br>Thank you! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
+      <div style="margin-bottom:6px;font-style:italic;color:#94a3b8">This is a computer generated statement. No signature required.</div>
+      <div>Thank you for your business! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
     </div>`;
 
   const ledgerCust = custIdRaw ? DB.customers.find(c => String(c.id) === custIdRaw) : null;
@@ -4560,30 +4138,6 @@ function getFYTag(dateStr) {
   const fyStart = m >= 4 ? y : y - 1;
   const fyEnd   = fyStart + 1;
   return String(fyStart).slice(-2) + String(fyEnd).slice(-2); // "2425"
-}
-
-// Populate a FY dropdown from a set of dates; default to current FY if present
-function populateFYFilter(selectId, dates) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  const fySet = new Set();
-  dates.forEach(d => { try { if (d) fySet.add(getFYTag(d)); } catch(e) {} });
-  const fyList = Array.from(fySet).sort().reverse();
-  const prev = sel.value; // capture before rebuilding innerHTML
-  sel.innerHTML = '<option value="all">All Years</option>' +
-    fyList.map(fy => {
-      const label = 'F.Y. 20' + fy.slice(0,2) + '-' + fy.slice(2);
-      return `<option value="${fy}">${label}</option>`;
-    }).join('');
-  // Restore previous selection: if user had picked a specific FY or "All Years" keep it;
-  // on first render (prev is empty string from static HTML) default to "all"
-  if (prev === 'all' || prev === '') {
-    sel.value = 'all';
-  } else if (fyList.includes(prev)) {
-    sel.value = prev;
-  } else {
-    sel.value = 'all';
-  }
 }
 
 function getNextReceiptNo(dateStr) {
@@ -4654,7 +4208,6 @@ function printPaymentReceipt(paymentId) {
     <div class="header">
       <div>
         <div class="co-name"><span class="m">MAULI</span> <span class="e">ENTERPRISES</span></div>
-        <div class="co-prop">PROP. SOURABH KAREKAR</div>
         <div class="co-sub">
           ${MAULI_LETTERHEAD.address}<br>
           GSTIN: ${MAULI_LETTERHEAD.gstin} &nbsp;|&nbsp; Ph: ${MAULI_LETTERHEAD.phone} &nbsp;|&nbsp; ${MAULI_LETTERHEAD.email}
@@ -4662,24 +4215,24 @@ function printPaymentReceipt(paymentId) {
       </div>
       <img src="./logo.png" class="logo" onerror="this.style.display='none'">
     </div>
-    <div class="section-title" style="color:#000;font-size:18px;font-weight:700;text-align:center;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:14px">Payment Receipt</div>
+    <div class="section-title">Payment Receipt</div>
     <div class="info-grid">
       <div class="info-box"><label>Receipt No.</label><strong>${receiptNo}</strong></div>
       <div class="info-box"><label>Payment Date</label><strong>${fmtDate(p.date)}</strong></div>
-      <div class="info-box"><label>Received From</label><strong>${c?.company || c?.name || '—'}</strong>${c?.company ? '<br><span style="color:#64748b;font-size:11px">'+c.name+'</span>' : ''}</div>
+      <div class="info-box"><label>Received From</label><strong>${c?.name || '—'}</strong>${c?.company ? '<br><span style="color:#64748b;font-size:11px">'+c.company+'</span>' : ''}</div>
       <div class="info-box"><label>Payment Method</label><strong>${p.method}</strong>${p.ref ? '<br><span style="color:#64748b;font-size:11px">Ref: '+p.ref+'</span>' : ''}</div>
     </div>
     <table>
       <thead><tr><th>Invoice #</th><th>Invoice Date</th><th>Invoice Amt</th><th>Paid Amt</th><th>Cash Disc</th></tr></thead>
       <tbody>${invRows}</tbody>
     </table>
-    <div style="background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin:10px 0">
-      <div style="font-size:14px;font-weight:700;color:#1e293b">Total Received</div>
-      <div style="font-size:16px;font-weight:700;color:#1e293b">₹${fmt(totalPaid)}${totalDisc > 0 ? '&nbsp;&nbsp;<span style="font-size:13px;color:#d97706;font-weight:400">(+₹' + fmt(totalDisc) + ' discount)</span>' : ''}</div>
+    <div style="text-align:right;font-size:16px;font-weight:700;color:#1a6fd4;margin:10px 0">
+      Total Received: ₹${fmt(totalPaid)}${totalDisc > 0 ? `  <span style="font-size:13px;color:#d97706">(+₹${fmt(totalDisc)} discount)</span>` : ''}
     </div>
     ${p.notes ? `<div style="margin-top:8px;font-size:12px;color:#64748b">Notes: ${p.notes}</div>` : ''}
     <div class="footer">
-      <div>This is a computer generated receipt. No signature required.<br>Thank you! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
+      <div style="margin-bottom:6px;font-style:italic;color:#94a3b8">This is a computer generated receipt. No signature required.</div>
+      <div>Thank you for your payment! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
     </div>`;
 
   buildPrintWindow(html, c?.email || null, c?.phone || null);
@@ -4694,35 +4247,55 @@ async function clearCollection(key) {
   if (currentUser?.role !== 'dev') return toast('Only Dev can do this.', 'error');
   const labels = { customers: 'Customers', invoices: 'Invoices', payments: 'Payments', creditNotes: 'Credit Notes' };
   const label = labels[key] || key;
-  if (!await confirmDialog({ title: `Delete All ${label}`, msg: `⚠ This will permanently delete ALL ${label} from Supabase.\n\nThis action is irreversible. Are you absolutely sure?`, type: 'danger', okLabel: 'Yes, Delete All' })) return;
-  if (!await confirmDialog({ title: 'Final Confirmation', msg: `Second confirmation required.\n\nDelete ALL ${label}? This cannot be undone.`, type: 'danger', okLabel: 'Permanently Delete' })) return;
+  if (!confirm(`⚠ This will permanently delete ALL ${label} from Firebase.\n\nAre you absolutely sure?`)) return;
+  if (!confirm(`Second confirmation — delete ALL ${label}? This cannot be undone.`)) return;
 
   toast(`Deleting ${label}...`, 'info');
   stopRealtimeListeners();
 
+  // Clear locally
   DB[key] = [];
   try { localStorage.removeItem('mauli_' + key); } catch(e) {}
   renderAll();
 
+  // Clear from Firestore
+  let fsErrors = 0;
   if (_db) {
     try {
-      const { error } = await _db.from(key).delete().gt('id', 0);
-      if (error) throw new Error(error.message);
-      addLog('delete', `Dev deleted all ${label}`);
-      try { await save('log'); } catch(e) {}
-      toast(`✅ All ${label} deleted successfully!`, 'success');
+      const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
+      const snap = await getDocs(col(_db, key));
+      const allDocs = snap.docs;
+      for (let i = 0; i < allDocs.length; i += 400) {
+        try {
+          const batch = writeBatch(_db);
+          allDocs.slice(i, i + 400).forEach(d => batch.delete(doc(col(_db, key), d.id)));
+          await batch.commit();
+        } catch(batchErr) {
+          console.warn('Batch delete error:', batchErr);
+          fsErrors++;
+        }
+      }
     } catch(e) {
-      console.warn('Supabase clear error:', e);
-      toast(`⚠ Local ${label} cleared. Supabase error: ${e.message}`, 'error');
+      console.warn('Firestore clear error:', e);
+      fsErrors++;
     }
   }
+
+  addLog('delete', `Dev deleted all ${label}`);
+  try { await save('log'); } catch(e) {}
   startRealtimeListeners();
+
+  if (fsErrors > 0) {
+    toast(`⚠ Local ${label} cleared. Firebase may be blocked — disable ad blocker and retry.`, 'error');
+  } else {
+    toast(`✅ All ${label} deleted successfully!`, 'success');
+  }
 }
 
 async function clearTestData() {
   if (currentUser?.role !== 'dev') return toast('Only Dev can do this.', 'error');
-  if (!await confirmDialog({ title: 'Delete Everything', msg: '⚠ This will permanently delete ALL Customers, Invoices, Payments and Credit Notes from Supabase.\n\nUser accounts will NOT be affected.\n\nAre you absolutely sure?', type: 'danger', okLabel: 'Yes, Delete All' })) return;
-  if (!await confirmDialog({ title: 'Final Confirmation', msg: 'Second confirmation required.\n\nThis will wipe all data and cannot be undone. Proceed?', type: 'danger', okLabel: 'Permanently Delete Everything' })) return;
+  if (!confirm('⚠ This will permanently delete ALL Customers, Invoices, Payments and Credit Notes from Firebase.\n\nUser accounts will NOT be affected.\n\nAre you absolutely sure?')) return;
+  if (!confirm('Second confirmation — this cannot be undone. Proceed?')) return;
   toast('Clearing all data...', 'info');
 
   const CLEAR_KEYS = ['customers','invoices','payments','creditNotes'];
@@ -4733,25 +4306,43 @@ async function clearTestData() {
   renderAll();
   stopRealtimeListeners();
 
+  let fsErrors = 0;
   if (_db) {
-    let errors = 0;
-    for (const key of CLEAR_KEYS) {
-      try {
-        const { error } = await _db.from(key).delete().gt('id', 0);
-        if (error) { console.warn('Delete error', key, error.message); errors++; }
-      } catch(e) { console.warn('Delete error', key, e); errors++; }
+    try {
+      const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
+      for (const key of CLEAR_KEYS) {
+        try {
+          const snap = await getDocs(col(_db, key));
+          const allDocs = snap.docs;
+          for (let i = 0; i < allDocs.length; i += 400) {
+            try {
+              const batch = writeBatch(_db);
+              allDocs.slice(i, i + 400).forEach(d => batch.delete(doc(col(_db, key), d.id)));
+              await batch.commit();
+            } catch(batchErr) {
+              console.warn('Batch delete error for', key, batchErr);
+              fsErrors++;
+            }
+          }
+        } catch(collErr) {
+          console.warn('Could not read collection', key, collErr);
+          fsErrors++;
+        }
+      }
+    } catch(e) {
+      console.warn('Firestore clear error:', e);
+      fsErrors++;
     }
-    addLog('delete', 'Dev cleared all data (customers, invoices, payments, credit notes)');
-    try { await save('log'); } catch(e) {}
-    startRealtimeListeners();
-    if (errors > 0) {
-      toast('⚠ Local data cleared. Some Supabase deletes failed — check console.', 'error');
-    } else {
-      toast('✅ All data cleared! Users are untouched.', 'success');
-    }
+  }
+
+  addLog('delete', 'Dev cleared all data (customers, invoices, payments, credit notes)');
+  try { await save('log'); } catch(e) {}
+  startRealtimeListeners();
+
+  if (fsErrors > 0) {
+    toast('⚠ Local data cleared. Firebase may be blocked by ad blocker — disable it and retry for full cloud clear.', 'error');
   } else {
-    startRealtimeListeners();
-    toast('✅ Local data cleared.', 'success');
+    toast('✅ All data cleared! Users are untouched.', 'success');
   }
 }
 
@@ -4771,51 +4362,6 @@ function printPaymentReceiptByGroup(paymentId, groupId) {
     if (first) return printPaymentReceipt(first.id);
   }
   printPaymentReceipt(paymentId);
-}
-
-// ---- Delete entire payment group (or single) ----
-async function deletePaymentGroup(paymentId, groupId) {
-  // Find a representative entry to display info to user
-  const rep = groupId
-    ? DB.payments.find(px => px.groupId === groupId && px.method !== 'Cash Discount')
-    : DB.payments.find(px => px.id === paymentId);
-  if (!rep) return toast('Payment not found.', 'error');
-
-  const c   = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(rep.customerId)))) || DB.customers.find(c => String(c.id) === String(rep.customerId));
-  const inv = DB.invoices.find(i => i.id === rep.invoiceId);
-  const receiptLabel = rep.receiptNo ? `Receipt ${rep.receiptNo}` : (groupId || 'Payment');
-
-  if (!await confirmDialog({ title: `Delete ${receiptLabel}`, msg: `Customer: ${c?.name || '—'}\nInvoice: ${inv?.invNo || '—'}\nAmount: ₹${fmt(rep.totalReceived || rep.amount)}\nMethod: ${rep.method}\n\nThis will permanently remove the payment and restore the invoice balance.`, type: 'danger', okLabel: 'Delete Payment' })) return;
-
-  // Collect IDs to delete from Supabase
-  const idsToDelete = groupId
-    ? DB.payments.filter(px => px.groupId === groupId).map(px => px.id)
-    : [paymentId];
-
-  // Remove from local DB
-  if (groupId) {
-    DB.payments = DB.payments.filter(px => px.groupId !== groupId);
-  } else {
-    DB.payments = DB.payments.filter(px => px.id !== paymentId);
-  }
-
-  // Delete from Supabase
-  if (_db) {
-    try {
-      const { error } = await _db.from('payments').delete().in('id', idsToDelete);
-      if (error) throw new Error(error.message);
-    } catch(e) {
-      console.error('Supabase payment delete error:', e);
-      toast('❌ Delete failed: ' + e.message, 'error');
-      return;
-    }
-  }
-
-  await addLog('delete', `Deleted payment ${receiptLabel} ₹${fmt(rep.totalReceived || rep.amount)} (${rep.method}) for ${c?.name || '—'} / ${inv?.invNo || '—'}`);
-  toast('Payment deleted.', 'error');
-  renderPayments();
-  renderInvoices();
-  renderDashboard();
 }
 
 // ============================================================
@@ -5062,49 +4608,51 @@ async function saveEditPayment() {
     : DB.payments.find(px => px.id === window._editPaymentSingleId)?.receiptNo;
 
   if (_editPaymentGroupId) {
+    // Collect old entry IDs BEFORE filtering them out (needed for Firestore delete)
+    const oldEntryIds = DB.payments
+      .filter(px => px.groupId === _editPaymentGroupId)
+      .map(px => String(px.id));
+
     DB.payments = DB.payments.filter(px => px.groupId !== _editPaymentGroupId);
 
-    // *** DELETE BY groupId — the only reliable approach for old float IDs ***
-    // Old entries have fractional IDs like 1776353224823.33 and 1776353224823.45.
-    // Deleting by id array fails: Math.round() causes collisions (both round to same int),
-    // and raw floats lose precision in JS JSON serialisation → Supabase match fails.
-    // groupId is a plain string column — always matches exactly, no precision issues.
-    if (_db && _editPaymentGroupId) {
+    // *** BUG FIX: Explicitly delete old Firestore documents ***
+    // Previously only new docs were written (upsert), leaving old ones in Firestore.
+    // On reload, Firestore returned both old + new entries → double-counted payments.
+    if (_db && oldEntryIds.length) {
       try {
-        const { error } = await _db.from('payments').delete().eq('groupId', _editPaymentGroupId);
-        if (error) console.error('Failed to delete old payment group from Supabase:', error.message);
+        const { writeBatch, doc, collection: col } = window._firebaseModules;
+        const CHUNK = 400;
+        for (let i = 0; i < oldEntryIds.length; i += CHUNK) {
+          const batch = writeBatch(_db);
+          oldEntryIds.slice(i, i + CHUNK).forEach(docId => {
+            batch.delete(doc(col(_db, 'payments'), docId));
+          });
+          await batch.commit();
+        }
       } catch(e) {
-        console.error('Failed to delete old payment group from Supabase:', e);
+        console.error('Failed to delete old payment entries from Firestore:', e);
       }
     }
   } else {
-    const singleId = window._editPaymentSingleId;
-    // For single entries (no groupId), assign a groupId now so future edits use the reliable path.
-    // Find the entry's groupId if it has one (it might have been assigned from a previous edit).
-    const singleEntry = DB.payments.find(px => px.id === singleId);
-    const singleGroupId = singleEntry?.groupId;
-    DB.payments = DB.payments.filter(px => px.id !== singleId);
-    // Delete from Supabase: prefer groupId if available (safe for float IDs),
-    // otherwise fall back to id-based delete (only safe for integer IDs).
+    const singleId = String(window._editPaymentSingleId);
+    DB.payments = DB.payments.filter(px => px.id !== window._editPaymentSingleId);
+    // Delete the single old document from Firestore
     if (_db && singleId) {
       try {
-        let error;
-        if (singleGroupId) {
-          ({ error } = await _db.from('payments').delete().eq('groupId', singleGroupId));
-        } else {
-          ({ error } = await _db.from('payments').delete().eq('id', singleId));
-        }
-        if (error) console.error('Failed to delete old single payment from Supabase:', error.message);
+        const { doc, deleteDoc: fsDeleteDoc, collection: col } = window._firebaseModules;
+        // Use the exposed deleteDoc from Firebase modules
+        const { writeBatch, doc: fsDoc, collection: fsCol } = window._firebaseModules;
+        const batch = writeBatch(_db);
+        batch.delete(fsDoc(fsCol(_db, 'payments'), singleId));
+        await batch.commit();
       } catch(e) {
-        console.error('Failed to delete old single payment from Supabase:', e);
+        console.error('Failed to delete old single payment from Firestore:', e);
       }
     }
   }
 
   // --- Rebuild entries ---
-  // Always assign a groupId — even for previously single (no-group) payments.
-  // This ensures future edits can correctly locate and remove all entries.
-  const newGroupId = _editPaymentGroupId || ('grp_' + uniqueId());
+  const newGroupId = _editPaymentGroupId || ('grp_' + Date.now());
   const c = DB.customers.find(cx => cx.id === customerId);
   const invNos = [];
 
@@ -5113,24 +4661,18 @@ async function saveEditPayment() {
     invNos.push(inv?.invNo || '—');
     // Push actual payment entry FIRST (before Cash Discount) so method display is correct
     if (alloc.adj > 0) {
-      DB.payments.push({ id: uniqueId(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.adj, date, method, ref, notes, cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
     }
     // Cash Discount entries pushed AFTER main payment entry
     if (alloc.disc > 0 && alloc.adj === 0) {
-      DB.payments.push({ id: uniqueId(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: 'Cash Discount', cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
     }
     if (alloc.disc > 0 && alloc.adj > 0) {
-      DB.payments.push({ id: uniqueId(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
+      DB.payments.push({ id: Date.now() + Math.random(), groupId: newGroupId, customerId, invoiceId: alloc.invId, amount: alloc.disc, date, method: 'Cash Discount', ref, notes: `Cash Discount on ${inv?.invNo}`, cashDisc: alloc.disc, totalReceived, receiptNo: receiptNo || '' });
     }
   }
 
-  try {
-    await save('payments');
-  } catch(e) {
-    btnGuardReset('btn-save-edit-payment');
-    toast('❌ Failed to save payment: ' + e.message, 'error');
-    return;
-  }
+  await save('payments');
 
   // --- Log with before/after ---
   const custChanged = String(Math.round(parseFloat(oldCustomerId))) !== String(customerId);
@@ -5139,7 +4681,7 @@ async function saveEditPayment() {
   if (custChanged) logMsg += ` | Customer: ${oldCust?.name || '?'} → ${newCust?.name || '?'}`;
   if (amtChanged)  logMsg += ` | Amount: ₹${fmt(oldTotal)} → ₹${fmt(totalReceived)}`;
   logMsg += ` | Invoices: ${invNos.join(', ')}`;
-  await addLog('edit', logMsg);
+  addLog('edit', logMsg);
 
   toast('Payment updated!', 'success');
   closeModal('modal-edit-payment');
@@ -5160,6 +4702,7 @@ function openEditCNModal(id) {
   if (!cn) return toast('Credit Note not found.', 'error');
 
   _editCNCustomerId = cn.customerId; // store for saveEditCN since dropdown is disabled
+  if (!cn) return toast('Credit Note not found.', 'error');
 
   // Populate customer dropdown (editable)
   const cSel = document.getElementById('ecn-customer');
@@ -5247,6 +4790,7 @@ async function saveEditCN() {
   const inv     = DB.invoices.find(i => i.id === invoiceId);
 
   DB.creditNotes[idx] = { ...oldCN, customerId, invoiceId, cnNumber, date, amount, reason, notes };
+  await save('creditNotes');
 
   // Build descriptive log
   const custChanged = String(oldCN.customerId) !== String(customerId);
@@ -5256,19 +4800,13 @@ async function saveEditCN() {
   if (custChanged) logMsg += ` | Customer: ${oldCust?.name || '?'} → ${newCust?.name || '?'}`;
   if (invChanged)  logMsg += ` | Invoice changed → ${inv?.invNo || invoiceId}`;
   if (amtChanged)  logMsg += ` | Amount: ₹${fmt(parseFloat(oldCN.amount))} → ₹${fmt(amount)}`;
+  addLog('edit', logMsg);
 
-  try {
-    await save('creditNotes');
-    await addLog('edit', logMsg);
-    toast('Credit Note updated!', 'success');
-    closeModal('modal-edit-creditnote');
-    renderCreditNotes();
-    renderInvoices();
-    renderDashboard();
-  } catch(e) {
-    btnGuardReset('btn-save-edit-cn');
-    toast('❌ Failed to save credit note: ' + e.message, 'error');
-  }
+  toast('Credit Note updated!', 'success');
+  closeModal('modal-edit-creditnote');
+  renderCreditNotes();
+  renderInvoices();
+  renderDashboard();
 }
 
 // ============================================================
@@ -5336,47 +4874,47 @@ async function saveExpense() {
       DB.expenses[idx] = { ...DB.expenses[idx], category, date, amount, mode, by, description };
       let logMsg = `Edited expense: ${category} by ${by}`;
       if (Math.abs(oldAmt - amount) > 0.01) logMsg += ` | Amount: ₹${fmt(oldAmt)} → ₹${fmt(amount)}`;
-      await addLog('edit', logMsg);
+      addLog('edit', logMsg);
       toast('Expense updated!', 'success');
     }
   } else {
     const entry = { id: Date.now(), category, date, amount, mode, by, description };
     DB.expenses.push(entry);
-    await addLog('create', `Added expense: ${category} ₹${fmt(amount)} by ${by} | Total expenses: ${DB.expenses.length}`);
+    addLog('create', `Added expense: ${category} ₹${fmt(amount)} by ${by} | Total expenses: ${DB.expenses.length}`);
     toast('Expense saved!', 'success');
   }
 
-  try {
-    await save('expenses');
-    closeModal('modal-expense');
-    renderExpenses();
-  } catch(e) {
-    btnGuardReset('btn-save-expense');
-    toast('❌ Failed to save expense: ' + e.message, 'error');
-  }
+  await save('expenses');
+  closeModal('modal-expense');
+  renderExpenses();
 }
 
 async function deleteExpense(id) {
   const e = (DB.expenses || []).find(x => x.id === id);
-  if (!await confirmDialog({ title: 'Delete Expense', msg: `Delete expense: ${e?.category} — ₹${fmt(e?.amount)}?\n\nThis action cannot be undone.`, type: 'danger', okLabel: 'Delete Expense' })) return;
+  if (!confirm(`Delete expense: ${e?.category} ₹${fmt(e?.amount)}?`)) return;
   await deleteDoc('expenses', id);
   DB.expenses = DB.expenses.filter(x => x.id !== id);
-  await addLog('delete', `Deleted expense: ${e?.category} ₹${fmt(e?.amount)}`);
+  addLog('delete', `Deleted expense: ${e?.category} ₹${fmt(e?.amount)}`);
   toast('Expense deleted.', 'error');
   renderExpenses();
 }
 
 async function deleteAllExpenses() {
   if (currentUser?.role !== 'dev') return toast('Only Dev can delete all expenses.', 'error');
-  if (!await confirmDialog({ title: 'Delete All Expenses', msg: '⚠ This will permanently delete ALL expenses from Supabase.\n\nThis action is irreversible. Are you absolutely sure?', type: 'danger', okLabel: 'Yes, Delete All' })) return;
-  if (!await confirmDialog({ title: 'Final Confirmation', msg: 'Second confirmation required.\n\nDelete ALL expenses? This cannot be undone.', type: 'danger', okLabel: 'Permanently Delete' })) return;
+  if (!confirm('⚠ Delete ALL expenses permanently?')) return;
+  if (!confirm('Second confirmation — this cannot be undone. Proceed?')) return;
   DB.expenses = [];
   try { localStorage.removeItem('mauli_expenses'); } catch(e) {}
   if (_db) {
     try {
-      const { error } = await _db.from('expenses').delete().gt('id', 0);
-      if (error) throw new Error(error.message);
-    } catch(e) { console.warn('Supabase expenses delete error:', e); }
+      const { writeBatch, doc, collection: col, getDocs } = window._firebaseModules;
+      const snap = await getDocs(col(_db, 'expenses'));
+      for (let i = 0; i < snap.docs.length; i += 400) {
+        const batch = writeBatch(_db);
+        snap.docs.slice(i, i+400).forEach(d => batch.delete(doc(col(_db,'expenses'), d.id)));
+        await batch.commit();
+      }
+    } catch(e) { console.warn('Firestore expenses delete error:', e); }
   }
   addLog('delete', 'Deleted all expenses');
   toast('All expenses deleted.', 'success');
@@ -5402,9 +4940,6 @@ function exportExpenses() {
 }
 
 function renderExpenses() {
-  // Populate FY dropdown from expense dates
-  populateFYFilter('exp-fy-filter', (DB.expenses || []).map(e => e.date));
-  const selectedFY = document.getElementById('exp-fy-filter')?.value || 'all';
   const search   = document.getElementById('exp-search')?.value.toLowerCase() || '';
   const catF     = document.getElementById('exp-cat-filter')?.value || '';
   const modeF    = document.getElementById('exp-mode-filter')?.value || '';
@@ -5415,15 +4950,11 @@ function renderExpenses() {
 
   const all = DB.expenses || [];
 
-  // Update stats — always show all-time totals
+  // Update stats
   document.getElementById('exp-stat-count').textContent = all.length;
   document.getElementById('exp-stat-total').textContent = '₹' + fmt(all.reduce((s,e) => s + parseFloat(e.amount||0), 0));
 
   let list = all.filter(e => {
-    // FY filter
-    if (selectedFY !== 'all') {
-      try { if (getFYTag(e.date) !== selectedFY) return false; } catch(ex) { return false; }
-    }
     const textMatch = [e.category, e.description, e.by, e.mode].join(' ').toLowerCase().includes(search);
     const catMatch  = !catF   || e.category === catF;
     const modeMatch = !modeF  || e.mode === modeF;
@@ -5460,52 +4991,6 @@ if ('serviceWorker' in navigator) {
 }
 
 // ============================================================
-// CUSTOM CONFIRM DIALOG — replaces browser confirm()
-// Usage: await confirmDialog({ title, msg, type, okLabel })
-// type: 'danger' | 'warning' | 'info'
-// ============================================================
-function confirmDialog({ title = 'Are you sure?', msg = '', type = 'danger', okLabel = 'Confirm', cancelLabel = 'Cancel' } = {}) {
-  return new Promise(resolve => {
-    const overlay   = document.getElementById('confirm-overlay');
-    const iconEl    = document.getElementById('confirm-icon');
-    const titleEl   = document.getElementById('confirm-title');
-    const msgEl     = document.getElementById('confirm-msg');
-    const okBtn     = document.getElementById('confirm-ok-btn');
-    const cancelBtn = document.getElementById('confirm-cancel-btn');
-
-    const icons = { danger: '🗑️', warning: '⚠️', info: 'ℹ️' };
-    const iconBg = { danger: 'danger', warning: 'warning', info: 'info' };
-    const okColors = { danger: 'btn-danger', warning: 'btn-warning', info: 'btn-primary' };
-
-    iconEl.textContent = icons[type] || '⚠️';
-    iconEl.className   = 'confirm-icon ' + (iconBg[type] || 'warning');
-    titleEl.textContent = title;
-    msgEl.textContent   = msg;
-    cancelBtn.textContent = cancelLabel;
-
-    okBtn.textContent = okLabel;
-    okBtn.className   = 'btn ' + (type === 'danger' ? 'btn-danger' : type === 'warning' ? 'btn-primary' : 'btn-primary');
-
-    overlay.classList.add('open');
-
-    function finish(result) {
-      overlay.classList.remove('open');
-      okBtn.removeEventListener('click', onOk);
-      cancelBtn.removeEventListener('click', onCancel);
-      overlay.removeEventListener('click', onBackdrop);
-      resolve(result);
-    }
-    function onOk()      { finish(true);  }
-    function onCancel()  { finish(false); }
-    function onBackdrop(e) { if (e.target === overlay) finish(false); }
-
-    okBtn.addEventListener('click', onOk);
-    cancelBtn.addEventListener('click', onCancel);
-    overlay.addEventListener('click', onBackdrop);
-  });
-}
-
-// ============================================================
 // INIT — restore session on refresh if token exists
 // ============================================================
 (function initApp() {
@@ -5515,49 +5000,69 @@ function confirmDialog({ title = 'Are you sure?', msg = '', type = 'danger', okL
   const token = getSessionToken();
   const cachedUser = (() => { try { return JSON.parse(sessionStorage.getItem('mauli_current_user')); } catch { return null; } })();
   if (token && cachedUser) {
-    // Hide login screen IMMEDIATELY to prevent flash
+    // Hide login screen IMMEDIATELY (before Firebase loads) to prevent flash
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    // Re-hydrate currentUser immediately so UI can restore
     currentUser = cachedUser;
-
-    // Wait for Supabase client to be ready, then load data
-    const waitDB = setInterval(async () => {
-      if (!_db) return;
-      clearInterval(waitDB);
-      document.getElementById('topbar-name').textContent = cachedUser.firstName + (cachedUser.lastName ? ' ' + cachedUser.lastName : '');
-      document.getElementById('topbar-role').textContent = roleLabel(cachedUser.role);
-      const isDev = cachedUser.role === 'dev';
-      document.querySelectorAll('.dev-only').forEach(el => el.style.display = isDev ? '' : 'none');
-      if (isDev) document.querySelectorAll('.expenses-tab-btn').forEach(el => el.style.display = '');
-      const isMgr = cachedUser.role === 'dev' || cachedUser.role === 'admin';
-      document.querySelectorAll('.mgr-only').forEach(el => el.style.display = isMgr ? '' : 'none');
-      applyRoleAccess(cachedUser.role, cachedUser);
-      await load();
-      renderAll();
-      startRealtimeListeners();
-      startIdleTimer();
+    // Wait for Firebase to be ready then finish loading
+    const tryRestore = setInterval(async () => {
+      if (!window._firebaseAuth) return;
+      clearInterval(tryRestore);
+      try {
+        await window._firebaseAuth.signInAnonymously(window._firebaseAuth.auth);
+      } catch(e) { console.warn('Anon sign-in on restore failed:', e); }
+      // Wait for Firestore to be set
+      const waitDB = setInterval(async () => {
+        if (!_db) return;
+        clearInterval(waitDB);
+        document.getElementById('topbar-name').textContent = cachedUser.firstName + (cachedUser.lastName ? ' ' + cachedUser.lastName : '');
+        document.getElementById('topbar-role').textContent = roleLabel(cachedUser.role);
+        const isDev = cachedUser.role === 'dev';
+        document.querySelectorAll('.dev-only').forEach(el => el.style.display = isDev ? '' : 'none');
+        if (isDev) document.querySelectorAll('.expenses-tab-btn').forEach(el => el.style.display = '');
+        const isMgr = cachedUser.role === 'dev' || cachedUser.role === 'admin';
+        document.querySelectorAll('.mgr-only').forEach(el => el.style.display = isMgr ? '' : 'none');
+        applyRoleAccess(cachedUser.role, cachedUser);
+        await load();
+        renderAll();
+        startRealtimeListeners();
+        startIdleTimer();
+      }, 100);
     }, 100);
   }
 })();
 </script>
 
 <!-- ============================================================
-     SUPABASE — replaces Firebase. Uses @supabase/supabase-js CDN.
-     Exposes _supabase client + calls setSupabaseDB() on ready.
+     FIREBASE — loaded as ES module, exposes Firestore to app
      ============================================================ -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script>
-(function initSupabase() {
-  const SUPABASE_URL  = 'https://cucndfvcenanvypitswu.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1Y25kZnZjZW5hbnZ5cGl0c3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMzcwMDksImV4cCI6MjA5MTkxMzAwOX0.UEvP5rM55Za4elkW8Yu-owrSHW_rFtTqOPC2OE_0gIk';
+<script type="module">
+import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js';
+import { getFirestore, collection, getDocs,
+         doc, setDoc, deleteDoc, writeBatch,
+         onSnapshot }                           from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
+import { getAuth, signInAnonymously, signOut as fbSignOut }
+                                                from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js';
 
-  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-    auth: { persistSession: false }   // app manages its own session
-  });
+const firebaseConfig = {
+  apiKey:            "AIzaSyCD7kmldOVLfXqpq53mxNq5jRCkWn_3nGw",
+  authDomain:        "mauli-enterprises-b83ea.firebaseapp.com",
+  projectId:         "mauli-enterprises-b83ea",
+  storageBucket:     "mauli-enterprises-b83ea.firebasestorage.app",
+  messagingSenderId: "590292764179",
+  appId:             "1:590292764179:web:42ee0878a77cae29d2a1e6"
+};
 
-  window._supabase = client;
-  window.setSupabaseDB(client);       // tell the main script DB is ready
-  console.log('✅ Supabase connected');
-})();
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+// Expose to non-module script
+window._firebaseModules = { collection, getDocs, doc, setDoc, deleteDoc, writeBatch, onSnapshot };
+window._firebaseAuth    = { auth, signInAnonymously, signOut: fbSignOut };
+window.setFirestoreDB(db);
+
+console.log('✅ Firebase Firestore connected');
 </script></body>
 </html>
