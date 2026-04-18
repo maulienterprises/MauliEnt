@@ -158,11 +158,12 @@ tr:hover td{background:rgba(26,111,212,0.04)}
   .bp-mauli{font-size:0.82rem!important}
   .bp-ent{font-size:0.72rem!important}
   .bp-sep{display:none}
-  .user-chip .role-tag{display:none}
+  .user-chip .role-tag{display:block;text-align:center}
   .sync-label{display:none}
   .topbar-right{gap:6px}
-  .user-chip{padding:4px 10px;font-size:0.72rem}
-  .btn-signout{padding:5px 9px;font-size:0.72rem;border-radius:6px;white-space:nowrap}
+  .user-chip{padding:4px 10px;font-size:0.72rem;flex-direction:column;align-items:center;gap:2px}
+  .btn-signout{padding:5px 10px;font-size:1rem;border-radius:6px;white-space:nowrap}
+  .btn-signout-text{display:none}
 }
 .log-entry{background:var(--input-bg);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:0.82rem;border-left:3px solid var(--border)}
 .log-entry.correction{border-left-color:var(--warning)}
@@ -332,7 +333,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <span id="topbar-name">—</span>
         <span class="role-tag" id="topbar-role">—</span>
       </div>
-      <button class="btn-signout" onclick="signOut()">⏻ Sign Out</button>
+      <button class="btn-signout" onclick="signOut()">⏻<span class="btn-signout-text"> Sign Out</span></button>
     </div>
   </div>
 
@@ -1815,7 +1816,7 @@ async function doLogin() {
   document.getElementById('login-btn').style.opacity = '1';
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  document.getElementById('topbar-name').textContent = user.firstName + (user.lastName ? ' ' + user.lastName : '');
+  document.getElementById('topbar-name').textContent = window.innerWidth <= 600 ? user.firstName : user.firstName + (user.lastName ? ' ' + user.lastName : '');
   document.getElementById('topbar-role').textContent = roleLabel(user.role);
 
   const isDev = user.role === 'dev';
@@ -5526,7 +5527,7 @@ function confirmDialog({ title = 'Are you sure?', msg = '', type = 'danger', okL
     const waitDB = setInterval(async () => {
       if (!_db) return;
       clearInterval(waitDB);
-      document.getElementById('topbar-name').textContent = cachedUser.firstName + (cachedUser.lastName ? ' ' + cachedUser.lastName : '');
+      document.getElementById('topbar-name').textContent = window.innerWidth <= 600 ? cachedUser.firstName : cachedUser.firstName + (cachedUser.lastName ? ' ' + cachedUser.lastName : '');
       document.getElementById('topbar-role').textContent = roleLabel(cachedUser.role);
       const isDev = cachedUser.role === 'dev';
       document.querySelectorAll('.dev-only').forEach(el => el.style.display = isDev ? '' : 'none');
