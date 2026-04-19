@@ -58,6 +58,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .role-tag{font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.25);color:#fff}
 .btn-signout{background:transparent;border:1px solid rgba(255,255,255,0.4);border-radius:8px;color:rgba(255,255,255,0.85);padding:6px 14px;cursor:pointer;font-size:0.8rem;font-family:inherit}
 .btn-signout:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,0.1)}
+.btn-icon-dl{background:transparent;border:1.5px solid var(--border);border-radius:8px;color:var(--accent);padding:5px 8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:0.18s;position:relative}
+.btn-icon-dl:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-icon-dl::after{content:attr(title);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;font-size:0.72rem;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:999}
+.btn-icon-dl:hover::after{opacity:1}
 /* ===== NAV ===== */
 .nav{background:#1a6fd4;border-bottom:2px solid #1355a8;display:flex;overflow-x:auto;padding:0 12px;gap:4px;scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
@@ -418,6 +422,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <div class="section-title">Customers</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('customers')">📥 Import</button>
+          <button class="btn-icon-dl dev-only" onclick="downloadTemplate('customers')" title="Download Template"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></button>
           <button class="btn btn-outline btn-sm" onclick="exportCustomers()">📤 Export</button>
           <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">➕ Add Customer</button>
         </div>
@@ -442,6 +447,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         <div class="section-title">Invoices</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('invoices')">📥 Import</button>
+          <button class="btn-icon-dl dev-only" onclick="downloadTemplate('invoices')" title="Download Template"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></button>
           <button class="btn btn-outline btn-sm" onclick="exportInvoices()">📤 Export</button>
           <button class="btn btn-primary btn-sm" onclick="openInvoiceModal()">➕ New Invoice</button>
         </div>
@@ -484,6 +490,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">Payment History</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('payments')">📥 Import</button>
+          <button class="btn-icon-dl dev-only" onclick="downloadTemplate('payments')" title="Download Template"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></button>
           <button class="btn btn-outline btn-sm" onclick="exportPayments()">📤 Export</button>
           <button class="btn btn-primary btn-sm" onclick="openPaymentModal()">➕ Record Payment</button>
         </div>
@@ -759,6 +767,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">📝 Credit Notes</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('creditnotes')">📥 Import</button>
+          <button class="btn-icon-dl dev-only" onclick="downloadTemplate('creditnotes')" title="Download Template"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></button>
           <button class="btn btn-outline btn-sm" onclick="exportCreditNotes()">📤 Export</button>
           <button class="btn btn-primary btn-sm" onclick="openCNModal()">➕ New Credit Note</button>
         </div>
@@ -3996,13 +4006,20 @@ function renderBackupHistory() {
 // ============================================================
 function openImportModal(type) {
   importType = type;
-  const titles = { customers: 'Import Customers from Excel', invoices: 'Import Invoices from Excel' };
+  const titles = {
+    customers: 'Import Customers from Excel',
+    invoices: 'Import Invoices from Excel',
+    payments: 'Import Payments from Excel',
+    creditnotes: 'Import Credit Notes from Excel'
+  };
   const cols = {
     customers: 'Required columns: Name*, Phone*, Email, Company, Pincode, Address, GST, CreditDays, WhatsappReminder, EmailReminder',
-    invoices: 'Required columns: CustomerName, InvoiceNo, InvoiceDate, DueDate, Amount, Description'
+    invoices: 'Required columns: CustomerName*, InvoiceNo*, InvoiceDate*, DueDate, Amount*, Description',
+    payments: 'Required columns: Receipt No*, Customer*, Amount*, Payment Date*, Mode of Payment*, Invoice No*, Cash Disc, Adjust Amt, Reference/UTR, Notes',
+    creditnotes: 'Required columns: CN No*, Customer*, Invoice No*, Date*, Amount*, Reason*, Notes'
   };
-  document.getElementById('import-title').textContent = titles[type];
-  document.getElementById('import-cols').textContent = cols[type];
+  document.getElementById('import-title').textContent = titles[type] || 'Import from Excel';
+  document.getElementById('import-cols').textContent = cols[type] || '';
   document.getElementById('import-file').value = '';
   openModal('modal-import');
 }
@@ -4083,7 +4100,7 @@ async function handleImport(input) {
       }).filter(r => {
         // Skip the template instruction row (starts with ⚠)
         // Check all possible first-column keys across all import types
-        const name = String(r['Name'] || r['Name *'] || r['CustomerName'] || r['CustomerName *'] || r['InvoiceNo'] || r['InvoiceNo *'] || '');
+        const name = String(r['Name'] || r['Name *'] || r['CustomerName'] || r['CustomerName *'] || r['InvoiceNo'] || r['InvoiceNo *'] || r['Receipt No'] || r['CN No'] || '');
         return name && !name.startsWith('⚠') && !name.toLowerCase().startsWith('columns marked');
       });
 
@@ -4093,6 +4110,14 @@ async function handleImport(input) {
       let count = 0;
 
       if (importType === 'customers') {
+        // Duplicate detection (by Customer Name)
+        const custDupes = [];
+        for (const r of rows) {
+          const name = String(r.Name || '').trim();
+          if (!name) continue;
+          const existing = DB.customers.find(c => c.name.toLowerCase() === name.toLowerCase());
+          if (existing) custDupes.push({ key: name, old: existing, newRow: r });
+        }
         const newItems = [];
         let idBase = Date.now();
         for (const r of rows) {
@@ -4118,6 +4143,14 @@ async function handleImport(input) {
         setImportProgress(40, `Uploading ${count} customers…`, 'Saving to Supabase in batches');
         await saveChunked('customers', newItems);
         addLog('create', `Imported ${count} customers from Excel`);
+        if (custDupes.length > 0) {
+          setImportProgress(100, '✅ Done!', `${count} imported, ${custDupes.length} duplicate(s)`);
+          await new Promise(r => setTimeout(r, 600));
+          closeModal('modal-import'); resetImportModal(); renderAll();
+          toast(`✅ ${count} customers imported. ${custDupes.length} duplicate(s) detected.`, 'success');
+          await showDuplicateAlert(custDupes, 'customers');
+          return;
+        }
         setImportProgress(100, '✅ Done!', `${count} customers imported`);
         await new Promise(r => setTimeout(r, 700));
         closeModal('modal-import');
@@ -4146,6 +4179,15 @@ async function handleImport(input) {
           newItems.push(item);
           count++;
         }
+        // Duplicate detection for invoices (by InvoiceNo)
+        const invDupeKeys = new Set(newItems.map(n => n.invNo));
+        const invDupes = [];
+        for (const r of rows) {
+          const invNo = String(r.InvoiceNo || '').trim();
+          if (!invNo || invDupeKeys.has(invNo)) continue;
+          const existing = DB.invoices.find(i => i.invNo === invNo && !newItems.find(n => n.id === i.id));
+          if (existing) invDupes.push({ key: invNo, old: existing, newRow: r });
+        }
         // Sort invoices serially after import
         DB.invoices.sort((a,b) => {
           const ka = invNoSortKey(a.invNo), kb = invNoSortKey(b.invNo);
@@ -4155,6 +4197,146 @@ async function handleImport(input) {
         setImportProgress(40, `Uploading ${count} invoices…`, 'Saving to Supabase in batches');
         await saveChunked('invoices', newItems);
         addLog('create', `Imported ${count} invoices from Excel`);
+        if (invDupes.length > 0) {
+          setImportProgress(100, '✅ Done!', `${count} imported, ${invDupes.length} duplicates found`);
+          await new Promise(r => setTimeout(r, 600));
+          closeModal('modal-import'); resetImportModal(); renderAll();
+          toast(`✅ ${count} invoices imported. ${invDupes.length} duplicate(s) detected.`, 'success');
+          await showDuplicateAlert(invDupes, 'invoices');
+          return;
+        }
+
+      } else if (importType === 'payments') {
+        // Group rows by Receipt No
+        const groups = {};
+        for (const r of rows) {
+          const rcpt = String(r['Receipt No'] || '').trim();
+          if (!rcpt) continue;
+          if (!groups[rcpt]) groups[rcpt] = [];
+          groups[rcpt].push(r);
+        }
+        // Duplicate detection
+        const payDupes = [];
+        for (const rcpt of Object.keys(groups)) {
+          const existing = DB.payments.find(p => p.receiptNo === rcpt);
+          if (existing) payDupes.push({ key: rcpt, old: existing, newRow: groups[rcpt][0] });
+        }
+        if (payDupes.length > 0) {
+          const dupRcpts = new Set(payDupes.map(d => d.key));
+          DB.payments = DB.payments.filter(p => !dupRcpts.has(p.receiptNo));
+        }
+        const newItems = [];
+        let idBase = Date.now();
+        for (const [rcptNo, rrows] of Object.entries(groups)) {
+          const first = rrows[0];
+          const custName = String(first['Customer'] || '').trim();
+          const c = DB.customers.find(c => c.name.toLowerCase() === custName.toLowerCase());
+          if (!c) { toast(`Customer not found: "${custName}" — skipping receipt ${rcptNo}`, 'error'); continue; }
+          const groupId = 'grp_' + Math.round(idBase);
+          const date = fmtExcelDate(first['Payment Date']);
+          const method = String(first['Mode of Payment'] || 'Cash').trim();
+          const ref = String(first['Reference/UTR'] || '').trim();
+          const notes = String(first['Notes'] || '').trim();
+          let totalReceived = 0;
+          for (const rr of rrows) {
+            const adjAmt = parseFloat(rr['Adjust Amt']);
+            const amt = parseFloat(rr['Amount'] || 0);
+            totalReceived += isNaN(adjAmt) ? amt : adjAmt;
+          }
+          for (const rr of rrows) {
+            const invNo = String(rr['Invoice No'] || '').trim();
+            const inv = DB.invoices.find(i => i.invNo === invNo);
+            if (!inv) { toast(`Invoice not found: "${invNo}" in receipt ${rcptNo}`, 'error'); continue; }
+            const adjAmt = parseFloat(rr['Adjust Amt']);
+            const rowAmt = parseFloat(rr['Amount'] || 0);
+            const allocAmt = isNaN(adjAmt) ? rowAmt : adjAmt;
+            const cashDisc = parseFloat(rr['Cash Disc']) || 0;
+            idBase++;
+            const mainEntry = {
+              id: idBase + Math.random(),
+              groupId, customerId: c.id, invoiceId: inv.id,
+              amount: allocAmt, date, method, ref, notes,
+              cashDisc, totalReceived, receiptNo: rcptNo
+            };
+            DB.payments.push(mainEntry);
+            newItems.push(mainEntry);
+            count++;
+            if (cashDisc > 0) {
+              idBase++;
+              const discEntry = {
+                id: idBase + Math.random(),
+                groupId, customerId: c.id, invoiceId: inv.id,
+                amount: cashDisc, date, method: 'Cash Discount', ref: '',
+                notes: `Cash Discount on ${invNo}`,
+                cashDisc, totalReceived, receiptNo: rcptNo
+              };
+              DB.payments.push(discEntry);
+              newItems.push(discEntry);
+            }
+          }
+        }
+        try { localStorage.setItem('mauli_payments', JSON.stringify(DB.payments)); } catch(e) {}
+        setImportProgress(40, `Uploading ${count} payment rows…`, 'Saving to Supabase in batches');
+        await saveChunked('payments', newItems);
+        addLog('create', `Imported payment rows (${Object.keys(groups).length} receipts) from Excel`);
+        if (payDupes.length > 0) {
+          setImportProgress(100, '✅ Done!', `${count} rows imported, ${payDupes.length} duplicate receipt(s)`);
+          await new Promise(r => setTimeout(r, 600));
+          closeModal('modal-import'); resetImportModal(); renderAll();
+          toast(`✅ Payments imported. ${payDupes.length} duplicate receipt(s) detected.`, 'success');
+          await showDuplicateAlert(payDupes, 'payments');
+          return;
+        }
+
+      } else if (importType === 'creditnotes') {
+        const cnDupes = [];
+        for (const r of rows) {
+          const cnNo = String(r['CN No'] || '').trim();
+          if (!cnNo) continue;
+          const existing = DB.creditNotes && DB.creditNotes.find(cn => cn.cnNumber === cnNo);
+          if (existing) cnDupes.push({ key: cnNo, old: existing, newRow: r });
+        }
+        if (cnDupes.length > 0) {
+          const dupCNs = new Set(cnDupes.map(d => d.key));
+          if (DB.creditNotes) DB.creditNotes = DB.creditNotes.filter(cn => !dupCNs.has(cn.cnNumber));
+        }
+        const newItems = [];
+        let idBase = Date.now();
+        for (const r of rows) {
+          const cnNo = String(r['CN No'] || '').trim();
+          const custName = String(r['Customer'] || '').trim();
+          const invNo = String(r['Invoice No'] || '').trim();
+          if (!cnNo || !custName || !invNo) continue;
+          const c = DB.customers.find(c => c.name.toLowerCase() === custName.toLowerCase());
+          if (!c) { toast(`Customer not found: "${custName}" — skipping CN ${cnNo}`, 'error'); continue; }
+          const inv = DB.invoices.find(i => i.invNo === invNo);
+          if (!inv) { toast(`Invoice not found: "${invNo}" — skipping CN ${cnNo}`, 'error'); continue; }
+          const item = {
+            id: Math.round(idBase++),
+            customerId: c.id, invoiceId: inv.id,
+            cnNumber: cnNo,
+            date: fmtExcelDate(r['Date']),
+            amount: parseFloat(r['Amount']) || 0,
+            reason: String(r['Reason'] || 'Other').trim(),
+            notes: String(r['Notes'] || '').trim()
+          };
+          if (!DB.creditNotes) DB.creditNotes = [];
+          DB.creditNotes.push(item);
+          newItems.push(item);
+          count++;
+        }
+        try { localStorage.setItem('mauli_creditNotes', JSON.stringify(DB.creditNotes)); } catch(e) {}
+        setImportProgress(40, `Uploading ${count} credit notes…`, 'Saving to Supabase in batches');
+        await saveChunked('creditNotes', newItems);
+        addLog('create', `Imported ${count} credit notes from Excel`);
+        if (cnDupes.length > 0) {
+          setImportProgress(100, '✅ Done!', `${count} imported, ${cnDupes.length} duplicate(s)`);
+          await new Promise(r => setTimeout(r, 600));
+          closeModal('modal-import'); resetImportModal(); renderAll();
+          toast(`✅ ${count} credit notes imported. ${cnDupes.length} duplicate(s) detected.`, 'success');
+          await showDuplicateAlert(cnDupes, 'creditnotes');
+          return;
+        }
       }
 
       setImportProgress(100, '✅ Done!', `${count} ${importType} imported`);
@@ -4170,6 +4352,128 @@ async function handleImport(input) {
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+// ============================================================
+// DUPLICATE DETECTION MODAL
+// ============================================================
+let _dupeResolve = null;
+
+function showDuplicateAlert(dupes, type) {
+  return new Promise(resolve => {
+    _dupeResolve = resolve;
+    window._currentDupes = dupes;
+    window._currentDupesType = type;
+    const count = dupes.length;
+    const keys = dupes.slice(0,3).map(d => d.key).join(', ') + (count > 3 ? ` … +${count-3} more` : '');
+    let modal = document.getElementById('modal-dupe-alert');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modal-dupe-alert';
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `<div class="modal" style="max-width:460px">
+        <div class="modal-header"><h3>⚠ Duplicate Data Found</h3></div>
+        <div class="modal-body">
+          <p id="dupe-alert-msg" style="white-space:pre-line;margin-bottom:20px;line-height:1.7;font-size:0.93rem"></p>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn btn-outline btn-sm" onclick="resolveDupeAlert(false)">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="resolveDupeAlert(true)">OK — Show Duplicates</button>
+          </div>
+        </div>
+      </div>`;
+      document.body.appendChild(modal);
+    }
+    document.getElementById('dupe-alert-msg').textContent =
+      `${count} duplicate record${count>1?'s':''} found:\n${keys}\n\nDuplicate data — want to see?`;
+    modal.style.display = 'flex';
+  });
+}
+
+function resolveDupeAlert(showDetails) {
+  const modal = document.getElementById('modal-dupe-alert');
+  if (modal) modal.style.display = 'none';
+  if (_dupeResolve) { _dupeResolve(false); _dupeResolve = null; }
+  if (showDetails) openDupeCompareModal(window._currentDupes, window._currentDupesType);
+}
+
+function openDupeCompareModal(dupes, type) {
+  let modal = document.getElementById('modal-dupe-compare');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-dupe-compare';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `<div class="modal" style="max-width:900px;max-height:90vh;overflow-y:auto">
+      <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <h3>🔍 Duplicate Comparison</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="exportDupeCompare()">📤 Export</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-dupe-compare').style.display='none'">✕ Close</button>
+        </div>
+      </div>
+      <div class="modal-body" id="dupe-compare-body"></div>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+
+  const fieldLabels = {
+    customers:   ['Name','Company','Phone','Email','City/Pincode','GST','Address','Credit Days'],
+    invoices:    ['Invoice No','Customer ID','Date','Due Date','Amount','Description'],
+    payments:    ['Receipt No','Customer ID','Invoice ID','Amount','Date','Method','Reference','Notes','Cash Disc','Total Received'],
+    creditnotes: ['CN No','Customer ID','Invoice ID','Date','Amount','Reason','Notes']
+  };
+  const fieldKeys = {
+    customers:   ['name','company','phone','email','city','gst','address','creditDays'],
+    invoices:    ['invNo','customerId','date','dueDate','amount','description'],
+    payments:    ['receiptNo','customerId','invoiceId','amount','date','method','ref','notes','cashDisc','totalReceived'],
+    creditnotes: ['cnNumber','customerId','invoiceId','date','amount','reason','notes']
+  };
+  const keys   = fieldKeys[type]   || [];
+  const labels = fieldLabels[type] || [];
+
+  const resolveId = (field, val) => {
+    if (field === 'customerId') { const c = DB.customers.find(c => c.id == val); return c ? c.name : val; }
+    if (field === 'invoiceId')  { const i = DB.invoices.find(i => i.id == val);  return i ? i.invNo : val; }
+    return val !== undefined && val !== null ? String(val) : '—';
+  };
+  const rowVal = (r, key) => r[key] !== undefined ? String(r[key]) : '—';
+
+  let html = '';
+  for (const d of dupes) {
+    const old = d.old || {}; const nw = d.newRow || {};
+    html += `<div style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div style="background:var(--accent);color:#fff;padding:8px 14px;font-weight:600;font-size:0.85rem">Duplicate: ${d.key}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr">
+        <div style="padding:12px;background:#fff5f5;border-right:1px solid var(--border)">
+          <div style="font-weight:700;color:var(--danger);font-size:0.78rem;margin-bottom:8px">EXISTING (Old)</div>
+          ${keys.map((k,i) => `<div style="font-size:0.77rem;padding:3px 0;border-bottom:1px solid #f5f0f0"><b style="color:var(--muted)">${labels[i]||k}:</b> ${resolveId(k, old[k])}</div>`).join('')}
+        </div>
+        <div style="padding:12px;background:#f0fff4">
+          <div style="font-weight:700;color:var(--success);font-size:0.78rem;margin-bottom:8px">INCOMING (New)</div>
+          ${keys.map((k,i) => `<div style="font-size:0.77rem;padding:3px 0;border-bottom:1px solid #f0f5f0"><b style="color:var(--muted)">${labels[i]||k}:</b> ${rowVal(nw, k)}</div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('dupe-compare-body').innerHTML = html || '<p>No duplicate details available.</p>';
+  modal.style.display = 'flex';
+}
+
+function exportDupeCompare() {
+  const dupes = window._currentDupes || [];
+  const rows = [];
+  for (const d of dupes) {
+    rows.push({ Section:'OLD (Existing)', Key: d.key, ...flattenObj(d.old) });
+    rows.push({ Section:'NEW (Incoming)', Key: d.key, ...flattenObj(d.newRow) });
+    rows.push({});
+  }
+  exportXLSX(rows, 'DuplicateComparison_MauliEnt');
+}
+
+function flattenObj(obj) {
+  if (!obj) return {};
+  const out = {};
+  for (const [k,v] of Object.entries(obj)) out[k] = String(v ?? '');
+  return out;
 }
 
 
@@ -4194,11 +4498,34 @@ function exportInvoices() {
 }
 
 function exportPayments() {
-  const data = DB.payments.map(p => {
-    const c   = DB.customers.find(c => c.id === p.customerId);
-    const inv = DB.invoices.find(i => i.id === p.invoiceId);
-    return { Date: p.date, Customer: c?.name, InvoiceNo: inv?.invNo, Amount: p.amount, Method: p.method, Reference: p.ref, Notes: p.notes || '' };
-  });
+  // Group by receiptNo so we export in the same multi-row format as the import template
+  const grouped = {};
+  for (const p of DB.payments) {
+    const key = p.receiptNo || p.groupId || String(p.id);
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(p);
+  }
+  const data = [];
+  for (const [rcpt, entries] of Object.entries(grouped)) {
+    // Exclude Cash Discount sub-entries from rows (they are implicit via Cash Disc column)
+    const mainEntries = entries.filter(e => e.method !== 'Cash Discount');
+    for (const p of mainEntries) {
+      const c   = DB.customers.find(c => c.id === p.customerId);
+      const inv = DB.invoices.find(i => i.id === p.invoiceId);
+      data.push({
+        'Receipt No':      p.receiptNo || '',
+        'Customer':        c?.name || '',
+        'Amount':          p.totalReceived || p.amount,
+        'Payment Date':    p.date,
+        'Mode of Payment': p.method,
+        'Invoice No':      inv?.invNo || '',
+        'Cash Disc':       p.cashDisc || 0,
+        'Adjust Amt':      p.amount,
+        'Reference/UTR':   p.ref || '',
+        'Notes':           p.notes || ''
+      });
+    }
+  }
   exportXLSX(data, 'Payments_MauliEnt');
 }
 
@@ -4227,6 +4554,187 @@ function exportXLSX(data, filename) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Data');
   XLSX.writeFile(wb, filename + '.xlsx');
+}
+
+// ============================================================
+// DOWNLOAD TEMPLATE
+// ============================================================
+function downloadTemplate(type) {
+  const ACCENT = 'FF1A6FD4';
+  const WHITE  = 'FFFFFFFF';
+  const WARN   = 'FFFFF3CD';
+  const HELP_H = 'FF1355A8';
+
+  const styleHeader = (ws, headers, sheetName) => {
+    headers.forEach((h, i) => {
+      const cell = ws[XLSX.utils.encode_cell({r:0, c:i})];
+      if (!cell) return;
+      cell.s = {
+        fill: { patternType:'solid', fgColor:{ rgb: ACCENT } },
+        font: { bold:true, color:{ rgb: WHITE }, name:'Arial', sz:10 },
+        alignment: { horizontal:'center', vertical:'center', wrapText:true },
+        border: { bottom:{ style:'thin', color:{ rgb:'FF1355A8' } } }
+      };
+    });
+    // Warning row
+    const wCell = ws[XLSX.utils.encode_cell({r:1, c:0})];
+    if (wCell) wCell.s = { fill:{patternType:'solid',fgColor:{rgb:WARN}}, font:{italic:true,color:{rgb:'FF856404'},name:'Arial',sz:9} };
+  };
+
+  const makeHelpSheet = (title, colDefs, exampleRows, notes) => {
+    const aoa = [];
+    aoa.push([title]);
+    aoa.push(['Fill the Data sheet and import via the app — ' + title.replace('Help — ','') + ' tab → 📥 Import']);
+    aoa.push([]);
+    aoa.push(['Column','Required?','Accepted Format / Values','Description & Rules']);
+    for (const d of colDefs) aoa.push([d.col, d.req, d.fmt, d.desc]);
+    aoa.push([]);
+    aoa.push(['EXAMPLE DATA']);
+    aoa.push(exampleRows[0] ? Object.keys(exampleRows[0]) : []);
+    for (const row of exampleRows) aoa.push(Object.values(row));
+    if (notes && notes.length) {
+      aoa.push([]);
+      aoa.push(['QUICK RULES']);
+      notes.forEach((n,i) => aoa.push([`${i+1}.  ${n}`]));
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    // Style title
+    if (ws['A1']) ws['A1'].s = { font:{bold:true,sz:13,color:{rgb:HELP_H},name:'Arial'} };
+    if (ws['A4']) ws['A4'].s = { font:{bold:true,sz:10,name:'Arial'}, fill:{patternType:'solid',fgColor:{rgb:'FFE8F0FE'}} };
+    ws['!cols'] = [{wch:22},{wch:12},{wch:30},{wch:60}];
+    return ws;
+  };
+
+  let wb, ws, wsHelp, headers, helpCols, exRows, notes, dataRows;
+
+  if (type === 'customers') {
+    headers = ['Name *','Phone *','Email','Company','Pincode','Address','GST','CreditDays','WhatsappReminder','EmailReminder'];
+    dataRows = [['⚠  Columns marked  *  are MANDATORY. Do not rename columns.']];
+    ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    styleHeader(ws, headers, 'Customers');
+    ws['!cols'] = headers.map((_,i)=>({wch:[35,15,25,25,10,35,20,12,18,16][i]}));
+    helpCols = [
+      {col:'Name *',req:'YES',fmt:'Any text',desc:'Full customer name. Must be unique.'},
+      {col:'Phone *',req:'YES',fmt:'10-digit number',desc:'Primary contact number.'},
+      {col:'Email',req:'NO',fmt:'email@example.com',desc:'Email address (optional).'},
+      {col:'Company',req:'NO',fmt:'Any text',desc:'Company/shop name.'},
+      {col:'Pincode',req:'NO',fmt:'6-digit PIN e.g. 416511',desc:'City/area pincode.'},
+      {col:'Address',req:'NO',fmt:'Any text',desc:'Full address.'},
+      {col:'GST',req:'NO',fmt:'27XXXXX... (15 chars)',desc:'GST number if applicable.'},
+      {col:'CreditDays',req:'NO',fmt:'Number e.g. 60',desc:'Payment credit period in days. Default: 60.'},
+      {col:'WhatsappReminder',req:'NO',fmt:'yes / no',desc:'Enable WhatsApp reminders.'},
+      {col:'EmailReminder',req:'NO',fmt:'yes / no',desc:'Enable Email reminders.'}
+    ];
+    exRows = [
+      {'Name *':'ABC TRADERS (MH-1001001)','Phone *':'9876543210','Email':'abc@mail.com','Company':'ABC TRADERS','Pincode':'416511','Address':'Near ST Stand, Kudal','GST':'','CreditDays':'60','WhatsappReminder':'yes','EmailReminder':'no'},
+      {'Name *':'XYZ GARMENTS (MH-1001002)','Phone *':'9876543211','Email':'','Company':'XYZ GARMENTS','Pincode':'415612','Address':'Bazarpeth, Ratnagiri','GST':'27ABCDE1234F1Z5','CreditDays':'45','WhatsappReminder':'yes','EmailReminder':'no'}
+    ];
+    notes = ['Name and Phone are mandatory.','WhatsappReminder and EmailReminder accept only yes or no.','Do NOT change column headers.'];
+    wsHelp = makeHelpSheet('Help — Customers Import Template', helpCols, exRows, notes);
+    wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
+    XLSX.writeFile(wb, 'MauliEnt_Customers_Template.xlsx');
+
+  } else if (type === 'invoices') {
+    headers = ['CustomerName *','InvoiceNo *','InvoiceDate *','DueDate','Amount *','Description'];
+    dataRows = [['⚠  Columns marked  *  are MANDATORY. Do not rename columns.']];
+    ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    styleHeader(ws, headers, 'Invoices');
+    ws['!cols'] = [{wch:35},{wch:18},{wch:14},{wch:14},{wch:12},{wch:30}];
+    helpCols = [
+      {col:'CustomerName *',req:'YES',fmt:'Exact name from Customers tab',desc:'Must match exactly (case-insensitive).'},
+      {col:'InvoiceNo *',req:'YES',fmt:'e.g. INV-2526-101',desc:'Unique invoice number. Must not already exist.'},
+      {col:'InvoiceDate *',req:'YES',fmt:'YYYY-MM-DD e.g. 2025-06-01',desc:'Invoice date.'},
+      {col:'DueDate',req:'NO',fmt:'YYYY-MM-DD e.g. 2025-07-31',desc:'Payment due date. Leave blank to auto-calculate.'},
+      {col:'Amount *',req:'YES',fmt:'Number e.g. 8500',desc:'Invoice total amount in ₹.'},
+      {col:'Description',req:'NO',fmt:'Any text',desc:'Optional invoice notes.'}
+    ];
+    exRows = [
+      {'CustomerName *':'ABC TRADERS (MH-1001001)','InvoiceNo *':'INV-2526-101','InvoiceDate *':'2025-06-01','DueDate':'2025-07-31','Amount *':8500,'Description':''},
+      {'CustomerName *':'XYZ GARMENTS (MH-1001002)','InvoiceNo *':'INV-2526-102','InvoiceDate *':'2025-06-05','DueDate':'2025-08-04','Amount *':12000,'Description':'Summer collection'}
+    ];
+    notes = ['CustomerName must already exist in the Customers tab.','InvoiceDate must be YYYY-MM-DD. Excel date format also accepted.','Do NOT change column headers.'];
+    wsHelp = makeHelpSheet('Help — Invoices Import Template', helpCols, exRows, notes);
+    wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+    XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
+    XLSX.writeFile(wb, 'MauliEnt_Invoices_Template.xlsx');
+
+  } else if (type === 'payments') {
+    headers = ['Receipt No *','Customer *','Amount *','Payment Date *','Mode of Payment *','Invoice No *','Cash Disc','Adjust Amt','Reference/UTR','Notes'];
+    dataRows = [['⚠  Columns marked  *  are MANDATORY. Same Receipt No on multiple rows = ONE grouped payment.']];
+    ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    styleHeader(ws, headers, 'Payments Import');
+    // Add Mode of Payment dropdown validation
+    try {
+      ws['!dataValidation'] = ws['!dataValidation'] || [];
+      // column E = index 4 = Mode of Payment
+    } catch(e){}
+    ws['!cols'] = [{wch:16},{wch:35},{wch:12},{wch:14},{wch:18},{wch:18},{wch:11},{wch:11},{wch:18},{wch:22}];
+    helpCols = [
+      {col:'Receipt No *',req:'YES',fmt:'e.g. RC-2526-0001',desc:'Receipt reference. SAME Receipt No on multiple rows = one payment split across invoices. All rows with same Receipt No are grouped as ONE entry.'},
+      {col:'Customer *',req:'YES',fmt:'Exact name from Customers tab',desc:'Must match customer name exactly (case-insensitive).'},
+      {col:'Amount *',req:'YES',fmt:'Number e.g. 29500',desc:'TOTAL amount received for this receipt. Enter the same value on all rows of the same Receipt No.'},
+      {col:'Payment Date *',req:'YES',fmt:'YYYY-MM-DD e.g. 2025-05-19',desc:'Date payment was received. Keep same on all rows of the same receipt.'},
+      {col:'Mode of Payment *',req:'YES',fmt:'Cash | UPI | NEFT/IMPS | Cheque | Cancelled',desc:'Use exactly one of these five values. Keep same on all rows of the same receipt.'},
+      {col:'Invoice No *',req:'YES',fmt:'e.g. INV-2526-103',desc:'Invoice this row settles. Each row = one invoice. Must exist in Invoices tab.'},
+      {col:'Cash Disc',req:'NO',fmt:'Number e.g. 371  (blank = 0)',desc:'Cash discount on this invoice. App auto-creates a Cash Discount sub-entry.'},
+      {col:'Adjust Amt',req:'NO',fmt:'Number (blank = same as Amount)',desc:'Amount allocated to this specific invoice. For multi-invoice receipts, enter per-invoice amount here.'},
+      {col:'Reference/UTR',req:'NO',fmt:'e.g. CHQ-123456',desc:'Cheque no, UTR, UPI transaction ID, etc.'},
+      {col:'Notes',req:'NO',fmt:'Any text',desc:'Optional remarks visible in payment PDF.'}
+    ];
+    exRows = [
+      {'Receipt No *':'RC-2526-0001','Customer *':'ABC TRADERS (MH-1001001)','Amount *':10000,'Payment Date *':'2025-06-10','Mode of Payment *':'Cheque','Invoice No *':'INV-2526-101','Cash Disc':0,'Adjust Amt':10000,'Reference/UTR':'CHQ-100001','Notes':''},
+      {'Receipt No *':'RC-2526-0002','Customer *':'ABC TRADERS (MH-1001001)','Amount *':29500,'Payment Date *':'2025-07-01','Mode of Payment *':'Cheque','Invoice No *':'INV-2526-102','Cash Disc':0,'Adjust Amt':10000,'Reference/UTR':'CHQ-100002','Notes':''},
+      {'Receipt No *':'RC-2526-0002','Customer *':'ABC TRADERS (MH-1001001)','Amount *':29500,'Payment Date *':'2025-07-01','Mode of Payment *':'Cheque','Invoice No *':'INV-2526-103','Cash Disc':500,'Adjust Amt':9500,'Reference/UTR':'CHQ-100002','Notes':''},
+      {'Receipt No *':'RC-2526-0002','Customer *':'ABC TRADERS (MH-1001001)','Amount *':29500,'Payment Date *':'2025-07-01','Mode of Payment *':'Cheque','Invoice No *':'INV-2526-104','Cash Disc':0,'Adjust Amt':10000,'Reference/UTR':'CHQ-100002','Notes':''}
+    ];
+    notes = [
+      'RC-2526-0002 above covers 3 invoices. Same Receipt No, Amount, Date, Mode on all 3 rows. Adjust Amt per row = per-invoice allocation.',
+      'Amount column = Total Received for the receipt (same on all rows of that receipt).',
+      'Adjust Amt = amount allocated to that specific invoice. Sum of Adjust Amt across rows = Amount.',
+      'Cash Disc on a row auto-creates a Cash Discount entry. Adjust Amt should already exclude Cash Disc.',
+      'Customer name and Invoice No must already exist in the app before importing.',
+      'Payment Date must be YYYY-MM-DD. Excel date format also accepted.'
+    ];
+    wsHelp = makeHelpSheet('Help — Payments Import Template', helpCols, exRows, notes);
+    wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Payments Import');
+    XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
+    XLSX.writeFile(wb, 'MauliEnt_Payments_Template.xlsx');
+
+  } else if (type === 'creditnotes') {
+    headers = ['CN No *','Customer *','Invoice No *','Date *','Amount *','Reason *','Notes'];
+    dataRows = [['⚠  Columns marked  *  are MANDATORY. Do not rename columns.']];
+    ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    styleHeader(ws, headers, 'Credit Notes Import');
+    ws['!cols'] = [{wch:16},{wch:35},{wch:18},{wch:14},{wch:12},{wch:18},{wch:28}];
+    helpCols = [
+      {col:'CN No *',req:'YES',fmt:'e.g. SR-2526-001',desc:'Unique credit note number. Must not already exist.'},
+      {col:'Customer *',req:'YES',fmt:'Exact name from Customers tab',desc:'Must match customer name exactly (case-insensitive).'},
+      {col:'Invoice No *',req:'YES',fmt:'e.g. INV-2526-101',desc:'Invoice this credit note is against. Must exist in Invoices tab.'},
+      {col:'Date *',req:'YES',fmt:'YYYY-MM-DD e.g. 2025-06-01',desc:'Date of the credit note.'},
+      {col:'Amount *',req:'YES',fmt:'Number e.g. 2034',desc:'Credit note amount in ₹. Reduces the invoice balance.'},
+      {col:'Reason *',req:'YES',fmt:'Return | Discount | Correction | Damaged | Other',desc:'Reason for credit note. Use one of the five listed values.'},
+      {col:'Notes',req:'NO',fmt:'Any text',desc:'Optional remarks.'}
+    ];
+    exRows = [
+      {'CN No *':'SR-2526-001','Customer *':'ABC TRADERS (MH-1001001)','Invoice No *':'INV-2526-101','Date *':'2025-06-15','Amount *':2034,'Reason *':'Return','Notes':'Goods returned — damaged fabric'},
+      {'CN No *':'SR-2526-002','Customer *':'XYZ GARMENTS (MH-1001002)','Invoice No *':'INV-2526-102','Date *':'2025-06-20','Amount *':1000,'Reason *':'Discount','Notes':'Festival discount'}
+    ];
+    notes = [
+      'CN No must be unique — it is used for duplicate detection during import.',
+      'Customer and Invoice No must already exist in the app before importing.',
+      'Reason must be exactly: Return, Discount, Correction, Damaged, or Other.',
+      'Date must be YYYY-MM-DD. Excel date format also accepted.'
+    ];
+    wsHelp = makeHelpSheet('Help — Credit Notes Import Template', helpCols, exRows, notes);
+    wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Credit Notes Import');
+    XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
+    XLSX.writeFile(wb, 'MauliEnt_CreditNotes_Template.xlsx');
+  }
 }
 
 // ============================================================
