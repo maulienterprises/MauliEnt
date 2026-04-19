@@ -4249,6 +4249,45 @@ async function handleImport(input) {
           if (!groups[rcpt]) groups[rcpt] = [];
           groups[rcpt].push(r);
         }
+
+        // ── AUTO-ASSIGN: numeric-only receipt keys (e.g. "1", "2") get real RC-YYYY-NNNN numbers ──
+        // Detect which keys are pure numbers, sort them ascending so "1" < "2" < "3"
+        const numericKeys = Object.keys(groups)
+          .filter(k => /^\d+$/.test(k))
+          .sort((a, b) => parseInt(a) - parseInt(b));
+        if (numericKeys.length > 0) {
+          // We need a date to determine FY for getNextReceiptNo.
+          // Use the Payment Date of the first row of each numeric group.
+          // Map: numericKey → assigned RC number
+          const autoMap = {};
+          for (const nk of numericKeys) {
+            const firstRow = groups[nk][0];
+            const refDate = fmtExcelDate(firstRow['Payment Date']) || today();
+            // getNextReceiptNo scans DB.payments — already-assigned autoMap entries
+            // are not yet in DB, so we also check autoMap values to avoid collision
+            const alreadyUsed = new Set(Object.values(autoMap));
+            let candidate = getNextReceiptNo(refDate);
+            // In edge case where candidate was already assigned in this batch, keep incrementing
+            while (alreadyUsed.has(candidate)) {
+              // temporarily inject then re-call — simpler: parse and increment manually
+              const pfx = candidate.slice(0, candidate.lastIndexOf('-') + 1);
+              const num = parseInt(candidate.slice(candidate.lastIndexOf('-') + 1)) || 0;
+              candidate = pfx + String(num + 1).padStart(4, '0');
+            }
+            autoMap[nk] = candidate;
+          }
+          // Re-key groups: replace numeric key with assigned RC number
+          for (const nk of numericKeys) {
+            const newKey = autoMap[nk];
+            groups[newKey] = groups[nk];
+            delete groups[nk];
+          }
+          // Show user what was auto-assigned
+          const assignedList = numericKeys.map(nk => `"${nk}" → ${autoMap[nk]}`).join(', ');
+          toast(`Auto-assigned receipt numbers: ${assignedList}`, 'info');
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         // Duplicate detection
         const payDupes = [];
         for (const rcpt of Object.keys(groups)) {
