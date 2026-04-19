@@ -56,8 +56,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .sync-label{font-size:0.75rem;color:rgba(255,255,255,0.8)}
 .user-chip{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:5px 14px;font-size:0.78rem;display:flex;align-items:center;gap:8px;color:#fff}
 .role-tag{font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.25);color:#fff}
-.btn-signout{background:transparent;border:1px solid rgba(255,255,255,0.4);border-radius:8px;color:rgba(255,255,255,0.85);padding:6px 14px;cursor:pointer;font-size:0.8rem;font-family:inherit}
+.btn-signout{background:transparent;border:1px solid rgba(255,255,255,0.4);border-radius:8px;color:rgba(255,255,255,0.85);padding:6px 14px;cursor:pointer;font-size:0.8rem;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1;vertical-align:middle}
 .btn-signout:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,0.1)}
+.signout-icon{display:block;flex-shrink:0}
 .btn-icon-dl{background:transparent;border:1.5px solid var(--border);border-radius:8px;color:var(--accent);padding:5px 8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:0.18s;position:relative}
 .btn-icon-dl:hover{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn-icon-dl::after{content:attr(title);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;font-size:0.72rem;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:999}
@@ -166,7 +167,7 @@ tr:hover td{background:rgba(26,111,212,0.04)}
   .sync-label{display:none}
   .topbar-right{gap:6px}
   .user-chip{padding:4px 10px;font-size:0.72rem;flex-direction:column;align-items:center;gap:2px}
-  .btn-signout{padding:5px 10px;font-size:1rem;border-radius:6px;white-space:nowrap}
+  .btn-signout{padding:6px 10px;font-size:0.8rem;border-radius:6px}
   .btn-signout-text{display:none}
   .signout-icon{display:block}
 }
@@ -348,10 +349,10 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
     <button class="nav-btn" onclick="showTab('customers',this)">👥 Customers</button>
     <button class="nav-btn" onclick="showTab('invoices',this)">🧾 Invoices</button>
     <button class="nav-btn" onclick="showTab('payments',this)">💳 Payments</button>
-    <button class="nav-btn" onclick="showTab('overdue',this)">⚠ Overdue</button>
     <button class="nav-btn mgr-only" onclick="showTab('creditnotes',this)" style="display:none">📝 Credit Notes</button>
-    <button class="nav-btn mgr-only" onclick="showTab('ledger',this)" style="display:none">📒 Customer Ledger</button>
     <button class="nav-btn expenses-tab-btn" onclick="showTab('expenses',this)" style="display:none">💸 Expenses</button>
+    <button class="nav-btn mgr-only" onclick="showTab('ledger',this)" style="display:none">📒 Customer Ledger</button>
+    <button class="nav-btn" onclick="showTab('overdue',this)">⚠ Overdue</button>
     <button class="nav-btn dev-only" onclick="showTab('log',this)" style="display:none">📋 Activity Log</button>
     <button class="nav-btn dev-only" onclick="showTab('users',this)" style="display:none">👤 Users</button>
     <button class="nav-btn dev-only" onclick="showTab('backup',this)" style="display:none">💾 Backup</button>
@@ -567,6 +568,8 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
       <div class="section-header" style="margin-bottom:16px">
         <div class="section-title">💸 Expenses</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm dev-only" onclick="openImportModal('expenses')">📥 Import</button>
+          <button class="btn-icon-dl dev-only" onclick="downloadTemplate('expenses')" title="Download Template"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></button>
           <button class="btn btn-outline btn-sm" onclick="exportExpenses()">📤 Export</button>
           <button class="btn btn-primary btn-sm" onclick="openExpenseModal()">➕ Add Expense</button>
         </div>
@@ -3272,14 +3275,43 @@ function renderCreditNotes() {
 }
 
 function exportCreditNotes() {
-  const list = DB.creditNotes || [];
-  if (!list.length) return toast('No credit notes to export.', 'error');
+  const selectedFY = document.getElementById('cn-fy-filter')?.value || 'all';
+  const search     = document.getElementById('cn-search')?.value.toLowerCase() || '';
+  const custF      = document.getElementById('cn-cust-filter')?.value || '';
+  const reasonF    = document.getElementById('cn-reason-filter')?.value || '';
+  const dateFrom   = document.getElementById('cn-date-from')?.value || '';
+  const dateTo     = document.getElementById('cn-date-to')?.value || '';
+  const amtMin     = parseFloat(document.getElementById('cn-amt-min')?.value) || null;
+  const amtMax     = parseFloat(document.getElementById('cn-amt-max')?.value) || null;
+  let list = (DB.creditNotes || []).filter(cn => {
+    if (selectedFY !== 'all') { try { if (getFYTag(cn.date)!==selectedFY) return false; } catch(e) { return false; } }
+    const c   = DB.customers.find(c=>String(c.id)===String(cn.customerId));
+    const inv = DB.invoices.find(i=>String(i.id)===String(cn.invoiceId));
+    if (!([cn.cnNumber,c?.name,inv?.invNo,cn.reason,cn.notes].join(' ').toLowerCase().includes(search))) return false;
+    if (custF   && String(cn.customerId)!==custF) return false;
+    if (reasonF && cn.reason!==reasonF) return false;
+    if (dateFrom && cn.date<dateFrom) return false;
+    if (dateTo   && cn.date>dateTo)   return false;
+    const a=parseFloat(cn.amount);
+    if (amtMin!==null && a<amtMin) return false;
+    if (amtMax!==null && a>amtMax) return false;
+    return true;
+  }).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if (!list.length) return toast('No credit notes to export (check filters).','error');
   const data = list.map(cn => {
-    const c   = DB.customers.find(c => c.id === cn.customerId);
-    const inv = DB.invoices.find(i => i.id === cn.invoiceId);
-    return { CNNumber: cn.cnNumber, Date: cn.date, Customer: c?.name, InvoiceNo: inv?.invNo, Amount: parseFloat(cn.amount), Reason: cn.reason, Notes: cn.notes || '' };
+    const c   = DB.customers.find(c=>c.id===cn.customerId);
+    const inv = DB.invoices.find(i=>i.id===cn.invoiceId);
+    return {
+      'CN No *':       cn.cnNumber,
+      'Customer *':    c?.name||'',
+      'Invoice No *':  inv?.invNo||'',
+      'Date *':        cn.date,
+      'Amount *':      parseFloat(cn.amount),
+      'Reason *':      cn.reason,
+      'Notes':         cn.notes||''
+    };
   });
-  exportXLSX(data, 'CreditNotes_MauliEnt');
+  exportStyledXLSX(data, 'CreditNotes_MauliEnt', 'Credit Notes');
 }
 
 function printCreditNotePDF(id) {
@@ -4007,19 +4039,21 @@ function renderBackupHistory() {
 function openImportModal(type) {
   importType = type;
   const titles = {
-    customers: 'Import Customers from Excel',
-    invoices: 'Import Invoices from Excel',
-    payments: 'Import Payments from Excel',
-    creditnotes: 'Import Credit Notes from Excel'
+    customers:   'Import Customers from Excel',
+    invoices:    'Import Invoices from Excel',
+    payments:    'Import Payments from Excel',
+    creditnotes: 'Import Credit Notes from Excel',
+    expenses:    'Import Expenses from Excel'
   };
   const cols = {
-    customers: 'Required columns: Name*, Phone*, Email, Company, Pincode, Address, GST, CreditDays, WhatsappReminder, EmailReminder',
-    invoices: 'Required columns: CustomerName*, InvoiceNo*, InvoiceDate*, DueDate, Amount*, Description',
-    payments: 'Required columns: Receipt No*, Customer*, Amount*, Payment Date*, Mode of Payment*, Invoice No*, Cash Disc, Adjust Amt, Reference/UTR, Notes',
-    creditnotes: 'Required columns: CN No*, Customer*, Invoice No*, Date*, Amount*, Reason*, Notes'
+    customers:   'Required columns: Name*, Phone*, Email, Company, Pincode, Address, GST, CreditDays, WhatsappReminder, EmailReminder',
+    invoices:    'Required columns: CustomerName*, InvoiceNo*, InvoiceDate*, DueDate, Amount*, Description',
+    payments:    'Required columns: Receipt No*, Customer*, Amount*, Payment Date*, Mode of Payment*, Invoice No*, Cash Disc, Adjust Amt, Reference/UTR, Notes',
+    creditnotes: 'Required columns: CN No*, Customer*, Invoice No*, Date*, Amount*, Reason*, Notes',
+    expenses:    'Required columns: Date*, Category*, Description, Amount*, Mode*, DoneBy'
   };
   document.getElementById('import-title').textContent = titles[type] || 'Import from Excel';
-  document.getElementById('import-cols').textContent = cols[type] || '';
+  document.getElementById('import-cols').textContent  = cols[type]   || '';
   document.getElementById('import-file').value = '';
   openModal('modal-import');
 }
@@ -4100,7 +4134,7 @@ async function handleImport(input) {
       }).filter(r => {
         // Skip the template instruction row (starts with ⚠)
         // Check all possible first-column keys across all import types
-        const name = String(r['Name'] || r['Name *'] || r['CustomerName'] || r['CustomerName *'] || r['InvoiceNo'] || r['InvoiceNo *'] || r['Receipt No'] || r['CN No'] || '');
+        const name = String(r['Name'] || r['Name *'] || r['CustomerName'] || r['CustomerName *'] || r['InvoiceNo'] || r['InvoiceNo *'] || r['Receipt No'] || r['CN No'] || r['Date'] || '');
         return name && !name.startsWith('⚠') && !name.toLowerCase().startsWith('columns marked');
       });
 
@@ -4337,6 +4371,67 @@ async function handleImport(input) {
           await showDuplicateAlert(cnDupes, 'creditnotes');
           return;
         }
+
+      } else if (importType === 'expenses') {
+        // Expenses have no unique key like Receipt No — we use Date+Category+Amount+Mode as a composite key for dupe detection
+        const expKey = e => `${e.date}|${(e.category||'').toLowerCase()}|${e.amount}|${(e.mode||'').toLowerCase()}`;
+        const existingKeys = new Set((DB.expenses || []).map(expKey));
+        const expDupes = [];
+        for (const r of rows) {
+          const date   = fmtExcelDate(r['Date']);
+          const cat    = String(r['Category'] || '').trim();
+          const amount = parseFloat(r['Amount'] || 0);
+          const mode   = String(r['Mode'] || 'UPI').trim();
+          if (!date || !cat) continue;
+          const k = `${date}|${cat.toLowerCase()}|${amount}|${mode.toLowerCase()}`;
+          const existing = (DB.expenses || []).find(e => expKey(e) === k);
+          if (existing) expDupes.push({ key: `${cat} ₹${amount} on ${date}`, old: existing, newRow: r });
+        }
+        if (expDupes.length > 0) {
+          const dupKeys = new Set(expDupes.map(d => expKey(d.old)));
+          if (DB.expenses) DB.expenses = DB.expenses.filter(e => !dupKeys.has(expKey(e)));
+        }
+        const newItems = [];
+        let idBase = Date.now();
+        const validCategories = ['Petrol','Hotel','Electricity','Professional Fees','Repair & Maintenance','Other'];
+        const validModes      = ['UPI','Cash','Self'];
+        for (const r of rows) {
+          const date   = fmtExcelDate(r['Date']);
+          let   cat    = String(r['Category'] || '').trim();
+          const amount = parseFloat(r['Amount'] || 0);
+          let   mode   = String(r['Mode'] || 'UPI').trim();
+          const desc   = String(r['Description'] || '').trim();
+          const by     = String(r['DoneBy'] || '').trim();
+          if (!date || !cat || !amount) continue;
+          // Normalise category & mode — fallback to 'Other' / 'UPI' if unrecognised
+          if (!validCategories.includes(cat)) cat = 'Other';
+          if (!validModes.includes(mode))     mode = 'UPI';
+          const item = {
+            id:          Math.round(idBase++),
+            date,
+            category:    cat,
+            description: desc,
+            amount,
+            mode,
+            by
+          };
+          if (!DB.expenses) DB.expenses = [];
+          DB.expenses.push(item);
+          newItems.push(item);
+          count++;
+        }
+        try { localStorage.setItem('mauli_expenses', JSON.stringify(DB.expenses)); } catch(e) {}
+        setImportProgress(40, `Uploading ${count} expenses…`, 'Saving to Supabase in batches');
+        await saveChunked('expenses', newItems);
+        addLog('create', `Imported ${count} expenses from Excel`);
+        if (expDupes.length > 0) {
+          setImportProgress(100, '✅ Done!', `${count} imported, ${expDupes.length} duplicate(s)`);
+          await new Promise(r => setTimeout(r, 600));
+          closeModal('modal-import'); resetImportModal(); renderAll();
+          toast(`✅ ${count} expenses imported. ${expDupes.length} duplicate(s) detected.`, 'success');
+          await showDuplicateAlert(expDupes, 'expenses');
+          return;
+        }
       }
 
       setImportProgress(100, '✅ Done!', `${count} ${importType} imported`);
@@ -4417,15 +4512,17 @@ function openDupeCompareModal(dupes, type) {
 
   const fieldLabels = {
     customers:   ['Name','Company','Phone','Email','City/Pincode','GST','Address','Credit Days'],
-    invoices:    ['Invoice No','Customer ID','Date','Due Date','Amount','Description'],
-    payments:    ['Receipt No','Customer ID','Invoice ID','Amount','Date','Method','Reference','Notes','Cash Disc','Total Received'],
-    creditnotes: ['CN No','Customer ID','Invoice ID','Date','Amount','Reason','Notes']
+    invoices:    ['Invoice No','Customer','Date','Due Date','Amount','Description'],
+    payments:    ['Receipt No','Customer','Invoice','Amount','Date','Method','Reference','Notes','Cash Disc','Total Received'],
+    creditnotes: ['CN No','Customer','Invoice','Date','Amount','Reason','Notes'],
+    expenses:    ['Date','Category','Description','Amount','Mode','Done By']
   };
   const fieldKeys = {
     customers:   ['name','company','phone','email','city','gst','address','creditDays'],
     invoices:    ['invNo','customerId','date','dueDate','amount','description'],
     payments:    ['receiptNo','customerId','invoiceId','amount','date','method','ref','notes','cashDisc','totalReceived'],
-    creditnotes: ['cnNumber','customerId','invoiceId','date','amount','reason','notes']
+    creditnotes: ['cnNumber','customerId','invoiceId','date','amount','reason','notes'],
+    expenses:    ['date','category','description','amount','mode','by']
   };
   const keys   = fieldKeys[type]   || [];
   const labels = fieldLabels[type] || [];
@@ -4481,52 +4578,145 @@ function flattenObj(obj) {
 // EXPORT
 // ============================================================
 function exportCustomers() {
-  const data = DB.customers.map(c => ({
-    Name: c.name, Company: c.company, Phone: c.phone, Email: c.email,
-    City: c.city, GST: c.gst, Address: c.address,
-    Balance: getCustomerBalance(c.id), Status: getCustomerStatus(c.id)
+  const search = document.getElementById('cust-search')?.value.toLowerCase() || '';
+  let list = DB.customers.filter(c => {
+    const match = [c.name, c.phone, c.email, c.city, c.company].join(' ').toLowerCase().includes(search);
+    if (!match) return false;
+    if (custFilter === 'all') return true;
+    return getCustomerStatus(c.id) === custFilter;
+  }).sort((a,b) => a.name.localeCompare(b.name,'en-IN'));
+  if (!list.length) return toast('No customers to export (check filters).','error');
+  const data = list.map(c => ({
+    'Name *':             c.name,
+    'Phone *':            c.phone,
+    'Email':              c.email || '',
+    'Company':            c.company || '',
+    'Pincode':            c.city || '',
+    'Address':            c.address || '',
+    'GST':                c.gst || '',
+    'CreditDays':         c.creditDays || 60,
+    'WhatsappReminder':   c.whatsapp ? 'yes' : 'no',
+    'EmailReminder':      c.emailRem  ? 'yes' : 'no'
   }));
-  exportXLSX(data, 'Customers_MauliEnt');
+  exportStyledXLSX(data, 'Customers_MauliEnt', 'Customers');
 }
 
 function exportInvoices() {
-  const data = DB.invoices.map(inv => {
-    const c = DB.customers.find(c => c.id === inv.customerId);
-    return { InvoiceNo: inv.invNo, Customer: c?.name, Date: inv.date, DueDate: inv.dueDate, Amount: inv.amount, Paid: getPaidAmount(inv.id), Balance: parseFloat(inv.amount) - getPaidAmount(inv.id), Status: getInvoiceStatus(inv) };
+  const selectedFY  = document.getElementById('inv-fy-filter')?.value || 'all';
+  const search      = document.getElementById('inv-search')?.value.toLowerCase() || '';
+  const custFilter2 = document.getElementById('inv-cust-filter')?.value || '';
+  const statusF     = document.getElementById('inv-status-filter')?.value || '';
+  const dateFrom    = document.getElementById('inv-date-from')?.value || '';
+  const dateTo      = document.getElementById('inv-date-to')?.value || '';
+  const amtMin      = parseFloat(document.getElementById('inv-amt-min')?.value) || null;
+  const amtMax      = parseFloat(document.getElementById('inv-amt-max')?.value) || null;
+  let list = DB.invoices.filter(inv => {
+    if (selectedFY !== 'all') { try { if (getFYTag(inv.date) !== selectedFY) return false; } catch(e) { return false; } }
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
+    if (!([inv.invNo, c?.name, inv.description].join(' ').toLowerCase().includes(search))) return false;
+    if (custFilter2 && String(Math.round(parseFloat(inv.customerId))) !== custFilter2 && String(inv.customerId) !== custFilter2) return false;
+    if (statusF && getInvoiceStatus(inv) !== statusF) return false;
+    if (dateFrom && inv.date < dateFrom) return false;
+    if (dateTo   && inv.date > dateTo)   return false;
+    const amt = parseFloat(inv.amount);
+    if (amtMin !== null && amt < amtMin) return false;
+    if (amtMax !== null && amt > amtMax) return false;
+    return true;
+  }).sort((a,b) => { const ka=invNoSortKey(a.invNo),kb=invNoSortKey(b.invNo); return ka<kb?-1:ka>kb?1:0; });
+  if (!list.length) return toast('No invoices to export (check filters).','error');
+  const data = list.map(inv => {
+    const c = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId)))) || DB.customers.find(c => String(c.id) === String(inv.customerId));
+    return {
+      'CustomerName *': c?.name || '',
+      'InvoiceNo *':    inv.invNo,
+      'InvoiceDate *':  inv.date,
+      'DueDate':        inv.dueDate || '',
+      'Amount *':       parseFloat(inv.amount),
+      'Description':    inv.description || ''
+    };
   });
-  exportXLSX(data, 'Invoices_MauliEnt');
+  exportStyledXLSX(data, 'Invoices_MauliEnt', 'Invoices');
 }
 
 function exportPayments() {
-  // Group by receiptNo so we export in the same multi-row format as the import template
-  const grouped = {};
-  for (const p of DB.payments) {
-    const key = p.receiptNo || p.groupId || String(p.id);
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(p);
-  }
+  const selectedFY = document.getElementById('pay-fy-filter')?.value || 'all';
+  const search     = document.getElementById('pay-search')?.value.toLowerCase() || '';
+  const custF      = document.getElementById('pay-cust-filter')?.value || '';
+  const methodF    = document.getElementById('pay-method-filter')?.value || '';
+  const dateFrom   = document.getElementById('pay-date-from')?.value || '';
+  const dateTo     = document.getElementById('pay-date-to')?.value || '';
+  const amtMin     = parseFloat(document.getElementById('pay-amt-min')?.value) || null;
+  const amtMax     = parseFloat(document.getElementById('pay-amt-max')?.value) || null;
+
+  // Build grouped display list (same logic as renderPayments)
+  const grouped = {}; const singles = [];
+  DB.payments.forEach(p => { if (p.groupId) { if (!grouped[p.groupId]) grouped[p.groupId]=[]; grouped[p.groupId].push(p); } else singles.push(p); });
+  let list = [];
+  Object.values(grouped).forEach(grp => {
+    const primaryEntry = grp.find(p => p.method !== 'Cash Discount') || grp[0];
+    const first = grp[0];
+    const totalAmt = grp.filter(p => p.method !== 'Cash Discount').reduce((s,p) => s+parseFloat(p.amount),0);
+    const totalDisc = grp.filter(p => p.method === 'Cash Discount').reduce((s,p) => s+parseFloat(p.amount),0);
+    const invNos = [...new Set(grp.map(p => DB.invoices.find(i=>i.id===p.invoiceId)?.invNo).filter(Boolean))];
+    list.push({ _isGroup:true, _grp:grp, customerId:first.customerId, date:first.date, method:primaryEntry.method, ref:primaryEntry.ref, notes:primaryEntry.notes, receiptNo:first.receiptNo||'', amount:first.totalReceived||totalAmt, cashDisc:totalDisc, invNos });
+  });
+  singles.forEach(p => { const inv=DB.invoices.find(i=>i.id===p.invoiceId); list.push({...p,_isGroup:false,invNos:[inv?.invNo||'—']}); });
+
+  list = list.filter(p => {
+    if (selectedFY !== 'all') { try { if (getFYTag(p.date)!==selectedFY) return false; } catch(e) { return false; } }
+    const c = DB.customers.find(c=>String(c.id)===String(Math.round(parseFloat(p.customerId))))||DB.customers.find(c=>String(c.id)===String(p.customerId));
+    if (!([c?.name,p.invNos?.join(' '),p.method,p.ref,p.notes].join(' ').toLowerCase().includes(search))) return false;
+    if (custF && String(Math.round(parseFloat(p.customerId)))!==custF && String(p.customerId)!==custF) return false;
+    if (methodF && p.method!==methodF) return false;
+    if (dateFrom && p.date<dateFrom) return false;
+    if (dateTo   && p.date>dateTo)   return false;
+    const pAmt=parseFloat(p.amount);
+    if (amtMin!==null && pAmt<amtMin) return false;
+    if (amtMax!==null && pAmt>amtMax) return false;
+    return true;
+  });
+
+  if (!list.length) return toast('No payments to export (check filters).','error');
+
+  // Flatten groups back to per-invoice rows (import template format)
   const data = [];
-  for (const [rcpt, entries] of Object.entries(grouped)) {
-    // Exclude Cash Discount sub-entries from rows (they are implicit via Cash Disc column)
-    const mainEntries = entries.filter(e => e.method !== 'Cash Discount');
-    for (const p of mainEntries) {
-      const c   = DB.customers.find(c => c.id === p.customerId);
-      const inv = DB.invoices.find(i => i.id === p.invoiceId);
+  for (const p of list) {
+    if (p._isGroup && p._grp) {
+      const mainEntries = p._grp.filter(e => e.method !== 'Cash Discount');
+      for (const e of mainEntries) {
+        const c   = DB.customers.find(c=>c.id===e.customerId);
+        const inv = DB.invoices.find(i=>i.id===e.invoiceId);
+        data.push({
+          'Receipt No *':      e.receiptNo||'',
+          'Customer *':        c?.name||'',
+          'Amount *':          e.totalReceived||p.amount,
+          'Payment Date *':    e.date,
+          'Mode of Payment *': e.method,
+          'Invoice No *':      inv?.invNo||'',
+          'Cash Disc':         e.cashDisc||0,
+          'Adjust Amt':        e.amount,
+          'Reference/UTR':     e.ref||'',
+          'Notes':             e.notes||''
+        });
+      }
+    } else {
+      const c   = DB.customers.find(c=>c.id===p.customerId);
+      const inv = DB.invoices.find(i=>i.id===p.invoiceId);
       data.push({
-        'Receipt No':      p.receiptNo || '',
-        'Customer':        c?.name || '',
-        'Amount':          p.totalReceived || p.amount,
-        'Payment Date':    p.date,
-        'Mode of Payment': p.method,
-        'Invoice No':      inv?.invNo || '',
-        'Cash Disc':       p.cashDisc || 0,
-        'Adjust Amt':      p.amount,
-        'Reference/UTR':   p.ref || '',
-        'Notes':           p.notes || ''
+        'Receipt No *':      p.receiptNo||'',
+        'Customer *':        c?.name||'',
+        'Amount *':          p.totalReceived||p.amount,
+        'Payment Date *':    p.date,
+        'Mode of Payment *': p.method,
+        'Invoice No *':      inv?.invNo||'',
+        'Cash Disc':         p.cashDisc||0,
+        'Adjust Amt':        p.amount,
+        'Reference/UTR':     p.ref||'',
+        'Notes':             p.notes||''
       });
     }
   }
-  exportXLSX(data, 'Payments_MauliEnt');
+  exportStyledXLSX(data, 'Payments_MauliEnt', 'Payments');
 }
 
 function exportUnpaidInvoices() {
@@ -4550,10 +4740,91 @@ function exportOverdueExcel() {
 }
 
 function exportXLSX(data, filename) {
+  // Legacy fallback — used by log, overdue, unpaid exports
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Data');
   XLSX.writeFile(wb, filename + '.xlsx');
+}
+
+// ── Professional styled export ──────────────────────────────
+function exportStyledXLSX(data, filename, sheetLabel) {
+  if (!data || !data.length) return;
+  const ACCENT   = 'FF1A6FD4';
+  const ACCENT2  = 'FF1355A8';
+  const WHITE    = 'FFFFFFFF';
+  const ROW_EVEN = 'FFF0F4FA';
+  const ROW_ODD  = 'FFFFFFFF';
+  const BORDER_C = 'FFCBD5E1';
+  const TEXT     = 'FF1E293B';
+  const MUTED    = 'FF64748B';
+
+  const headers = Object.keys(data[0]);
+  const aoa = [headers, ...data.map(r => headers.map(h => r[h]))];
+  const ws  = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Col widths — estimate from header + data
+  const colWidths = headers.map(h => {
+    const maxData = data.reduce((m,r) => Math.max(m, String(r[h]||'').length), 0);
+    return { wch: Math.min(50, Math.max(h.length + 2, maxData + 2)) };
+  });
+  ws['!cols'] = colWidths;
+
+  // Freeze header row
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+  // Style each cell
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+      const isHeader = R === 0;
+      const isEven   = R % 2 === 0;
+      const thin = { style: 'thin', color: { rgb: BORDER_C } };
+      const border = { top: thin, bottom: thin, left: thin, right: thin };
+
+      if (isHeader) {
+        ws[addr].s = {
+          fill:      { patternType: 'solid', fgColor: { rgb: ACCENT } },
+          font:      { bold: true, color: { rgb: WHITE }, name: 'Arial', sz: 10 },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border:    { top: thin, bottom: { style:'medium', color:{rgb:ACCENT2} }, left: thin, right: thin }
+        };
+      } else {
+        ws[addr].s = {
+          fill:      { patternType: 'solid', fgColor: { rgb: isEven ? ROW_EVEN : ROW_ODD } },
+          font:      { name: 'Arial', sz: 9, color: { rgb: TEXT } },
+          alignment: { horizontal: 'left', vertical: 'center', wrapText: false },
+          border
+        };
+      }
+    }
+  }
+
+  // Auto-detect date columns and format them
+  const dateColIdx = headers.map((h,i) => /date/i.test(h) ? i : -1).filter(i=>i>=0);
+  for (let R = 1; R <= range.e.r; R++) {
+    for (const C of dateColIdx) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      if (ws[addr] && ws[addr].v) ws[addr].z = 'yyyy-mm-dd';
+    }
+  }
+
+  // Number formatting for amount cols
+  const amtColIdx = headers.map((h,i) => /amount|amt|disc|cash.disc/i.test(h) ? i : -1).filter(i=>i>=0);
+  for (let R = 1; R <= range.e.r; R++) {
+    for (const C of amtColIdx) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      if (ws[addr] && typeof ws[addr].v === 'number') ws[addr].z = '#,##0.00';
+    }
+  }
+
+  ws['!sheetView'] = [{ state: 'normal', showGridLines: false }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetLabel || 'Data');
+  XLSX.writeFile(wb, filename + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
 // ============================================================
@@ -4734,6 +5005,49 @@ function downloadTemplate(type) {
     XLSX.utils.book_append_sheet(wb, ws, 'Credit Notes Import');
     XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
     XLSX.writeFile(wb, 'MauliEnt_CreditNotes_Template.xlsx');
+
+  } else if (type === 'expenses') {
+    headers = ['Date *','Category *','Description','Amount *','Mode *','DoneBy'];
+    dataRows = [['⚠  Columns marked * are MANDATORY. Do not rename columns.']];
+    ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    styleHeader(ws, headers, 'Expenses Import');
+    ws['!cols'] = [{wch:14},{wch:22},{wch:30},{wch:12},{wch:14},{wch:18}];
+
+    // Category dropdown col B rows 3:1000
+    if (!ws['!dataValidation']) ws['!dataValidation'] = [];
+    const dvCat = { type:'list', formula1:'"Petrol,Hotel,Electricity,Professional Fees,Repair & Maintenance,Other"', sqref:'B3:B1000', showDropDown:false, allowBlank:true };
+    ws['!dataValidation'].push(dvCat);
+    // Mode dropdown col E rows 3:1000
+    const dvMode = { type:'list', formula1:'"UPI,Cash,Self"', sqref:'E3:E1000', showDropDown:false, allowBlank:true };
+    ws['!dataValidation'].push(dvMode);
+
+    helpCols = [
+      {col:'Date *',    req:'YES', fmt:'YYYY-MM-DD  e.g. 2025-06-01', desc:'Date of the expense. Excel date format also accepted.'},
+      {col:'Category *',req:'YES', fmt:'Petrol | Hotel | Electricity | Professional Fees | Repair & Maintenance | Other', desc:'Expense category. Use exactly one of the listed values. A dropdown is provided in the template. Unrecognised values default to Other.'},
+      {col:'Description',req:'NO', fmt:'Any text', desc:'Optional details or remarks about the expense.'},
+      {col:'Amount *',  req:'YES', fmt:'Number  e.g. 450', desc:'Expense amount in ₹.'},
+      {col:'Mode *',    req:'YES', fmt:'UPI | Cash | Self', desc:'Payment mode. Use exactly one of the three values. A dropdown is provided in the template. Unrecognised values default to UPI.'},
+      {col:'DoneBy',    req:'NO',  fmt:'Any text  e.g. Rahul', desc:'Person who incurred/approved the expense. Optional.'}
+    ];
+    exRows = [
+      {'Date *':'2025-06-01','Category *':'Petrol','Description':'Fuel for delivery van','Amount *':450,'Mode *':'Cash','DoneBy':'Rahul'},
+      {'Date *':'2025-06-03','Category *':'Hotel','Description':'Stay - client visit Pune','Amount *':2200,'Mode *':'UPI','DoneBy':'Mauli'},
+      {'Date *':'2025-06-05','Category *':'Professional Fees','Description':'CA fees Q1','Amount *':5000,'Mode *':'UPI','DoneBy':''},
+      {'Date *':'2025-06-10','Category *':'Electricity','Description':'Office electricity bill','Amount *':3100,'Mode *':'UPI','DoneBy':''},
+      {'Date *':'2025-06-12','Category *':'Repair & Maintenance','Description':'AC servicing','Amount *':800,'Mode *':'Cash','DoneBy':'Suresh'}
+    ];
+    notes = [
+      'Date must be YYYY-MM-DD. Excel serial dates (Excel\'s own date format) are also handled automatically.',
+      'Category dropdown: Petrol, Hotel, Electricity, Professional Fees, Repair & Maintenance, Other.',
+      'Mode dropdown: UPI, Cash, Self.',
+      'Unrecognised Category values are saved as "Other". Unrecognised Mode values default to "UPI".',
+      'Do NOT change column headers. The * suffix is stripped automatically by the app.'
+    ];
+    wsHelp = makeHelpSheet('Help — Expenses Import Template', helpCols, exRows, notes);
+    wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Expenses Import');
+    XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
+    XLSX.writeFile(wb, 'MauliEnt_Expenses_Template.xlsx');
   }
 }
 
@@ -5904,13 +6218,31 @@ function clearExpDateFilter() {
 }
 
 function exportExpenses() {
-  const list = DB.expenses || [];
-  if (!list.length) return toast('No expenses to export.', 'error');
+  const selectedFY = document.getElementById('exp-fy-filter')?.value || 'all';
+  const search     = document.getElementById('exp-search')?.value.toLowerCase() || '';
+  const catF       = document.getElementById('exp-cat-filter')?.value || '';
+  const modeF      = document.getElementById('exp-mode-filter')?.value || '';
+  const dateFrom   = document.getElementById('exp-date-from')?.value || '';
+  const dateTo     = document.getElementById('exp-date-to')?.value || '';
+  let list = (DB.expenses || []).filter(e => {
+    if (selectedFY !== 'all') { try { if (getFYTag(e.date)!==selectedFY) return false; } catch(ex) { return false; } }
+    if (!([e.category,e.description,e.by,e.mode].join(' ').toLowerCase().includes(search))) return false;
+    if (catF  && e.category!==catF)  return false;
+    if (modeF && e.mode!==modeF)     return false;
+    if (dateFrom && e.date<dateFrom) return false;
+    if (dateTo   && e.date>dateTo)   return false;
+    return true;
+  }).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if (!list.length) return toast('No expenses to export (check filters).','error');
   const data = list.map(e => ({
-    Date: e.date, Category: e.category, Description: e.description || '',
-    Amount: parseFloat(e.amount), Mode: e.mode, DoneBy: e.by
+    'Date *':        e.date,
+    'Category *':    e.category,
+    'Description':   e.description||'',
+    'Amount *':      parseFloat(e.amount),
+    'Mode *':        e.mode,
+    'DoneBy':        e.by||''
   }));
-  exportXLSX(data, 'Expenses_MauliEnt');
+  exportStyledXLSX(data, 'Expenses_MauliEnt', 'Expenses');
 }
 
 function renderExpenses() {
