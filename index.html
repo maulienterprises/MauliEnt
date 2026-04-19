@@ -3305,7 +3305,7 @@ function exportCreditNotes() {
       'CN No *':       cn.cnNumber,
       'Customer *':    c?.name||'',
       'Invoice No *':  inv?.invNo||'',
-      'Date *':        cn.date,
+      'Date *':        fmtDateExport(cn.date),
       'Amount *':      parseFloat(cn.amount),
       'Reason *':      cn.reason,
       'Notes':         cn.notes||''
@@ -4629,8 +4629,8 @@ function exportInvoices() {
     return {
       'CustomerName *': c?.name || '',
       'InvoiceNo *':    inv.invNo,
-      'InvoiceDate *':  inv.date,
-      'DueDate':        inv.dueDate || '',
+      'InvoiceDate *':  fmtDateExport(inv.date),
+      'DueDate':        fmtDateExport(inv.dueDate),
       'Amount *':       parseFloat(inv.amount),
       'Description':    inv.description || ''
     };
@@ -4690,7 +4690,7 @@ function exportPayments() {
           'Receipt No *':      e.receiptNo||'',
           'Customer *':        c?.name||'',
           'Amount *':          e.totalReceived||p.amount,
-          'Payment Date *':    e.date,
+          'Payment Date *':    fmtDateExport(e.date),
           'Mode of Payment *': e.method,
           'Invoice No *':      inv?.invNo||'',
           'Cash Disc':         e.cashDisc||0,
@@ -4706,7 +4706,7 @@ function exportPayments() {
         'Receipt No *':      p.receiptNo||'',
         'Customer *':        c?.name||'',
         'Amount *':          p.totalReceived||p.amount,
-        'Payment Date *':    p.date,
+        'Payment Date *':    fmtDateExport(p.date),
         'Mode of Payment *': p.method,
         'Invoice No *':      inv?.invNo||'',
         'Cash Disc':         p.cashDisc||0,
@@ -4802,12 +4802,16 @@ function exportStyledXLSX(data, filename, sheetLabel) {
     }
   }
 
-  // Auto-detect date columns and format them
+  // Auto-detect date columns and format them as DD-MM-YYYY text
   const dateColIdx = headers.map((h,i) => /date/i.test(h) ? i : -1).filter(i=>i>=0);
   for (let R = 1; R <= range.e.r; R++) {
     for (const C of dateColIdx) {
       const addr = XLSX.utils.encode_cell({ r: R, c: C });
-      if (ws[addr] && ws[addr].v) ws[addr].z = 'yyyy-mm-dd';
+      if (ws[addr] && ws[addr].v) {
+        const raw = String(ws[addr].v);
+        const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) { ws[addr].t = 's'; ws[addr].v = m[3]+'-'+m[2]+'-'+m[1]; delete ws[addr].z; }
+      }
     }
   }
 
@@ -4830,7 +4834,51 @@ function exportStyledXLSX(data, filename, sheetLabel) {
 // ============================================================
 // DOWNLOAD TEMPLATE
 // ============================================================
-function downloadTemplate(type) {
+// ============================================================
+// GITHUB TEMPLATE URLs
+// ============================================================
+const GITHUB_TEMPLATES = {
+  customers:   'https://raw.githubusercontent.com/maulienterprises/MauliEnt/main/Templates/MauliEnt_Customers_Template.xlsx',
+  invoices:    'https://raw.githubusercontent.com/maulienterprises/MauliEnt/main/Templates/MauliEnt_Invoices_Template.xlsx',
+  payments:    'https://raw.githubusercontent.com/maulienterprises/MauliEnt/main/Templates/MauliEnt_Payments_Template.xlsx',
+  expenses:    'https://raw.githubusercontent.com/maulienterprises/MauliEnt/main/Templates/MauliEnt_Expenses_Template.xlsx',
+  creditnotes: 'https://raw.githubusercontent.com/maulienterprises/MauliEnt/main/Templates/MauliEnt_CreditNotes_Template.xlsx'
+};
+
+async function downloadTemplate(type) {
+  const url = GITHUB_TEMPLATES[type];
+  if (!url) { toast('Unknown template type: ' + type, 'error'); return; }
+
+  const fileNames = {
+    customers:   'MauliEnt_Customers_Template.xlsx',
+    invoices:    'MauliEnt_Invoices_Template.xlsx',
+    payments:    'MauliEnt_Payments_Template.xlsx',
+    expenses:    'MauliEnt_Expenses_Template.xlsx',
+    creditnotes: 'MauliEnt_CreditNotes_Template.xlsx'
+  };
+
+  try {
+    toast('Downloading template…', 'info');
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const blob = await resp.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileNames[type];
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('Template downloaded ✓', 'success');
+  } catch(err) {
+    console.error('Template download failed:', err);
+    toast('Could not fetch template from GitHub. Check your internet connection.', 'error');
+  }
+}
+
+// ============================================================
+// OLD downloadTemplate (replaced by GitHub fetch above — kept for reference only, never called)
+// ============================================================
+function _downloadTemplate_OLD_UNUSED(type) {
   const ACCENT = 'FF1A6FD4';
   const WHITE  = 'FFFFFFFF';
   const WARN   = 'FFFFF3CD';
@@ -5056,6 +5104,8 @@ function downloadTemplate(type) {
 // ============================================================
 function fmt(n) { return parseFloat(n||0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function today() { return new Date().toISOString().split('T')[0]; }
+// Convert YYYY-MM-DD → DD-MM-YYYY for export columns
+function fmtDateExport(d) { if (!d) return ''; const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3]+'-'+m[2]+'-'+m[1] : d; }
 // Sort invoice numbers like INV-2425-1, INV-2425-10, INV-2425-157 numerically
 function invNoSortKey(invNo) {
   const s = String(invNo || '');
@@ -6235,7 +6285,7 @@ function exportExpenses() {
   }).sort((a,b)=>new Date(b.date)-new Date(a.date));
   if (!list.length) return toast('No expenses to export (check filters).','error');
   const data = list.map(e => ({
-    'Date *':        e.date,
+    'Date *':        fmtDateExport(e.date),
     'Category *':    e.category,
     'Description':   e.description||'',
     'Amount *':      parseFloat(e.amount),
