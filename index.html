@@ -852,14 +852,19 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           <div class="stat-sub" id="ledger-total-count">0 invoices</div>
         </div>
         <div class="stat-card green">
-          <div class="stat-label">Total Paid</div>
+          <div class="stat-label">Actually Paid</div>
           <div class="stat-value" id="ledger-paid">&#8377;0</div>
-          <div class="stat-sub" id="ledger-paid-count">0 invoices</div>
+          <div class="stat-sub" id="ledger-paid-count">0 paid</div>
+        </div>
+        <div class="stat-card" style="border-color:#f59e0b40">
+          <div class="stat-label" style="color:var(--warning)">Cash Discount</div>
+          <div class="stat-value" id="ledger-cashdisc" style="color:var(--warning)">&#8377;0</div>
+          <div class="stat-sub" id="ledger-cashdisc-sub">adjusted at payment</div>
         </div>
         <div class="stat-card red">
           <div class="stat-label">Outstanding</div>
           <div class="stat-value" id="ledger-unpaid">&#8377;0</div>
-          <div class="stat-sub" id="ledger-unpaid-count">0 invoices</div>
+          <div class="stat-sub" id="ledger-unpaid-count">0 unpaid</div>
         </div>
       </div>
       <div class="table-wrap">
@@ -867,7 +872,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
           <thead>
             <tr>
               <th>#</th><th>Customer</th><th>Invoice #</th><th>Invoice Date</th><th>Due Date</th>
-              <th>Invoice Amt</th><th>Paid Amt</th><th>Balance</th><th>Status</th>
+              <th>Invoice Amt</th><th>Actually Paid</th><th>Cash Discount</th><th>Balance</th><th>Status</th>
             </tr>
           </thead>
           <tbody id="ledger-table"></tbody>
@@ -5228,33 +5233,83 @@ function renderLedger() {
   if (statusFilter === 'paid')   invList = invList.filter(i => getInvoiceStatus(i) === 'paid');
   else if (statusFilter === 'unpaid') invList = invList.filter(i => getInvoiceStatus(i) !== 'paid');
 
-  // Compute summary totals from full set for selected customer
+  // Compute bifurcated summary totals from full set for selected customer
   const allForCust = custIdRaw ? DB.invoices.filter(i => String(i.customerId) === custIdRaw) : [...DB.invoices];
   const totalInvoiced = allForCust.reduce((s,i) => s + parseFloat(i.amount), 0);
-  const totalPaidAmt  = allForCust.reduce((s,i) => s + getPaidAmount(i.id), 0);
+
+  // Actually paid = cash/upi/neft + credit notes (NOT cash discount)
+  const totalActuallyPaid = allForCust.reduce((s, inv) => {
+    const invIdStr = String(inv.id);
+    const cashPaid = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount')
+      .reduce((a, p) => a + parseFloat(p.amount), 0);
+    const creditAmt = (DB.creditNotes || [])
+      .filter(cn => String(cn.invoiceId) === invIdStr)
+      .reduce((a, cn) => a + parseFloat(cn.amount), 0);
+    return s + cashPaid + creditAmt;
+  }, 0);
+
+  // Cash Discount total
+  const totalCashDiscAmt = allForCust.reduce((s, inv) => {
+    const invIdStr = String(inv.id);
+    let disc = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method === 'Cash Discount')
+      .reduce((a, p) => a + parseFloat(p.amount), 0);
+    if (disc === 0) {
+      disc = DB.payments
+        .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount' && parseFloat(p.cashDisc) > 0)
+        .reduce((a, p) => a + parseFloat(p.cashDisc), 0);
+    }
+    return s + disc;
+  }, 0);
+
+  const totalPaidAmt  = totalActuallyPaid + totalCashDiscAmt;
   const totalUnpaid   = totalInvoiced - totalPaidAmt;
   const paidCount     = allForCust.filter(i => getInvoiceStatus(i) === 'paid').length;
   const unpaidCount   = allForCust.filter(i => getInvoiceStatus(i) !== 'paid').length;
 
-  document.getElementById('ledger-total').textContent      = '₹' + fmt(totalInvoiced);
-  document.getElementById('ledger-total-count').textContent = allForCust.length + ' invoices';
-  document.getElementById('ledger-paid').textContent       = '₹' + fmt(totalPaidAmt);
-  document.getElementById('ledger-paid-count').textContent  = paidCount + ' paid';
-  document.getElementById('ledger-unpaid').textContent     = '₹' + fmt(totalUnpaid);
+  document.getElementById('ledger-total').textContent       = '₹' + fmt(totalInvoiced);
+  document.getElementById('ledger-total-count').textContent  = allForCust.length + ' invoices';
+  document.getElementById('ledger-paid').textContent        = '₹' + fmt(totalActuallyPaid);
+  document.getElementById('ledger-paid-count').textContent   = paidCount + ' paid';
+  if (document.getElementById('ledger-cashdisc')) {
+    document.getElementById('ledger-cashdisc').textContent  = '₹' + fmt(totalCashDiscAmt);
+  }
+  document.getElementById('ledger-unpaid').textContent      = '₹' + fmt(totalUnpaid);
   document.getElementById('ledger-unpaid-count').textContent = unpaidCount + ' unpaid';
 
   if (!invList.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">📒</div><p>No invoices found for this filter.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">📒</div><p>No invoices found for this filter.</p></div></td></tr>`;
     return;
   }
 
   const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
   tbody.innerHTML = invList.map((inv, idx) => {
     const c    = DB.customers.find(c => String(c.id) === String(inv.customerId));
-    const paid = getPaidAmount(inv.id);
-    const bal  = parseFloat(inv.amount) - paid;
+    const invIdStr = String(inv.id);
+    // Actually paid = cash/upi/neft/cheque payments (exclude Cash Discount entries)
+    const actuallyPaid = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount')
+      .reduce((s, p) => s + parseFloat(p.amount), 0);
+    // Cash Discount = separate Cash Discount method entries
+    let cashDisc = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method === 'Cash Discount')
+      .reduce((s, p) => s + parseFloat(p.amount), 0);
+    // Fallback: older entries that store discount only in cashDisc field
+    if (cashDisc === 0) {
+      cashDisc = DB.payments
+        .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount' && parseFloat(p.cashDisc) > 0)
+        .reduce((s, p) => s + parseFloat(p.cashDisc), 0);
+    }
+    // Credit notes count toward "actually paid" (separate from cash discount)
+    const creditNoteAmt = (DB.creditNotes || [])
+      .filter(cn => String(cn.invoiceId) === invIdStr)
+      .reduce((s, cn) => s + parseFloat(cn.amount), 0);
+    const totalPaid = actuallyPaid + cashDisc + creditNoteAmt;
+    const bal  = parseFloat(inv.amount) - totalPaid;
     const status = getInvoiceStatus(inv);
-    const hasCN = (DB.creditNotes||[]).some(cn => String(cn.invoiceId) === String(inv.id));
+    const hasCN = creditNoteAmt > 0;
+    const actuallyPaidDisplay = actuallyPaid + creditNoteAmt; // show cash received + credit notes in "Actually Paid"
     return `<tr>
       <td>${idx + 1}</td>
       <td><strong>${c?.name || '—'}</strong>${c?.company ? `<br><small style="color:var(--muted)">${c.company}</small>` : ''}</td>
@@ -5262,7 +5317,8 @@ function renderLedger() {
       <td>${fmtDate(inv.date)}</td>
       <td>${fmtDate(inv.dueDate)}</td>
       <td>₹${fmt(inv.amount)}</td>
-      <td style="color:var(--success)">₹${fmt(paid)}</td>
+      <td style="color:var(--success)">₹${fmt(actuallyPaidDisplay)}</td>
+      <td style="color:${cashDisc > 0 ? 'var(--warning)' : 'var(--muted)'}">₹${fmt(cashDisc)}</td>
       <td style="color:${bal > 0 ? 'var(--danger)' : 'var(--success)'}"><strong>₹${fmt(bal)}</strong></td>
       <td><span class="badge ${statusMap[status]}">${status}</span></td>
     </tr>`;
@@ -5339,7 +5395,7 @@ function buildPrintWindow(htmlContent, customerEmail, customerPhone) {
     .print-btn{background:#16a34a;color:#fff}.print-btn:hover{background:#15803d}
     .email-btn{background:#1a6fd4;color:#fff}.email-btn:hover{background:#1355a8}
     .wa-btn{background:#25d366;color:#fff}.wa-btn:hover{background:#1ebe5d}
-    @page{size:A4;margin:18mm 15mm}
+    @page{size:A4;margin:18mm 15mm 18mm 15mm}
     @media print{.action-bar,.wa-note{display:none}body{padding:0;display:block}.footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #cbd5e1;padding:8px 15mm;background:#fff;margin:0}}
   </style></head><body><div class="print-body">
   <div class="action-bar">
@@ -5396,15 +5452,56 @@ function printLedgerStatement() {
 
   const showCustCol = !custIdRaw; // only show customer column when All Customers selected
   const statusMap = { paid:'paid', pending:'pending', partial:'partial', overdue:'overdue' };
+  // Compute bifurcated totals for PDF summary
+  const totalActuallyPaid = invList.reduce((s, inv) => {
+    const invIdStr = String(inv.id);
+    const cashPaid = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount')
+      .reduce((a, p) => a + parseFloat(p.amount), 0);
+    const creditNoteAmt = (DB.creditNotes || [])
+      .filter(cn => String(cn.invoiceId) === invIdStr)
+      .reduce((a, cn) => a + parseFloat(cn.amount), 0);
+    return s + cashPaid + creditNoteAmt;
+  }, 0);
+  const totalCashDisc = invList.reduce((s, inv) => {
+    const invIdStr = String(inv.id);
+    let disc = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method === 'Cash Discount')
+      .reduce((a, p) => a + parseFloat(p.amount), 0);
+    if (disc === 0) {
+      disc = DB.payments
+        .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount' && parseFloat(p.cashDisc) > 0)
+        .reduce((a, p) => a + parseFloat(p.cashDisc), 0);
+    }
+    return s + disc;
+  }, 0);
+
   const rows = invList.map((inv, idx) => {
     const c    = DB.customers.find(c => String(c.id) === String(inv.customerId));
-    const paid = getPaidAmount(inv.id);
-    const bal  = parseFloat(inv.amount) - paid;
+    const invIdStr = String(inv.id);
+    // Actually paid = cash/upi/neft payments + credit notes
+    const cashPaid = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount')
+      .reduce((a, p) => a + parseFloat(p.amount), 0);
+    let discAmt = DB.payments
+      .filter(p => String(p.invoiceId) === invIdStr && p.method === 'Cash Discount')
+      .reduce((a, p) => a + parseFloat(p.amount), 0);
+    if (discAmt === 0) {
+      discAmt = DB.payments
+        .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount' && parseFloat(p.cashDisc) > 0)
+        .reduce((a, p) => a + parseFloat(p.cashDisc), 0);
+    }
+    const creditNoteAmt = (DB.creditNotes || [])
+      .filter(cn => String(cn.invoiceId) === invIdStr)
+      .reduce((a, cn) => a + parseFloat(cn.amount), 0);
+    const actuallyPaid = cashPaid + creditNoteAmt;
+    const totalPaidForInv = actuallyPaid + discAmt;
+    const bal  = parseFloat(inv.amount) - totalPaidForInv;
     const st   = getInvoiceStatus(inv);
     // Find latest payment date for this invoice
-    const invPayments = DB.payments.filter(p => String(p.invoiceId) === String(inv.id) && p.amount > 0);
+    const invPayments = DB.payments.filter(p => String(p.invoiceId) === invIdStr && p.amount > 0 && p.method !== 'Cash Discount');
     invPayments.sort((a,b) => new Date(b.date) - new Date(a.date));
-    const invCreditNotes = (DB.creditNotes || []).filter(cn => String(cn.invoiceId) === String(inv.id));
+    const invCreditNotes = (DB.creditNotes || []).filter(cn => String(cn.invoiceId) === invIdStr);
     let paymentDate;
     if (invPayments.length > 0) {
       paymentDate = fmtDate(invPayments[0].date);
@@ -5420,7 +5517,8 @@ function printLedgerStatement() {
       <td>${fmtDate(inv.date)}</td>
       <td>${paymentDate}</td>
       <td style="text-align:right">₹${fmt(inv.amount)}</td>
-      <td style="text-align:right;color:#16a34a">₹${fmt(paid)}</td>
+      <td style="text-align:right;color:#16a34a">₹${fmt(actuallyPaid)}</td>
+      <td style="text-align:right;color:${discAmt > 0 ? '#d97706' : '#94a3b8'}">₹${fmt(discAmt)}</td>
       <td style="text-align:right;color:${bal>0?'#dc2626':'#16a34a'}"><strong>₹${fmt(bal)}</strong></td>
       <td><span class="badge ${statusMap[st]}">${st}</span></td>
     </tr>`;
@@ -5445,18 +5543,35 @@ function printLedgerStatement() {
       <div class="info-box"><label>Generated On</label><strong>${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</strong></div>
     </div>
     <table>
-      <thead><tr><th>#</th>${showCustCol ? '<th>Customer</th>' : ''}<th>Invoice #</th><th>Date</th><th>Payment Date</th><th style="text-align:right">Amount</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
+      <thead>
+        <tr>
+          <th>#</th>${showCustCol ? '<th>Customer</th>' : ''}
+          <th>Invoice #</th><th>Date</th><th>Payment Date</th>
+          <th style="text-align:right">Inv. Amt</th>
+          <th style="text-align:right;color:#16a34a">Actually Paid</th>
+          <th style="text-align:right;color:#d97706">Cash Disc</th>
+          <th style="text-align:right">Balance</th>
+          <th>Status</th>
+        </tr>
+      </thead>
       <tbody>
         ${rows}
         <tr class="total-row">
-          <td colspan="${showCustCol ? 5 : 4}" style="text-align:right">Total</td>
-          <td style="text-align:right">₹${fmt(totalInvoiced)}</td>
-          <td style="text-align:right;color:#16a34a">₹${fmt(totalPaid)}</td>
-          <td style="text-align:right;color:#dc2626">₹${fmt(totalDue)}</td>
+          <td colspan="${showCustCol ? 5 : 4}" style="text-align:right;font-weight:700">Total</td>
+          <td style="text-align:right;font-weight:700">₹${fmt(totalInvoiced)}</td>
+          <td style="text-align:right;color:#16a34a;font-weight:700">₹${fmt(totalActuallyPaid)}</td>
+          <td style="text-align:right;color:#d97706;font-weight:700">₹${fmt(totalCashDisc)}</td>
+          <td style="text-align:right;color:#dc2626;font-weight:700">₹${fmt(totalDue)}</td>
           <td></td>
         </tr>
       </tbody>
     </table>
+    <div style="background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin:4px 0 16px;font-size:11px;color:#64748b;line-height:1.7">
+      <strong style="color:#1e293b">Note:</strong>
+      &nbsp;<strong style="color:#16a34a">Actually Paid</strong> = Cash / UPI / NEFT / Cheque received + Credit Notes applied. &nbsp;
+      <strong style="color:#d97706">Cash Disc</strong> = Cash Discount adjusted at time of payment. &nbsp;
+      <em>Balance = Invoice Amount − Actually Paid − Cash Discount.</em>
+    </div>
     <div class="footer">
       <div>This is a computer generated statement. No signature required.<br>Thank you! &nbsp;|&nbsp; MAULI ENTERPRISES</div>
     </div>`;
