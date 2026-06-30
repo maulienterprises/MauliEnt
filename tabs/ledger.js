@@ -59,7 +59,7 @@ function renderLedger() {
   if (el('ledger-unpaid-count')) el('ledger-unpaid-count').textContent = unpaidCount + ' unpaid';
 
   if (!invs.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">📒</div><p>No records found.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">📒</div><p>No records found.</p></div></td></tr>`;
     return;
   }
   const statusMap = { paid:'badge-paid', pending:'badge-pending', partial:'badge-partial', overdue:'badge-overdue' };
@@ -67,6 +67,7 @@ function renderLedger() {
   tbody.innerHTML = invs.map((inv, idx) => {
     const c      = DB.customers.find(c => String(c.id) === String(Math.round(parseFloat(inv.customerId))));
     const paid   = getPaidAmount(inv.id);
+    const lastPayDate = getLastPaymentDate(inv.id);
     const bal    = parseFloat(inv.amount) - paid;
     runningBal  += bal;
     const status = getInvoiceStatus(inv);
@@ -78,6 +79,7 @@ function renderLedger() {
       <td>${fmtDate(inv.dueDate)}</td>
       <td>₹${fmt(inv.amount)}</td>
       <td style="color:var(--success)">₹${fmt(paid)}</td>
+      <td>${lastPayDate ? fmtDate(lastPayDate) : '—'}</td>
       <td style="color:${bal>0?'var(--danger)':'var(--success)'}">₹${fmt(bal)}</td>
       <td><span class="badge ${statusMap[status]}">${status}</span></td>
     </tr>`;
@@ -106,6 +108,7 @@ function exportLedger() {
     return {
       Customer: c?.name||'', InvoiceNo: inv.invNo, Date: inv.date, DueDate: inv.dueDate,
       Amount: parseFloat(inv.amount), Paid: getPaidAmount(inv.id),
+      ReceiptDate: getLastPaymentDate(inv.id) || '',
       Balance: parseFloat(inv.amount) - getPaidAmount(inv.id), Status: getInvoiceStatus(inv)
     };
   });
@@ -133,6 +136,7 @@ function printLedgerStatement() {
   const totalBal  = totalAmt - totalPaid;
   const rows = invs.map((inv, i) => {
     const paid   = getPaidAmount(inv.id);
+    const lastPayDate = getLastPaymentDate(inv.id);
     const bal    = parseFloat(inv.amount) - paid;
     const status = getInvoiceStatus(inv);
     const statusColors = { paid:'#16a34a', pending:'#d97706', partial:'#1a6fd4', overdue:'#dc2626' };
@@ -143,6 +147,7 @@ function printLedgerStatement() {
       <td>${fmtDate(inv.dueDate)}</td>
       <td>₹${fmt(inv.amount)}</td>
       <td style="color:#16a34a">₹${fmt(paid)}</td>
+      <td>${lastPayDate ? fmtDate(lastPayDate) : '—'}</td>
       <td style="color:${bal>0?'#dc2626':'#16a34a'}">₹${fmt(bal)}</td>
       <td><span class="badge ${status}" style="background:${statusColors[status]}20;color:${statusColors[status]};border:1px solid ${statusColors[status]}40;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700">${status}</span></td>
     </tr>`;
@@ -160,12 +165,13 @@ function printLedgerStatement() {
     </div><img src="./logo.png" class="logo" onerror="this.style.display='none'"></div>
     <div class="section-title" style="color:#000;font-size:17px;font-weight:700;text-align:center;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:14px">Account Statement</div>
     ${periodLine}${custInfo}
-    <table><thead><tr><th>#</th><th>Invoice #</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+    <table><thead><tr><th>#</th><th>Invoice #</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Paid</th><th>Receipt Date</th><th>Balance</th><th>Status</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr class="total-row" style="background:#e8f0fc">
       <td colspan="4" style="text-align:right;font-weight:700;color:#1355a8">Totals:</td>
       <td style="font-weight:700">₹${fmt(totalAmt)}</td>
       <td style="font-weight:700;color:#16a34a">₹${fmt(totalPaid)}</td>
+      <td></td>
       <td style="font-weight:700;color:${totalBal>0?'#dc2626':'#16a34a'}">₹${fmt(totalBal)}</td>
       <td></td>
     </tr></tfoot></table>
