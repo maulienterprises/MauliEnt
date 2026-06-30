@@ -2,7 +2,7 @@
 // sw.js — Service Worker for PWA offline support
 // ============================================================
 
-const CACHE_NAME = 'maulient-v2';
+const CACHE_NAME = 'maulient-v3';
 const ASSETS = [
   './',
   './index.html',
