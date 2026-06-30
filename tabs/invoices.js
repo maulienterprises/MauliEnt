@@ -2,6 +2,14 @@
 // tabs/invoices.js — Invoice CRUD, status, render, export
 // ============================================================
 
+function getLastPaymentDate(invoiceId) {
+  const invIdStr = String(invoiceId);
+  const payments = DB.payments
+    .filter(p => String(p.invoiceId) === invIdStr && p.method !== 'Cancelled' && p.method !== 'Cash Discount')
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  return payments.length ? payments[0].date : null;
+}
+
 function getPaidAmount(invoiceId) {
   const invIdStr = String(invoiceId);
   const payments = DB.payments
